@@ -1,7 +1,10 @@
 using AutoShopper.Core;
 using AutoShopper.Core.Debug;
 using AutoShopper.Core.Game.Watchers;
+using AutoShopper.Core.Inventory;
+using AutoShopper.Core.Items;
 using AutoShopper.Core.Localization;
+using AutoShopper.Core.Shopping;
 using AutoShopper.Core.Stats;
 using AutoShopper.Core.Tasks;
 using AutoShopper.Windows;
@@ -23,6 +26,7 @@ namespace AutoShopper;
 public sealed class Plugin : IDalamudPlugin
 {
     private const string GotoSubcommand = "goto";
+    private const string AddSubcommand = "add";
     private const string NavmeshIpcProviderMarker = "Navmesh.IPCProvider";
     // Lifestream's own budget for a data center transfer is up to an hour; a plan older than this is a leftover, not a journey in flight.
     private static readonly TimeSpan PendingJourneyMaxAge = TimeSpan.FromMinutes(90);
@@ -39,6 +43,9 @@ public sealed class Plugin : IDalamudPlugin
     internal WindowSystem WindowSystem { get; } = new("AutoShopper");
     internal RunHistory History { get; }
     internal AutoShopController Controller { get; }
+    internal ItemCatalog Items { get; }
+    internal InventoryReader Inventory { get; }
+    internal ShoppingListStore Lists { get; }
 
     private readonly DutyWatcher dutyWatcher;
     private readonly GmAlertWatcher gmAlertWatcher;
@@ -62,6 +69,9 @@ public sealed class Plugin : IDalamudPlugin
 
         History = new RunHistory();
         Controller = new AutoShopController();
+        Items = new ItemCatalog();
+        Inventory = new InventoryReader();
+        Lists = new ShoppingListStore(Configuration, Items, Inventory);
         dutyWatcher = new DutyWatcher();
         gmAlertWatcher = new GmAlertWatcher();
 
@@ -108,6 +118,7 @@ public sealed class Plugin : IDalamudPlugin
 
         dutyWatcher.Dispose();
         gmAlertWatcher.Dispose();
+        Inventory.Dispose();
 
         CLibMain.Dispose();
         ECommonsMain.Dispose();
@@ -171,6 +182,10 @@ public sealed class Plugin : IDalamudPlugin
         else if (HasSubcommand(trimmed, GotoSubcommand))
         {
             AutoGoto.HandleCommand(trimmed[GotoSubcommand.Length..].Trim(), Controller.Running);
+        }
+        else if (HasSubcommand(trimmed, AddSubcommand))
+        {
+            AddItemCommand.Handle(trimmed[AddSubcommand.Length..].Trim(), Items, Lists);
         }
         else
         {
