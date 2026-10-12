@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoShopper", "AutoShopper\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommons", "ECommons\ECommons\ECommons.csproj", "{D55EBA09-1B7C-4ABE-9D62-A4F8C9D2B7E1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoShopper.Tests", "AutoShopper.Tests\AutoShopper.Tests.csproj", "{77382720-BF97-41DC-8977-9F803F69DA01}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{D55EBA09-1B7C-4ABE-9D62-A4F8C9D2B7E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D55EBA09-1B7C-4ABE-9D62-A4F8C9D2B7E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D55EBA09-1B7C-4ABE-9D62-A4F8C9D2B7E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77382720-BF97-41DC-8977-9F803F69DA01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77382720-BF97-41DC-8977-9F803F69DA01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77382720-BF97-41DC-8977-9F803F69DA01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77382720-BF97-41DC-8977-9F803F69DA01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
