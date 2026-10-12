@@ -17,6 +17,7 @@ internal static partial class L
     internal static class Shell
     {
         public static readonly LocString NavShop = new("shell.nav.shop", "Shop");
+        public static readonly LocString NavLists = new("shell.nav.lists", "Lists");
         public static readonly LocString NavSettings = new("shell.nav.settings", "Settings");
         public static readonly LocString NavHistory = new("shell.nav.history", "History");
         public static readonly LocString NavPlugins = new("shell.nav.plugins", "Plugins");
@@ -55,7 +56,9 @@ internal static partial class L
         public static readonly LocString SentenceEnd = new("shop.sentence.end", ".");
 
         public static readonly LocString Lists = new("shop.lists", "Shopping lists");
-        public static readonly LocString ListsEmpty = new("shop.listsEmpty", "Shopping lists are coming in the next update.");
+        public static readonly LocString ListsEmpty = new("shop.listsEmpty", "No shopping list yet. Make one on the Lists page.");
+        public static readonly LocString OpenLists = new("shop.openLists", "Open lists");
+        public static readonly LocString EditList = new("shop.editList", "Edit list");
 
         public static readonly LocString Start = new("shop.start", "START");
         public static readonly LocString Stop = new("shop.stop", "STOP");
@@ -312,7 +315,7 @@ internal static partial class L
 
     internal static class Plugin
     {
-        public static readonly LocString CommandHelp = new("plugin.commandHelp", "Toggle the Auto Shopper window. /ashop config | stats | deps | log | changelog | about | pause (pause or resume the run) | target (dump the current target's BaseId) | goto <territory> <x> <y> <z>, goto <world> [aetheryte] [i<n>] or goto home (travel helpers, goto stop cancels).");
+        public static readonly LocString CommandHelp = new("plugin.commandHelp", "Toggle the Auto Shopper window. /ashop config | stats | deps | log | changelog | about | add <item name or id> [quantity] (add an item to the selected list) | pause (pause or resume the run) | target (dump the current target's BaseId) | goto <territory> <x> <y> <z>, goto <world> [aetheryte] [i<n>] or goto home (travel helpers, goto stop cancels).");
         public static readonly LocString CommandHelpAlias = new("plugin.commandHelpAlias", "Alias for /ashop.");
     }
 }
