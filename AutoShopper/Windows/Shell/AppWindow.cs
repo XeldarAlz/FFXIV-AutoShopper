@@ -9,7 +9,7 @@ namespace AutoShopper.Windows.Shell;
 
 public sealed class AppWindow : Window, IDisposable
 {
-    public enum Page { Shop, Settings, History, Plugins, Log, Changelog, About }
+    public enum Page { Shop, Lists, Settings, History, Plugins, Log, Changelog, About }
 
     private const float PageRevealMs = 260f;
     private const float PageSlide = 12f;
@@ -35,6 +35,7 @@ public sealed class AppWindow : Window, IDisposable
 
     private readonly Plugin plugin;
     private readonly ShopPage shopPage = new();
+    private readonly ListsPage listsPage = new();
     private readonly SettingsPage settingsPage = new();
     private readonly HistoryPage historyPage = new();
     private readonly PluginsPage pluginsPage = new();
@@ -46,6 +47,7 @@ public sealed class AppWindow : Window, IDisposable
     private long pageShownTick = Environment.TickCount64;
     private bool resetScroll;
 
+    private bool itemGlyphsShared;
     private bool compact;
     private float collapse;
     private float collapseFrom;
@@ -101,6 +103,7 @@ public sealed class AppWindow : Window, IDisposable
 
     public override void PreDraw()
     {
+        ShareItemGlyphs();
         bodyFont = Fonts.PushBody();
         chrome = Styling.PushChrome(Vector2.Zero);
         AdvanceCollapse();
@@ -126,6 +129,18 @@ public sealed class AppWindow : Window, IDisposable
         }
 
         SizeCondition = ImGuiCond.FirstUseEver;
+    }
+
+    // Item names follow the client language, so their letters reach the font atlas once the catalog has loaded.
+    private void ShareItemGlyphs()
+    {
+        if (itemGlyphsShared || !plugin.Items.IsReady)
+        {
+            return;
+        }
+
+        itemGlyphsShared = true;
+        Fonts.AddContentGlyphs(plugin.Items.NameGlyphRanges);
     }
 
     private void AdvanceCollapse()
@@ -248,6 +263,7 @@ public sealed class AppWindow : Window, IDisposable
         switch (page)
         {
             case Page.Shop: shopPage.Draw(plugin, this); break;
+            case Page.Lists: listsPage.Draw(plugin); break;
             case Page.Settings: settingsPage.Draw(plugin); break;
             case Page.History: historyPage.Draw(plugin); break;
             case Page.Plugins: pluginsPage.Draw(); break;

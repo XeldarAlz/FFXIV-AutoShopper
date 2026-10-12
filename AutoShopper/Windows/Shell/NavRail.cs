@@ -18,13 +18,14 @@ internal static class NavRail
 
     private static readonly Entry[] entries =
     [
-        new(AppWindow.Page.Shop,      FontAwesomeIcon.ShoppingCart, "##ashop_nav_shop",      L.Shell.NavShop),
-        new(AppWindow.Page.Settings,  FontAwesomeIcon.SlidersH,     "##ashop_nav_settings",  L.Shell.NavSettings),
-        new(AppWindow.Page.History,   FontAwesomeIcon.ChartLine,    "##ashop_nav_history",   L.Shell.NavHistory),
-        new(AppWindow.Page.Plugins,   FontAwesomeIcon.Plug,         "##ashop_nav_plugins",   L.Shell.NavPlugins),
-        new(AppWindow.Page.Log,       FontAwesomeIcon.Terminal,     "##ashop_nav_log",       L.Shell.NavLog),
-        new(AppWindow.Page.Changelog, FontAwesomeIcon.Newspaper,    "##ashop_nav_changelog", L.Shell.NavChangelog),
-        new(AppWindow.Page.About,     FontAwesomeIcon.InfoCircle,   "##ashop_nav_about",     L.Shell.NavAbout),
+        new(AppWindow.Page.Shop,      FontAwesomeIcon.ShoppingCart,  "##ashop_nav_shop",      L.Shell.NavShop),
+        new(AppWindow.Page.Lists,     FontAwesomeIcon.ClipboardList, "##ashop_nav_lists",     L.Shell.NavLists),
+        new(AppWindow.Page.Settings,  FontAwesomeIcon.SlidersH,      "##ashop_nav_settings",  L.Shell.NavSettings),
+        new(AppWindow.Page.History,   FontAwesomeIcon.ChartLine,     "##ashop_nav_history",   L.Shell.NavHistory),
+        new(AppWindow.Page.Plugins,   FontAwesomeIcon.Plug,          "##ashop_nav_plugins",   L.Shell.NavPlugins),
+        new(AppWindow.Page.Log,       FontAwesomeIcon.Terminal,      "##ashop_nav_log",       L.Shell.NavLog),
+        new(AppWindow.Page.Changelog, FontAwesomeIcon.Newspaper,     "##ashop_nav_changelog", L.Shell.NavChangelog),
+        new(AppWindow.Page.About,     FontAwesomeIcon.InfoCircle,    "##ashop_nav_about",     L.Shell.NavAbout),
     ];
 
     public static AppWindow.Page? Draw(AppWindow.Page current, Plugin plugin)

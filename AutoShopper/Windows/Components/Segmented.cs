@@ -126,18 +126,21 @@ internal static class Segmented
         return offset;
     }
 
+    // An icon-only segment has no label to keep a gap from, so its glyph centres on its own.
+    private static float IconSpacing(float labelWidth) => labelWidth > 0f ? IconGap * ImGuiHelpers.GlobalScale : 0f;
+
     private static Metrics Measure(Item item)
     {
         var icon = item.Icon is { } glyph ? TextDraw.IconSize(glyph) : Vector2.Zero;
         var label = TextDraw.Measure(item.Label);
-        var content = label.X + (item.Icon is not null ? icon.X + IconGap * ImGuiHelpers.GlobalScale : 0f);
+        var content = label.X + (item.Icon is not null ? icon.X + IconSpacing(label.X) : 0f);
         return new Metrics(icon, label, content);
     }
 
     private static void DrawContent(Item item, Metrics metric, Vector2 segmentMin, float segmentWidth, float height, bool selected, float hover, bool enabled)
     {
         var scale = ImGuiHelpers.GlobalScale;
-        var iconSpan = item.Icon is not null ? metric.Icon.X + IconGap * scale : 0f;
+        var iconSpan = item.Icon is not null ? metric.Icon.X + IconSpacing(metric.Label.X) : 0f;
         var available = segmentWidth - SegmentPadX * 2f * scale;
         var label = item.Label;
         var labelWidth = metric.Label.X;

@@ -52,6 +52,7 @@ internal static class Fonts
     private static byte[]? latinFont;
     private static ushort[] latinRanges = [0];
     private static ushort[] mergeRanges = [0];
+    private static ushort[] contentRanges = [0];
     private static int cjkFace = NotoCjkJapaneseFace;
     private static float unitPx = UiBuilder.DefaultFontSizePx;
 
@@ -86,6 +87,27 @@ internal static class Fonts
     }
 
     public static void OnLanguageChanged() => Rebuild();
+
+    // Item names follow the game client, whose script can differ from the plugin language's, so the letters they use
+    // join the atlas once the item catalog has loaded. The atlas is rebuilt only when some of them were missing.
+    public static void AddContentGlyphs(ushort[] ranges)
+    {
+        var covered = new bool[GlyphRanges.CodepointCount];
+        GlyphRanges.MarkRanges(covered, latinRanges);
+        GlyphRanges.MarkRanges(covered, mergeRanges);
+        var wanted = new bool[GlyphRanges.CodepointCount];
+        GlyphRanges.MarkRanges(wanted, ranges);
+        contentRanges = ranges;
+
+        for (var codepoint = GlyphRanges.FirstNonAsciiCodepoint; codepoint < GlyphRanges.CodepointCount; codepoint++)
+        {
+            if (wanted[codepoint] && !covered[codepoint])
+            {
+                Rebuild();
+                return;
+            }
+        }
+    }
 
     public static void Dispose()
     {
@@ -210,6 +232,7 @@ internal static class Fonts
         GlyphRanges.MarkRanges(merge, SymbolBlocks);
         GlyphRanges.MarkRanges(extra, Loc.Current.ExtraGlyphRanges);
         GlyphRanges.MarkRanges(extra, Loc.CatalogGlyphRanges);
+        GlyphRanges.MarkRanges(extra, contentRanges);
         MarkNativeNames(extra);
 
         for (var codepoint = GlyphRanges.FirstNonAsciiCodepoint; codepoint < GlyphRanges.CodepointCount; codepoint++)

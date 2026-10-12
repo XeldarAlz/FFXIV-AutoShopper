@@ -72,16 +72,17 @@ internal static class Dropdown
     private static int[] rowIndices = new int[64];
     private static float[] rowHeights = new float[64];
 
+    // A set bit in disabledMask greys out the option at that index and keeps it from being picked.
     public static bool Draw(string id, ReadOnlySpan<string> labels, ref int selected, float width,
-        float panelWidth = 0f, bool searchable = false, string? searchHint = null)
-        => DrawCore(id, labels, default, ref selected, width, panelWidth, searchable, searchHint);
+        float panelWidth = 0f, bool searchable = false, string? searchHint = null, uint disabledMask = 0)
+        => DrawCore(id, labels, default, ref selected, width, panelWidth, searchable, searchHint, disabledMask);
 
     public static bool DrawDetailed(string id, ReadOnlySpan<string> labels, ReadOnlySpan<string> details,
         ref int selected, float width, float panelWidth = 0f)
-        => DrawCore(id, labels, details, ref selected, width, panelWidth, false, null);
+        => DrawCore(id, labels, details, ref selected, width, panelWidth, false, null, 0);
 
     private static bool DrawCore(string id, ReadOnlySpan<string> labels, ReadOnlySpan<string> details,
-        ref int selected, float width, float panelWidth, bool searchable, string? searchHint)
+        ref int selected, float width, float panelWidth, bool searchable, string? searchHint, uint disabledMask)
     {
         if (labels.Length == 0)
         {
@@ -107,7 +108,7 @@ internal static class Dropdown
             open = true;
         }
 
-        return open && DrawPanel(state, labels, details, ref selected, origin, size, panelWidth, searchable, searchHint);
+        return open && DrawPanel(state, labels, details, ref selected, origin, size, panelWidth, searchable, searchHint, disabledMask);
     }
 
     private static State StateFor(string id)
@@ -180,7 +181,8 @@ internal static class Dropdown
     }
 
     private static bool DrawPanel(State state, ReadOnlySpan<string> labels, ReadOnlySpan<string> details,
-        ref int selected, Vector2 triggerOrigin, Vector2 triggerSize, float panelWidth, bool searchable, string? searchHint)
+        ref int selected, Vector2 triggerOrigin, Vector2 triggerSize, float panelWidth, bool searchable, string? searchHint,
+        uint disabledMask)
     {
         var scale = ImGuiHelpers.GlobalScale;
         var pad = PanelPad * scale;
@@ -225,7 +227,7 @@ internal static class Dropdown
             return false;
         }
 
-        return DrawRows(state, labels, details, ref selected, rows, listOrigin, innerWidth, listHeight, scale);
+        return DrawRows(state, labels, details, ref selected, rows, listOrigin, innerWidth, listHeight, scale, disabledMask);
     }
 
     private static Vector2 PanelPosition(Vector2 triggerOrigin, Vector2 triggerSize, float width,
@@ -312,7 +314,7 @@ internal static class Dropdown
     }
 
     private static bool DrawRows(State state, ReadOnlySpan<string> labels, ReadOnlySpan<string> details,
-        ref int selected, int rows, Vector2 origin, float innerWidth, float listHeight, float scale)
+        ref int selected, int rows, Vector2 origin, float innerWidth, float listHeight, float scale, uint disabledMask)
     {
         state.Highlight = Math.Clamp(state.Highlight, 0, rows - 1);
         var commit = HandleKeys(state, rows);
@@ -346,13 +348,13 @@ internal static class Dropdown
 
             var option = rowIndices[row];
             var detail = details.IsEmpty ? null : details[option];
-            if (DrawRow(state, row, labels[option], detail, option == selected, width, height, scale))
+            if (DrawRow(state, row, labels[option], detail, option == selected, IsDisabled(disabledMask, option), width, height, scale))
             {
                 picked = option;
             }
         }
 
-        if (commit)
+        if (commit && !IsDisabled(disabledMask, rowIndices[state.Highlight]))
         {
             picked = rowIndices[state.Highlight];
         }
@@ -371,6 +373,9 @@ internal static class Dropdown
         selected = picked;
         return true;
     }
+
+    private static bool IsDisabled(uint disabledMask, int option)
+        => option < 32 && (disabledMask & (1u << option)) != 0;
 
     private static bool HandleKeys(State state, int rows)
     {
@@ -399,14 +404,14 @@ internal static class Dropdown
         return MathF.Max(0f, offset - (listHeight - rowHeights[highlight]) * 0.5f);
     }
 
-    private static bool DrawRow(State state, int row, string name, string? detail, bool selected,
+    private static bool DrawRow(State state, int row, string name, string? detail, bool selected, bool disabled,
         float width, float height, float scale)
     {
         var size = new Vector2(width, height);
         var origin = ImGui.GetCursorScreenPos();
 
         ImGui.PushID(row);
-        var hit = Hit.Area(RowId, size);
+        var hit = Hit.Area(RowId, size, !disabled);
         ImGui.PopID();
 
         if (hit.Hovered)
@@ -414,7 +419,7 @@ internal static class Dropdown
             state.Highlight = row;
         }
 
-        var hover = Motion.Hover(Motion.Key(RowId, row), hit.Hovered || state.Highlight == row);
+        var hover = disabled ? 0f : Motion.Hover(Motion.Key(RowId, row), hit.Hovered || state.Highlight == row);
         var appear = Motion.Reveal(state.OpenedTick, RevealMs, MathF.Min(row, StaggerRows) * StaggerMs);
         var dl = ImGui.GetWindowDrawList();
         var min = origin + new Vector2((1f - appear) * RowSlide * scale, 0f);
@@ -445,7 +450,9 @@ internal static class Dropdown
 
         var textLeft = min.X + padX;
         var textRight = max.X - padX - (selected ? checkSize * 2f : 0f);
-        var nameColor = selected ? Styling.AccentGlowSoft : Vector4.Lerp(Styling.TextSecondary, Styling.TextStrong, hover);
+        var nameColor = disabled ? Styling.TextMuted
+            : selected ? Styling.AccentGlowSoft
+            : Vector4.Lerp(Styling.TextSecondary, Styling.TextStrong, hover);
         TextDraw.At(TextDraw.Truncate(name, textRight - textLeft), new Vector2(textLeft, min.Y + padY),
             Styling.WithAlpha(nameColor, appear));
 
