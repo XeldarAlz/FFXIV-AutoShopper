@@ -1,0 +1,174 @@
+using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility;
+using Dalamud.Interface.Utility.Raii;
+using System.Numerics;
+
+namespace AutoShopper.Windows;
+
+internal static class Styling
+{
+    public static readonly Vector4 AccentGlow       = new(0.976f, 0.804f, 0.902f, 1.00f);
+    public static readonly Vector4 AccentGlowSoft   = new(1.000f, 0.925f, 0.965f, 1.00f);
+    public static readonly Vector4 AccentNebula     = new(0.494f, 0.420f, 0.902f, 1.00f);
+    public static readonly Vector4 InkOnGlow        = new(0.110f, 0.039f, 0.110f, 1.00f);
+    public static readonly Vector4 AccentMint       = new(0.46f, 0.86f, 0.66f, 1.00f);
+    public static readonly Vector4 AccentMintSoft   = new(0.66f, 0.96f, 0.80f, 1.00f);
+    public static readonly Vector4 AccentAmber      = new(0.95f, 0.52f, 0.25f, 1.00f);
+    public static readonly Vector4 AccentAmberSoft  = new(1.00f, 0.70f, 0.48f, 1.00f);
+    public static readonly Vector4 AccentRose       = new(0.93f, 0.42f, 0.50f, 1.00f);
+    public static readonly Vector4 AccentRoseSoft   = new(1.00f, 0.62f, 0.68f, 1.00f);
+    public static readonly Vector4 AccentBlue       = new(0.40f, 0.68f, 0.98f, 1.00f);
+    public static readonly Vector4 AccentBlueSoft   = new(0.62f, 0.82f, 1.00f, 1.00f);
+    public static readonly Vector4 AccentDiscord    = new(0.345f, 0.396f, 0.949f, 1.00f);
+    public static readonly Vector4 AccentPatreon    = new(1.000f, 0.259f, 0.302f, 1.00f);
+    public static readonly Vector4 AccentPatreonSoft = new(1.000f, 0.580f, 0.600f, 1.00f);
+    public static readonly Vector4 AccentCoffee     = new(1.000f, 0.867f, 0.000f, 1.00f);
+    public static readonly Vector4 AccentCoffeeDeep = new(1.000f, 0.690f, 0.130f, 1.00f);
+    public static readonly Vector4 InkOnCoffee      = new(0.130f, 0.090f, 0.040f, 1.00f);
+
+    public static readonly Vector4 WindowBg = new(0.047f, 0.035f, 0.078f, 0.985f);
+    public static readonly Vector4 Surface0 = new(0.069f, 0.052f, 0.115f, 1.00f);
+    public static readonly Vector4 Surface1 = new(0.090f, 0.068f, 0.150f, 1.00f);
+    public static readonly Vector4 Surface2 = new(0.118f, 0.088f, 0.196f, 1.00f);
+    public static readonly Vector4 Surface3 = new(0.151f, 0.113f, 0.252f, 1.00f);
+
+    public static readonly Vector4 CardBg      = new(0.069f, 0.052f, 0.115f, 0.90f);
+    public static readonly Vector4 CardBgSoft  = new(0.090f, 0.068f, 0.150f, 0.62f);
+    public static readonly Vector4 CardBgHover = new(0.118f, 0.088f, 0.196f, 0.95f);
+    public static readonly Vector4 SliderBg    = new(0.137f, 0.103f, 0.228f, 1.00f);
+    public static readonly Vector4 BorderDim   = new(0.234f, 0.176f, 0.390f, 1.00f);
+
+    public static readonly Vector4 TextStrong    = new(0.957f, 0.945f, 0.980f, 1.00f);
+    public static readonly Vector4 TextSecondary = new(0.812f, 0.796f, 0.863f, 1.00f);
+    public static readonly Vector4 TextDim       = new(0.612f, 0.592f, 0.682f, 1.00f);
+    public static readonly Vector4 TextMuted     = new(0.447f, 0.427f, 0.522f, 1.00f);
+
+    public static readonly Vector4 Hairline  = new(1f, 1f, 1f, 0.055f);
+    public static readonly Vector4 Highlight = new(1f, 1f, 1f, 0.075f);
+
+    public const float WindowRounding = 14f;
+    public const float PanelRounding = 12f;
+    public const float CardRounding = 10f;
+    public const float FrameRounding = 7f;
+
+    public const double PulseFast = 600.0;
+    public const double PulseMedium = 800.0;
+    public const double PulseBreath = 2600.0;
+    public const double PulseCalm = 1900.0;
+    public const double PulseOrbit = 3400.0;
+
+    public static float Pulse(double periodMs = PulseMedium)
+    {
+        var t = (Environment.TickCount % periodMs) / periodMs;
+        return (float)((Math.Sin(t * Math.PI * 2.0) + 1.0) * 0.5);
+    }
+
+    public static Vector4 PulseColor(Vector4 a, Vector4 b, double periodMs = PulseMedium)
+        => Vector4.Lerp(a, b, Pulse(periodMs));
+
+    public static float Phase(double periodMs)
+        => (float)((Environment.TickCount % periodMs) / periodMs);
+
+    public static Vector4 WithAlpha(Vector4 c, float a) => c with { W = a };
+
+    public static Vector4 Lighten(Vector4 c, float t) => Vector4.Lerp(c, Vector4.One, t) with { W = c.W };
+
+    public static Vector4 Darken(Vector4 c, float t) => Vector4.Lerp(c, Vector4.Zero, t) with { W = c.W };
+
+    public static Vector4 Tint(Vector4 baseColor, Vector4 accent, float amount)
+        => Vector4.Lerp(baseColor, accent, amount) with { W = baseColor.W };
+
+    // Only the blush pink brand crosses 0.65; amber, mint and rose keep white text like the sibling plugins.
+    public static Vector4 ForegroundOn(Vector4 fill) => Luminance(fill) > 0.65f ? InkOnGlow : TextStrong;
+
+    // WCAG relative luminance of an sRGB color.
+    private static float Luminance(Vector4 color) => 0.2126f * Linear(color.X) + 0.7152f * Linear(color.Y) + 0.0722f * Linear(color.Z);
+
+    private static float Linear(float channel) => channel <= 0.04045f ? channel / 12.92f : MathF.Pow((channel + 0.055f) / 1.055f, 2.4f);
+
+    public static void TextCentered(string text, Vector4 color)
+    {
+        var w = ImGui.CalcTextSize(text).X;
+        var avail = ImGui.GetContentRegionAvail().X;
+        if (avail > w) ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (avail - w) * 0.5f);
+        using (ImRaii.PushColor(ImGuiCol.Text, color))
+            ImGui.TextUnformatted(text);
+    }
+
+    public static void VSpace(float pixels)
+        => ImGui.Dummy(new Vector2(0, pixels * ImGuiHelpers.GlobalScale));
+
+    public static void CenterNextItem(float width)
+    {
+        var avail = ImGui.GetContentRegionAvail().X;
+        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + MathF.Max(0f, (avail - width) * 0.5f));
+    }
+
+    public static void SectionLabel(string label)
+    {
+        using (Fonts.PushHeadline())
+        using (ImRaii.PushColor(ImGuiCol.Text, TextStrong))
+            ImGui.TextUnformatted(label);
+    }
+
+    public static IDisposable PushChrome(Vector2 windowPadding)
+    {
+        var scale = ImGuiHelpers.GlobalScale;
+        var style = ImRaii.PushStyle(ImGuiStyleVar.WindowRounding, WindowRounding * scale)
+            .Push(ImGuiStyleVar.WindowBorderSize, 1f)
+            .Push(ImGuiStyleVar.WindowPadding, windowPadding * scale)
+            .Push(ImGuiStyleVar.ChildRounding, CardRounding * scale)
+            .Push(ImGuiStyleVar.ChildBorderSize, 0f)
+            .Push(ImGuiStyleVar.PopupRounding, CardRounding * scale)
+            .Push(ImGuiStyleVar.PopupBorderSize, 1f)
+            .Push(ImGuiStyleVar.FrameRounding, FrameRounding * scale)
+            .Push(ImGuiStyleVar.FramePadding, new Vector2(10f, 6f) * scale)
+            .Push(ImGuiStyleVar.FrameBorderSize, 0f)
+            .Push(ImGuiStyleVar.ItemSpacing, new Vector2(10f, 8f) * scale)
+            .Push(ImGuiStyleVar.ItemInnerSpacing, new Vector2(6f, 4f) * scale)
+            .Push(ImGuiStyleVar.ScrollbarSize, 9f * scale)
+            .Push(ImGuiStyleVar.ScrollbarRounding, 9f * scale)
+            .Push(ImGuiStyleVar.GrabRounding, 6f * scale)
+            .Push(ImGuiStyleVar.GrabMinSize, 12f * scale);
+
+        var color = ImRaii.PushColor(ImGuiCol.WindowBg, WindowBg)
+            .Push(ImGuiCol.ChildBg, Vector4.Zero)
+            .Push(ImGuiCol.PopupBg, Surface1 with { W = 0.985f })
+            .Push(ImGuiCol.Border, new Vector4(1f, 1f, 1f, 0.09f))
+            .Push(ImGuiCol.BorderShadow, Vector4.Zero)
+            .Push(ImGuiCol.FrameBg, SliderBg)
+            .Push(ImGuiCol.FrameBgHovered, Surface2)
+            .Push(ImGuiCol.FrameBgActive, Surface3)
+            .Push(ImGuiCol.ScrollbarBg, Vector4.Zero)
+            .Push(ImGuiCol.ScrollbarGrab, new Vector4(1f, 1f, 1f, 0.12f))
+            .Push(ImGuiCol.ScrollbarGrabHovered, new Vector4(1f, 1f, 1f, 0.20f))
+            .Push(ImGuiCol.ScrollbarGrabActive, new Vector4(1f, 1f, 1f, 0.28f))
+            .Push(ImGuiCol.Button, Surface1)
+            .Push(ImGuiCol.ButtonHovered, Surface2)
+            .Push(ImGuiCol.ButtonActive, Tint(Surface2, AccentGlow, 0.35f))
+            .Push(ImGuiCol.Header, Tint(Surface1, AccentGlow, 0.30f))
+            .Push(ImGuiCol.HeaderHovered, Surface2)
+            .Push(ImGuiCol.HeaderActive, Tint(Surface2, AccentGlow, 0.40f))
+            .Push(ImGuiCol.CheckMark, AccentGlowSoft)
+            .Push(ImGuiCol.SliderGrab, AccentGlow)
+            .Push(ImGuiCol.SliderGrabActive, AccentGlowSoft)
+            .Push(ImGuiCol.Text, TextStrong)
+            .Push(ImGuiCol.TextDisabled, TextMuted)
+            .Push(ImGuiCol.Separator, Hairline)
+            .Push(ImGuiCol.ResizeGrip, Vector4.Zero)
+            .Push(ImGuiCol.ResizeGripHovered, Vector4.Zero)
+            .Push(ImGuiCol.ResizeGripActive, Vector4.Zero)
+            .Push(ImGuiCol.TextSelectedBg, WithAlpha(AccentNebula, 0.40f));
+
+        return new ChromeScope(style, color);
+    }
+
+    private sealed class ChromeScope(IDisposable style, IDisposable color) : IDisposable
+    {
+        public void Dispose()
+        {
+            color.Dispose();
+            style.Dispose();
+        }
+    }
+}

@@ -1,0 +1,17 @@
+{
+  "Author": "XeldarAlz",
+  "Name": "Auto Shopper",
+  "InternalName": "AutoShopper",
+  "Punchline": "Your market board shopping list, bought for you.",
+  "Description": "Buys your market board shopping list for you: plans the cheapest route through Universalis prices across the worlds you allow, travels between them with Lifestream, walks to the market board, buys whole listings within your price caps, and confirms every purchase.",
+  "ApplicableVersion": "any",
+  "RepoUrl": "https://github.com/XeldarAlz/FFXIV-AutoShopper",
+  "IconUrl": "https://raw.githubusercontent.com/XeldarAlz/FFXIV-AutoShopper/master/AutoShopper/Images/Icon.png",
+  "Tags": [
+    "Market Board",
+    "Shopping",
+    "Universalis",
+    "Data Center Travel",
+    "Automation"
+  ]
+}

@@ -1,0 +1,113 @@
+name: Bug report
+description: Something's broken or behaving unexpectedly.
+title: "[Bug] "
+labels: ["bug"]
+assignees: ["XeldarAlz"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill out as much as you can; it makes a huge difference.
+
+        If you're not sure whether it's a bug or expected behavior, prefer the [Q&A discussions](https://github.com/XeldarAlz/FFXIV-AutoShopper/discussions/new?category=q-a); triage is faster there.
+
+        For security issues, please use [private vulnerability reporting](https://github.com/XeldarAlz/FFXIV-AutoShopper/security/advisories/new) instead.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see? What did you expect to see instead?
+      placeholder: "The plugin travelled to the planned world but never opened the market board..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to trigger the bug. If it's intermittent, say so.
+      placeholder: |
+        1. Open `/ashop`
+        2. Add an item to a shopping list
+        3. Press Start
+        4. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: Shown in `/xlplugins` next to "Auto Shopper".
+      options:
+        - 0.1.0.0
+        - Older / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: region
+    attributes:
+      label: Region
+      description: Worlds, data centers and market prices differ per region, so the region is a frequent root cause.
+      options:
+        - North America
+        - Europe
+        - Japan
+        - Oceania
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: where
+    attributes:
+      label: Data center and world of the run
+      description: Where were you when the run started, and on which world or data center did it fail?
+      placeholder: "Started on Gilgamesh (Aether); failed while buying on Zalera (Crystal)"
+
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Where in the run did it fail?
+      description: The plugin's flow runs planning -> travel -> walking to the market board -> searching -> buying -> confirming -> way home.
+      options:
+        - Planning (prices, worlds, or the plan itself look wrong)
+        - Travel (world change, data center travel, teleport)
+        - Walking to the market board (stuck, wrong board, can't reach it)
+        - Searching (wrong item, listings not read)
+        - Buying (wrong listing, over the price cap, purchase failed)
+        - Confirming (purchase not confirmed, wrong quantity)
+        - Way home (didn't return, wrong world)
+        - Selection / UI (issue before pressing Start)
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Attachments
+      description: |
+        **If you can provide any of these, it turns guesswork into a fix.**
+
+        - **Plugin console**: open `/ashop log`, press *Copy log* and paste the result into the console field below. It already includes the plugin version, Dalamud version and zone.
+        - **Dalamud log**: open `/xllog`, click the *Open log folder* button at the bottom-right, attach `dalamud.log`. Filter by `[AutoShopper]` if you want to trim it down.
+        - **The market board listings** as a screenshot, if the plugin bought or skipped the wrong one.
+        - **Screenshots / short clip** if the issue is visual (selection state, wrong tooltip, frozen card, etc.)
+        - **Other plugins active** that touch the market board, movement, teleport, or input, which helps rule out conflicts.
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output (optional)
+      description: |
+        Paste what *Copy log* on the plugin's Console page (`/ashop log`) put on your clipboard. Short snippets (chat-log tail, Dalamud error text) also belong here; attach full `dalamud.log` files under **Attachments** above.
+      render: text
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Whether Lifestream's data center travel is enabled, your price caps, hunches, anything that helps the bug land.
