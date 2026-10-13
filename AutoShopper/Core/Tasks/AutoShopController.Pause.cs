@@ -48,6 +48,7 @@ internal sealed partial class AutoShopController
         currentTask = null;
         Svc.Automation.Stop();
         ReleaseHelpers();
+        AbandonTravel("the run was paused");
 
         Diag($"Run paused ({reason}); session kept.");
         ECommons.DalamudServices.Svc.Chat.Print(reason == PauseReason.InContent

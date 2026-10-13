@@ -13,6 +13,9 @@ public sealed class ShopSession
     internal bool Recorded;
     internal bool AfterActionDispatched;
 
+    // The history row of a run that ended on its own, kept so its way home can report back into it.
+    internal RunRecord? Record;
+
     private long pausedMs;
     private long pauseStartedAtMs;
     private DateTime? endedAt;
@@ -41,6 +44,8 @@ public sealed class ShopSession
     public int Units { get; internal set; }
 
     public int Purchases { get; internal set; }
+
+    public ReturnHomeResult ReturnHome { get; internal set; }
 
     // A run cut off by a logout or an unload is not over: it leaves no history row, and its journal offers to resume.
     public bool Interrupted { get; internal set; }

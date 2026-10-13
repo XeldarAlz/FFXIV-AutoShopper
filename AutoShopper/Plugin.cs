@@ -11,6 +11,7 @@ using AutoShopper.Core.Pricing;
 using AutoShopper.Core.Shopping;
 using AutoShopper.Core.Stats;
 using AutoShopper.Core.Tasks;
+using AutoShopper.Core.Travel;
 using AutoShopper.Windows;
 using AutoShopper.Windows.Shell;
 using clib;
@@ -57,6 +58,7 @@ public sealed class Plugin : IDalamudPlugin
     internal PlanPreview Preview { get; }
     internal MarketServices Market { get; }
     internal ShopLedger Ledger { get; }
+    internal CongestionWatcher Congestion { get; }
 
     private readonly DutyWatcher dutyWatcher;
     private readonly GmAlertWatcher gmAlertWatcher;
@@ -78,6 +80,8 @@ public sealed class Plugin : IDalamudPlugin
             Configuration.Save();
         }
 
+        DropStaleContinuation();
+
         History = new RunHistory();
         Controller = new AutoShopController();
         Items = new ItemCatalog();
@@ -87,6 +91,7 @@ public sealed class Plugin : IDalamudPlugin
         Preview = new PlanPreview(Configuration, Lists, Inventory, Prices);
         Market = new MarketServices(Configuration);
         Ledger = new ShopLedger(PluginInterface.ConfigDirectory.FullName);
+        Congestion = new CongestionWatcher();
         RotateLedger();
         dutyWatcher = new DutyWatcher();
         gmAlertWatcher = new GmAlertWatcher();
@@ -140,6 +145,7 @@ public sealed class Plugin : IDalamudPlugin
         Prices.Dispose();
         Inventory.Dispose();
         Market.Dispose();
+        Congestion.Dispose();
 
         CLibMain.Dispose();
         ECommonsMain.Dispose();
@@ -295,7 +301,19 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnLogout(int type, int code)
     {
-        Controller.Interrupt();
+        Controller.OnLogout();
+    }
+
+    // A continuation outlives its run only when the plugin did not: such a run waits for the player's Resume.
+    private void DropStaleContinuation()
+    {
+        if (Configuration.PendingContinuation is not { } stale)
+        {
+            return;
+        }
+
+        RunLog.Info($"Dropping the transfer continuation of run {stale.RunId} to {stale.TargetWorld}: the plugin did not live through the transfer, so the run waits for Resume.");
+        Configuration.ClearPendingContinuation();
     }
 
     // Finished runs move to a dated archive at load, so the journal only holds what may still need an answer.
@@ -316,6 +334,7 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnLogin()
     {
+        Controller.OnLogin();
         ResumePendingJourney();
         if (!Configuration.AutoShowOnLogin)
         {

@@ -4,6 +4,7 @@ using AutoShopper.Core.Ledger;
 using AutoShopper.Core.Market;
 using AutoShopper.Core.Market.Model;
 using AutoShopper.Core.Planning;
+using AutoShopper.Core.Pricing.Model;
 using AutoShopper.Core.Stats;
 using Dalamud.Plugin.Services;
 using ECommons.DalamudServices;
@@ -62,7 +63,41 @@ internal sealed class ShopRunState : IDisposable
 
     public RunTally Tally { get; private set; }
 
-    public PurchasePlan? Plan { get; set; }
+    public PurchasePlan? Plan { get; private set; }
+
+    // The stops behind the run and ahead of it; null until the run has a plan.
+    public RunRoute? Route { get; private set; }
+
+    public TravelExclusions Exclusions { get; } = new();
+
+    // The worlds the run planned on when it was authorized or resumed; a replan never reaches past them.
+    public ImmutableArray<PlanWorld> RunWorlds { get; private set; } = ImmutableArray<PlanWorld>.Empty;
+
+    // The estimates the run plans what is left on, refreshed only once older than the stale setting.
+    public PriceSnapshot? Prices { get; private set; }
+
+    public long LastPriceRefreshAtMs { get; set; }
+
+    public TravelPhase TravelPhase { get; private set; }
+
+    public string TravelTarget { get; private set; } = string.Empty;
+
+    public long TravelStartedAtMs { get; private set; }
+
+    // Set while a data center transfer this run asked for is under way, from right before the request to the check
+    // after the login it brings.
+    public bool TransferArmed { get; private set; }
+
+    public bool TransferLoggedOut { get; private set; }
+
+    public TransferSnapshot? PendingAtLogout { get; private set; }
+
+    public ReturnHomeResult ReturnHome { get; private set; }
+
+    // Stops on a world the run had already shopped.
+    public int Revisits { get; private set; }
+
+    public IReadOnlyList<uint> CompletedWorldIds => completedWorlds;
 
     public RunState State { get; private set; } = RunState.Preflight;
 
@@ -126,11 +161,12 @@ internal sealed class ShopRunState : IDisposable
             state.completedWorlds.Add(progress.CompletedWorldIds[index]);
         }
 
+        state.Exclusions.Restore(progress.ExcludedWorldIds);
         state.RefreshExcludedSnapshot();
         return state;
     }
 
-    public bool Authorize(RunAuthorization authorization, PurchasePlan plan, DateTime nowUtc)
+    public bool Authorize(RunAuthorization authorization, PurchasePlan plan, PriceSnapshot? prices, DateTime nowUtc)
     {
         if (!Journal.TryAppend(authorization.ToJournalEvent(Journal.NextSequence, nowUtc)))
         {
@@ -138,11 +174,140 @@ internal sealed class ShopRunState : IDisposable
         }
 
         Authorization = authorization;
-        Plan = plan;
+        StartRoute(plan, plan.Request.Worlds, prices, plan.Request.Settings.MaxStops);
         Spend = new SpendBook(authorization.MaxSpend);
         Tally = new RunTally(authorization.Demands);
         Changed();
         return true;
+    }
+
+    // The run's most stops setting as it stood when the run planned first, 0 for no limit.
+    public int MaxStops { get; private set; }
+
+    public void StartRoute(PurchasePlan plan, ImmutableArray<PlanWorld> runWorlds, PriceSnapshot? prices, int maxStops)
+    {
+        Plan = plan;
+        MaxStops = Math.Max(0, maxStops);
+        RunWorlds = runWorlds.IsDefault ? ImmutableArray<PlanWorld>.Empty : runWorlds;
+        Prices = prices;
+        Route = RunRoute.Start(plan.Stops);
+        Changed();
+    }
+
+    public void Replanned(PurchasePlan plan)
+    {
+        Plan = plan;
+        Route?.ReplaceAhead(plan.Stops);
+        Changed();
+    }
+
+    public void UsePrices(PriceSnapshot prices)
+    {
+        Prices = prices;
+        Changed();
+    }
+
+    public void BeginStop(int index)
+    {
+        Route?.Begin(index);
+        Changed();
+    }
+
+    public void CompleteStop(int index)
+    {
+        if (Route is not { } route || (uint)index >= (uint)route.Count)
+        {
+            return;
+        }
+
+        var worldId = route[index].World.WorldId;
+        if (completedWorlds.Contains(worldId))
+        {
+            Revisits++;
+        }
+
+        route.Complete(index);
+        MarkWorldCompleted(worldId);
+        Changed();
+    }
+
+    public void SkipStop(int index, RouteSkip skip, TravelFailure failure)
+    {
+        Route?.Skip(index, skip, failure);
+        Changed();
+    }
+
+    public void SkipAhead(RouteSkip skip, TravelFailure failure)
+    {
+        Route?.SkipAhead(skip, failure);
+        Changed();
+    }
+
+    public ExclusionStep RecordTravelFailure(in PlanWorld target, TravelFailure failure, uint currentDataCenterId)
+    {
+        var step = Exclusions.Record(target, failure, currentDataCenterId);
+        Changed();
+        return step;
+    }
+
+    public void RecordArrival()
+    {
+        Exclusions.RecordArrival();
+        Changed();
+    }
+
+    public void SetTravel(TravelPhase phase, string target)
+    {
+        if (TravelPhase == phase && string.Equals(TravelTarget, target, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        TravelPhase = phase;
+        TravelTarget = target;
+        TravelStartedAtMs = Environment.TickCount64;
+        Changed();
+    }
+
+    public void ClearTravel() => SetTravel(TravelPhase.None, string.Empty);
+
+    public void ArmTransfer()
+    {
+        TransferArmed = true;
+        TransferLoggedOut = false;
+        PendingAtLogout = null;
+        Changed();
+    }
+
+    public void NoteTransferLogout(TransferSnapshot? pending)
+    {
+        TransferLoggedOut = true;
+        PendingAtLogout = pending;
+        Changed();
+    }
+
+    public void EndTransfer()
+    {
+        if (!TransferArmed && !TransferLoggedOut && PendingAtLogout is null)
+        {
+            return;
+        }
+
+        TransferArmed = false;
+        TransferLoggedOut = false;
+        PendingAtLogout = null;
+        Changed();
+    }
+
+    public void SetReturnHome(ReturnHomeResult result)
+    {
+        if (ReturnHome == result)
+        {
+            return;
+        }
+
+        ReturnHome = result;
+        Changed();
     }
 
     public void SetState(RunState state)
@@ -275,6 +440,7 @@ internal sealed class ShopRunState : IDisposable
             PlanVersion = Plan?.Version ?? 0,
             CompletedWorldIds = [.. completedWorlds],
             ExcludedListingKeys = excludedSnapshot,
+            ExcludedWorldIds = Exclusions.ExcludedWorldIds,
             AttemptCount = AttemptCount,
             FailedAttemptCount = FailedAttemptCount,
         });

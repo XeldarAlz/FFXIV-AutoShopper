@@ -19,6 +19,9 @@ public sealed class RunRecord
     public int Units { get; set; }
     public int Purchases { get; set; }
 
+    // How the way home went, apart from the outcome of the shopping; null on rows written before it was recorded.
+    public ReturnHomeResult? ReturnHome { get; set; }
+
     public TimeSpan Duration => TimeSpan.FromSeconds(DurationSeconds);
     public bool Finished => Outcome is RunOutcome.Completed or RunOutcome.CompletedPartial;
 }

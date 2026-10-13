@@ -41,7 +41,7 @@ internal static partial class L
         public static readonly LocString NoStock = new("issue.noStock", "Not enough listed");
         public static readonly LocString InventoryFull = new("issue.inventoryFull", "Bags full");
         public static readonly LocString InsufficientGil = new("issue.insufficientGil", "Not enough gil");
-        public static readonly LocString TravelNotYetSupported = new("issue.travelNotYetSupported", "On another world: travel arrives in a later update");
+        public static readonly LocString TravelFailed = new("issue.travelFailed", "Could not travel there");
         public static readonly LocString DependencyBusy = new("issue.dependencyBusy", "A helper plugin was busy");
         public static readonly LocString UncertainPurchase = new("issue.uncertainPurchase", "Purchase without a clear answer");
         public static readonly LocString UnsupportedGameVersion = new("issue.unsupportedGameVersion", "Not supported on this game version");

@@ -39,6 +39,13 @@ internal sealed class RunHistory
         Save();
     }
 
+    // A row already in the history changed, such as the way home of a run reporting back.
+    public void Update()
+    {
+        RecomputeLifetime();
+        Save();
+    }
+
     public void Clear()
     {
         Records.Clear();

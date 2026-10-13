@@ -2,6 +2,7 @@ using System.Globalization;
 using AutoShopper.Core.Execution.Model;
 using AutoShopper.Core.Localization;
 using AutoShopper.Core.Planning;
+using AutoShopper.Core.Stats;
 using AutoShopper.Core.Tasks;
 using AutoShopper.Core.Travel;
 
@@ -10,6 +11,17 @@ namespace AutoShopper.Windows.Sections;
 internal readonly record struct RunLineView(string Name, uint IconId, bool HighQuality, string? Quality, string Progress, string Spent, float Fraction, bool Satisfied);
 
 internal readonly record struct RunIssueView(string Title, string Detail, bool Blocking);
+
+internal enum RouteChipState : byte
+{
+    Done = 0,
+    Current = 1,
+    Next = 2,
+    Later = 3,
+    Skipped = 4,
+}
+
+internal readonly record struct RouteChipView(string Label, RouteChipState State, string Tooltip);
 
 // The running panel's text for one state of the run, rebuilt only when the run, its tally or the language changes,
 // so the panel draws every frame without building strings.
@@ -43,12 +55,23 @@ internal sealed class RunView
 
     public required RunIssueView[] Issues { get; init; }
 
+    public required RouteChipView[] Route { get; init; }
+
+    // One line per skipped stop: the world and why.
+    public required string[] SkippedNotes { get; init; }
+
+    // Null once a finished run had no way home to report.
+    public required string? ReturnHome { get; init; }
+
+    public required bool ReturnHomeWanted { get; init; }
+
     public bool IsCurrent(ShopRunState run, bool withNames)
         => ReferenceEquals(Run, run)
         && Revision == run.Revision
         && TallyRevision == run.Tally.Revision
         && ReferenceEquals(Language, Loc.Current)
-        && WithNames == withNames;
+        && WithNames == withNames
+        && ReturnHomeWanted == Plugin.Instance.Configuration.ReturnHomeAfterRun;
 
     public static RunView Build(ShopRunState run, bool withNames)
     {
@@ -68,7 +91,102 @@ internal sealed class RunView
             BudgetSub = run.LastGil >= 0 ? Loc.T(L.Run.TilePurse, Loc.Gil(run.LastGil)) : null,
             Lines = BuildLines(run),
             Issues = BuildIssues(run),
+            Route = BuildRoute(run),
+            SkippedNotes = BuildSkippedNotes(run),
+            ReturnHome = ReturnHomeText(run, Plugin.Instance.Configuration.ReturnHomeAfterRun),
+            ReturnHomeWanted = Plugin.Instance.Configuration.ReturnHomeAfterRun,
         };
+    }
+
+    private static RouteChipView[] BuildRoute(ShopRunState run)
+    {
+        if (run.Route is not { } route)
+        {
+            return [];
+        }
+
+        var next = route.NextIndex();
+        var following = route.FollowingIndex();
+        var chips = new RouteChipView[route.Count];
+        for (var index = 0; index < chips.Length; index++)
+        {
+            var entry = route[index];
+            var state = entry.Status switch
+            {
+                RouteStatus.Done => RouteChipState.Done,
+                RouteStatus.Skipped => RouteChipState.Skipped,
+                _ when index == next => RouteChipState.Current,
+                _ when index == following => RouteChipState.Next,
+                _ => RouteChipState.Later,
+            };
+            chips[index] = new RouteChipView(entry.World.Name, state, ChipTooltip(entry, state));
+        }
+
+        return chips;
+    }
+
+    private static string ChipTooltip(in RouteEntry entry, RouteChipState state) => state switch
+    {
+        RouteChipState.Done => Loc.T(L.Route.StatusDone),
+        RouteChipState.Current => Loc.T(L.Route.StatusCurrent),
+        RouteChipState.Next => Loc.T(L.Route.StatusNext),
+        RouteChipState.Later => Loc.T(L.Route.StatusLater),
+        _ => Loc.T(L.Route.LabelValue, Loc.T(L.Route.StatusSkipped), SkipReason(entry)),
+    };
+
+    private static string[] BuildSkippedNotes(ShopRunState run)
+    {
+        if (run.Route is not { } route)
+        {
+            return [];
+        }
+
+        var notes = new List<string>();
+        for (var index = 0; index < route.Count; index++)
+        {
+            var entry = route[index];
+            if (entry.Status == RouteStatus.Skipped)
+            {
+                notes.Add(Loc.T(L.Route.LabelValue, entry.World.Name, SkipReason(entry)));
+            }
+        }
+
+        return [.. notes];
+    }
+
+    public static string SkipReason(in RouteEntry entry) => entry.Skip switch
+    {
+        RouteSkip.NotNeeded => Loc.T(L.Route.SkipNotNeeded),
+        RouteSkip.StopLimit => Loc.T(L.Route.SkipStopLimit),
+        RouteSkip.TravelHalted => Loc.T(L.Route.SkipHalted),
+        _ => FailureLabel(entry.Failure),
+    };
+
+    public static string FailureLabel(TravelFailure failure) => failure switch
+    {
+        TravelFailure.Refused => Loc.T(L.Route.FailRefused),
+        TravelFailure.LifestreamBusy => Loc.T(L.Route.FailBusy),
+        TravelFailure.DataCenterTravelOff => Loc.T(L.Route.FailDataCenterOff),
+        TravelFailure.Congested => Loc.T(L.Route.FailCongested),
+        TravelFailure.TimedOut => Loc.T(L.Route.FailTimedOut),
+        TravelFailure.ArrivalUnconfirmed => Loc.T(L.Route.FailUnconfirmed),
+        TravelFailure.Blocked => Loc.T(L.Route.FailBlocked),
+        _ => Loc.T(L.Route.FailAbandoned),
+    };
+
+    private static string? ReturnHomeText(ShopRunState run, bool wanted)
+    {
+        var label = run.ReturnHome switch
+        {
+            ReturnHomeResult.AlreadyHome => Loc.T(L.Route.HomeAlready),
+            ReturnHomeResult.Underway => Loc.T(L.Route.HomeUnderway),
+            ReturnHomeResult.Arrived => Loc.T(L.Route.HomeArrived),
+            ReturnHomeResult.Failed => Loc.T(L.Route.HomeFailed),
+            ReturnHomeResult.Skipped => Loc.T(L.Route.HomeSkipped),
+            _ when run.FinalState is not null => null,
+            _ => Loc.T(wanted ? L.Route.HomePending : L.Route.HomeOff),
+        };
+        return label is null ? null : Loc.T(L.Route.LabelValue, Loc.T(L.Route.ReturnHome), label);
     }
 
     private static RunLineView[] BuildLines(ShopRunState run)
@@ -145,7 +263,7 @@ internal sealed class RunView
         RunIssueReason.NoStock => Loc.T(L.Issues.NoStock),
         RunIssueReason.InventoryFull => Loc.T(L.Issues.InventoryFull),
         RunIssueReason.InsufficientGil => Loc.T(L.Issues.InsufficientGil),
-        RunIssueReason.TravelNotYetSupported => Loc.T(L.Issues.TravelNotYetSupported),
+        RunIssueReason.TravelFailed => Loc.T(L.Issues.TravelFailed),
         RunIssueReason.DependencyBusy => Loc.T(L.Issues.DependencyBusy),
         RunIssueReason.UncertainPurchase => Loc.T(L.Issues.UncertainPurchase),
         RunIssueReason.UnsupportedGameVersion => Loc.T(L.Issues.UnsupportedGameVersion),

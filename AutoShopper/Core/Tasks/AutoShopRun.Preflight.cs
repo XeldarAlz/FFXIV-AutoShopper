@@ -62,7 +62,7 @@ internal sealed partial class AutoShopRun
             return Loc.T(L.Buyer.RefuseNothing);
         }
 
-        return Authorize(demands, preview.Selected, scope);
+        return Authorize(demands, preview.Selected, scope, preview.Input.Prices);
     }
 
     // A Resume, a fault restart or a run read back from the journal: the authorization stands, so only who and where
@@ -116,20 +116,27 @@ internal sealed partial class AutoShopRun
 
         run.SetState(RunState.Planning);
         Status = Loc.T(L.Buyer.StatusPlanning);
-        var request = RunPlanning.RemainingRequest(authorization, run.Tally, prices.Offers, scope.PlanWorlds, PlanPreview.SettingsFor(Owner.Configuration, scope), run.ExcludedListingKeys);
+        var configuration = Owner.Configuration;
+        var settings = PlanPreview.SettingsFor(configuration, scope);
+        var runWorlds = RunPlanning.AuthorizedWorlds(authorization, scope.PlanWorlds);
+        // A run whose most stops are used up plans no world, so its route is empty and it ends with what it bought.
+        var worlds = RouteReplanning.TryStopsLeft(settings.MaxStops, run.CompletedWorldIds.Count, out var stopsLeft)
+            ? RouteReplanning.EligibleWorlds(runWorlds, run.CompletedWorldIds, run.Exclusions, configuration.WorldRevisits, authorization)
+            : ImmutableArray<PlanWorld>.Empty;
+        var request = RunPlanning.RemainingRequest(authorization, run.Tally, prices.Offers, worlds, settings with { MaxStops = stopsLeft }, run.ExcludedListingKeys);
         var plan = await OffThread(token => new Planner().Plan(request, token), "planning what is left of the run");
         if (plan is null)
         {
             return Loc.T(L.Buyer.RefusePlan);
         }
 
-        run.Plan = plan;
+        run.StartRoute(plan, runWorlds, prices, settings.MaxStops);
         RunLog.Info($"Run: resumed run {run.RunId}; {plan.Stops.Length} stop(s) planned for what is left.");
         Print(Loc.T(L.Buyer.ChatResumed));
         return null;
     }
 
-    private string? Authorize(ImmutableArray<PlanDemand> demands, PurchasePlan plan, ResolvedScope scope)
+    private string? Authorize(ImmutableArray<PlanDemand> demands, PurchasePlan plan, ResolvedScope scope, PriceSnapshot? prices)
     {
         var configuration = Owner.Configuration;
         var now = DateTime.UtcNow;
@@ -161,7 +168,7 @@ internal sealed partial class AutoShopRun
             RunLog.Info($"Run: journal rotation archived {rotation.ArchivedRuns} finished run(s){(rotation.Succeeded ? string.Empty : $"; it failed: {rotation.Error}")}.");
         }
 
-        if (!run.Authorize(authorization!, plan, now))
+        if (!run.Authorize(authorization!, plan, prices, now))
         {
             RunLog.Warning($"Run: the authorization could not be written: {run.Journal.LastError}.");
             return Loc.T(L.Buyer.RefuseJournal);

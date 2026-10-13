@@ -57,6 +57,6 @@ internal static partial class L
         public static readonly LocString CurrentWorld = new("shopping.currentWorld", "You are here");
         public static readonly LocString LogInForWorlds = new("shopping.logInForWorlds", "Log in to see and pick the worlds.");
         public static readonly LocString NoWorlds = new("shopping.noWorlds", "No world is selected. Prices and plans need at least one.");
-        public static readonly LocString JapanNote = new("shopping.japanNote", "Japanese data centers: World Visit between them changed on 13 October 2026. Prices and plans cover them, but runs that travel between Japanese data centers stay off until that route has been tested.");
+        public static readonly LocString JapanNote = new("shopping.japanNote", "Japanese data centers: World Visit between them changed on 13 October 2026, and that route is untested. Unless the setting below allows Japanese data centers, Japanese worlds outside the data center you stand on stay out of prices, plans and runs.");
     }
 }

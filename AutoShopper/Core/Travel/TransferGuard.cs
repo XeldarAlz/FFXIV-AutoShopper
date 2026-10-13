@@ -20,9 +20,10 @@ internal static class TransferGuard
         "Trade",
     ];
 
-    public static string? Blocker()
+    // The game refuses only a data center transfer to a party member, so a world change within one may skip that check.
+    public static string? Blocker(bool partyBlocks = true)
     {
-        if (PartyOps.InParty())
+        if (partyBlocks && PartyOps.InParty())
         {
             return "the character is in a party";
         }

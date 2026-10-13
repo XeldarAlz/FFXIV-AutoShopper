@@ -1,4 +1,5 @@
 using AutoShopper.Core.Execution.Model;
+using AutoShopper.Core.Localization;
 using AutoShopper.Core.Stats;
 using AutoShopper.Core.Travel;
 
@@ -32,56 +33,130 @@ internal sealed partial class AutoShopController
 
     private void EndRun(ShopSession owningSession)
     {
-        if (ReferenceEquals(session, owningSession) && owningSession.Outcome is null)
+        var live = ReferenceEquals(session, owningSession);
+        if (live && owningSession.Outcome is null)
         {
             EndShopRun(owningSession, owningSession.EndedWithFault ? RunState.Failed : RunState.Stopped, owningSession.EndedWithFault ? "an unexpected error" : "the run task ended");
         }
 
+        // Chosen before the history row is written, so the row says whether the way home was due.
+        var choice = live ? ChooseAfterRun(owningSession) : AfterRunChoice.Nothing;
         FinalizeRun(owningSession);
-        if (!ReferenceEquals(session, owningSession))
+        if (!live)
         {
             Diag("A run that is no longer live ended; it was recorded and the current run is left alone.");
             return;
         }
 
-        if (!TryRunAfterAction(owningSession))
+        if (!choice.HasWork)
         {
             ClearRun();
-        }
-    }
-
-    // One ordered chain once a run ends on its own: the way home, then the after-run action. A Stop or a fault runs
-    // neither. The finished run stays on screen while the chain runs, and is cleared once it ends.
-    private bool TryRunAfterAction(ShopSession ending)
-    {
-        if (ending.AfterActionDispatched)
-        {
-            return false;
-        }
-
-        if (!ending.CompletedByStopCondition || ending.EndedWithFault)
-        {
-            Diag($"Run ended without meeting its stop condition (fault {ending.EndedWithFault}); no way home and no after-run action.");
-            return false;
-        }
-
-        ending.AfterActionDispatched = true;
-        if (!ECommons.DalamudServices.Svc.ClientState.IsLoggedIn)
-        {
-            Diag("Run ended while logged out; no way home and no after-run action.");
-            return false;
-        }
-
-        var action = AfterActionFor(ending);
-        var wayHome = WayHomeDue();
-        if (!wayHome && action is null)
-        {
-            return false;
+            return;
         }
 
         progress.SetPhase(RunPhase.Finishing);
-        RunChain(wayHome, action);
-        return true;
+        RunChain(choice.WayHome, choice.Action);
+    }
+
+    // One ordered chain once a run ends on its own: the way home, then the after-run action. A Stop or a fault runs
+    // neither. The finished run stays on screen while the chain runs, and is cleared once it ends. The way home's
+    // result goes to the run's panel and history row, apart from how the shopping ended.
+    private AfterRunChoice ChooseAfterRun(ShopSession ending)
+    {
+        if (ending.AfterActionDispatched)
+        {
+            return AfterRunChoice.Nothing;
+        }
+
+        ending.AfterActionDispatched = true;
+        var configuration = Plugin.Instance.Configuration;
+        var homeKnown = Worlds.TryHome(out var home);
+        var currentKnown = Worlds.TryCurrent(out var current);
+        var away = homeKnown && currentKnown && home.Id != current.Id;
+        var wayHomeAllowed = !away || WayHomeAllowed(home, current, configuration.AllowJapaneseDataCenters);
+        var choice = AfterRunPolicy.Decide(new AfterRunFacts
+        {
+            CompletedByStopCondition = ending.CompletedByStopCondition,
+            EndedWithFault = ending.EndedWithFault,
+            LoggedIn = ECommons.DalamudServices.Svc.ClientState.IsLoggedIn,
+            DidWork = ending.DidWork,
+            DryRun = ending.DryRun,
+            ReturnHome = configuration.ReturnHomeAfterRun,
+            AwayFromHome = away,
+            WayHomeAllowed = wayHomeAllowed,
+            Action = configuration.AfterRun,
+        });
+        Diag($"After the run: way home {choice.WayHome}, after-run action {(choice.Action?.ToString() ?? "none")}{(choice.ActionSkippedForDryRun ? $" ({configuration.AfterRun} skipped for a dry run)" : string.Empty)}; stop condition {ending.CompletedByStopCondition}, fault {ending.EndedWithFault}, away from home {away}.");
+        if (!ending.CompletedByStopCondition || ending.EndedWithFault)
+        {
+            return choice;
+        }
+
+        SetReturnHome(ending, ReturnHomeFor(configuration.ReturnHomeAfterRun, choice.WayHome, homeKnown && currentKnown, away, wayHomeAllowed));
+        if (configuration.ReturnHomeAfterRun && away && !wayHomeAllowed)
+        {
+            ECommons.DalamudServices.Svc.Chat.Print($"{AshopConstants.LogPrefix} {Loc.T(L.Route.ChatHomeSkippedJapan, current.Name)}");
+        }
+
+        if (choice.ActionSkippedForDryRun)
+        {
+            ECommons.DalamudServices.Svc.Chat.Print($"{AshopConstants.LogPrefix} {Loc.T(L.Route.ChatAfterRunDry, ActionName(configuration.AfterRun))}");
+        }
+
+        return choice;
+    }
+
+    private static ReturnHomeResult ReturnHomeFor(bool wanted, bool travelling, bool worldsKnown, bool away, bool allowed)
+    {
+        if (!wanted)
+        {
+            return ReturnHomeResult.NotAsked;
+        }
+
+        if (travelling)
+        {
+            return ReturnHomeResult.Underway;
+        }
+
+        if (!worldsKnown)
+        {
+            return ReturnHomeResult.Failed;
+        }
+
+        if (!away)
+        {
+            return ReturnHomeResult.AlreadyHome;
+        }
+
+        return allowed ? ReturnHomeResult.Failed : ReturnHomeResult.Skipped;
+    }
+
+    private static string ActionName(AfterRunAction action) => action switch
+    {
+        AfterRunAction.Logout => Loc.T(L.Travel.AfterLogoutName),
+        AfterRunAction.CloseGame => Loc.T(L.Travel.AfterCloseName),
+        AfterRunAction.ReturnToInn => Loc.T(L.Travel.AfterInnName),
+        _ => Loc.T(L.Travel.AfterStayName),
+    };
+
+    // Travel between Japanese data centers stays off with the setting, the way home included.
+    private static bool WayHomeAllowed(in WorldInfo home, in WorldInfo current, bool allowJapanese)
+        => allowJapanese
+        || home.DataCenterId == current.DataCenterId
+        || (home.Region != WorldRegion.Japan && current.Region != WorldRegion.Japan);
+
+    // The run's own row and panel learn how the way home went, apart from how the shopping ended.
+    private void SetReturnHome(ShopSession ending, ReturnHomeResult result)
+    {
+        ending.ReturnHome = result;
+        shopRun?.SetReturnHome(result);
+        if (ending.Record is not { } record || record.ReturnHome == result)
+        {
+            return;
+        }
+
+        record.ReturnHome = result;
+        Plugin.Instance.History.Update();
     }
 
     private void RunChain(bool wayHome, AfterRunAction? action)
@@ -89,9 +164,16 @@ internal sealed partial class AutoShopController
         if (wayHome)
         {
             Diag(action is { } then ? $"Run completed; taking the way home, then after-run action {then}." : "Run completed; taking the way home.");
-            RunTask(new AutoWayHome(), () =>
+            var ending = session;
+            var trip = new AutoWayHome(shopRun);
+            RunTask(trip, () =>
             {
-                Diag("The way home finished.");
+                Diag($"The way home finished ({trip.Result}).");
+                if (ending is not null)
+                {
+                    SetReturnHome(ending, trip.Result);
+                }
+
                 RunChain(wayHome: false, action);
             });
             return;
@@ -106,24 +188,6 @@ internal sealed partial class AutoShopController
         ClearRun();
     }
 
-    private static AfterRunAction? AfterActionFor(ShopSession ending)
-    {
-        var action = Plugin.Instance.Configuration.AfterRun;
-        if (action == AfterRunAction.StayLoggedIn)
-        {
-            Diag("Run completed by its stop condition; the after-run action is StayLoggedIn, nothing to do.");
-            return null;
-        }
-
-        if (!ending.DidWork)
-        {
-            Diag($"Run ended by its stop condition without doing any work; skipping after-run action {action}.");
-            return null;
-        }
-
-        return action;
-    }
-
     private void RunAfterAction(AfterRunAction action)
     {
         Diag($"Starting after-run action {action}.");
@@ -133,28 +197,6 @@ internal sealed partial class AutoShopController
             Diag($"After-run action {action} finished.");
             ClearRun();
         });
-    }
-
-    private static bool WayHomeDue()
-    {
-        if (!Plugin.Instance.Configuration.ReturnHomeAfterRun)
-        {
-            return false;
-        }
-
-        if (!Worlds.TryHome(out var home) || !Worlds.TryCurrent(out var current))
-        {
-            Diag("The way home is on, but the home or current world could not be read; staying.");
-            return false;
-        }
-
-        if (home.Id == current.Id)
-        {
-            Diag($"Already on the home world {home.Name}; no way home needed.");
-            return false;
-        }
-
-        return true;
     }
 
     // Idempotent through Recorded, so an explicit Stop and a finished task can both call it.
@@ -197,8 +239,10 @@ internal sealed partial class AutoShopController
                 Spent = ending.Spent,
                 Units = ending.Units,
                 Purchases = ending.Purchases,
+                ReturnHome = ending.ReturnHome,
             };
             Plugin.Instance.History.Append(record);
+            ending.Record = record;
             Diag($"Run recorded to history ({outcome}{(record.DryRun ? ", dry run" : string.Empty)}): {record.Duration} on {record.WorldName} ({record.DataCenterName}), {record.Units} unit(s) for {record.Spent} gil{(record.CrossedDataCenter ? ", across data centers" : string.Empty)}.");
         }
         catch (Exception exception)

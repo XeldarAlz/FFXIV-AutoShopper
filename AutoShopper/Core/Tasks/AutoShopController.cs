@@ -4,6 +4,7 @@ using AutoShopper.Core.Ipc;
 using AutoShopper.Core.Ledger;
 using AutoShopper.Core.Localization;
 using AutoShopper.Core.Stats;
+using AutoShopper.Core.Travel;
 using clib.Services;
 
 namespace AutoShopper.Core.Tasks;
@@ -114,7 +115,9 @@ internal sealed partial class AutoShopController
     }
 
     // A logout, a character change or an unload stops the run where it stands and leaves its journal as it is, so
-    // the Shop page offers to resume it later; it never resumes on its own.
+    // the Shop page offers to resume it later; it never resumes on its own. Lifestream's travel is left alone: a
+    // transfer under way is picked up as a bare journey at the next login. A run that already ended only loses what
+    // was left of its way home and after-run action.
     public void Interrupt()
     {
         if (shopRun is not { } run)
@@ -123,17 +126,21 @@ internal sealed partial class AutoShopController
         }
 
         var ending = session;
+        var finished = run.FinalState is not null;
         stopping = false;
         currentTask = null;
         PauseReason = PauseReason.None;
         Svc.Automation.Stop();
         ReleaseHelpers();
-        if (run.IsAuthorized && run.FinalState is null)
+        TravelOwnership.Release(run);
+        run.EndTransfer();
+        Plugin.Instance.Configuration.ClearPendingContinuation();
+        if (run.IsAuthorized && !finished)
         {
             run.Checkpoint(DateTime.UtcNow);
         }
 
-        if (ending is not null)
+        if (ending is not null && !finished)
         {
             ending.Interrupted = true;
         }
@@ -141,11 +148,75 @@ internal sealed partial class AutoShopController
         FinalizeRun(ending);
         ClearRun();
         Plugin.Instance.Ledger.Invalidate();
+        if (finished)
+        {
+            Diag($"Run {run.RunId} had ended; what was left of its way home and after-run action is dropped.");
+            return;
+        }
+
         Diag($"Run {run.RunId} interrupted; its journal is kept for a resume.");
         if (run.IsAuthorized && !run.DryRun)
         {
             ECommons.DalamudServices.Svc.Chat.Print($"{AshopConstants.LogPrefix} {Loc.T(L.Buyer.ChatInterrupted)}");
         }
+    }
+
+    // The logout a data center transfer brings belongs to the trip the run, or its way home, asked for, so the task
+    // lives through it and checks the login that follows. Any other logout interrupts the run.
+    public void OnLogout()
+    {
+        if (!InPlannedTransfer())
+        {
+            Interrupt();
+            return;
+        }
+
+        var journey = Plugin.Instance.Configuration.PendingJourney;
+        shopRun?.NoteTransferLogout(journey is { } pending ? new TransferSnapshot(pending.World, pending.StartedAtUtc) : null);
+        Diag("Logged out for the data center transfer the run asked for; the run waits for the login that ends it.");
+    }
+
+    // The run checks the login once the character stands on the planned world; another character back is interrupted
+    // at once, when the game already tells who logged in.
+    public void OnLogin()
+    {
+        if (shopRun is not { TransferLoggedOut: true, FinalState: null } run)
+        {
+            return;
+        }
+
+        var contentId = ECommons.DalamudServices.Svc.PlayerState.ContentId;
+        Diag("Logged back in during the run's data center transfer.");
+        if (contentId != 0 && run.Authorization is { } authorization && contentId != authorization.CharacterContentId)
+        {
+            Diag("Another character logged in after the transfer; the run is interrupted.");
+            Interrupt();
+        }
+    }
+
+    private bool InPlannedTransfer()
+    {
+        if (Paused || stopping || currentTask is null || shopRun is not { } run)
+        {
+            return false;
+        }
+
+        var configuration = Plugin.Instance.Configuration;
+        if (configuration.PendingJourney is not { } journey)
+        {
+            return false;
+        }
+
+        if (currentTask is AutoWayHome)
+        {
+            return journey.ReturnTrip;
+        }
+
+        return currentTask is AutoShopRun
+            && run.TransferArmed
+            && configuration.PendingContinuation is { } continuation
+            && continuation.RunId == run.RunId
+            && continuation.JourneyStartedAtUtc == journey.StartedAtUtc;
     }
 
     public void Shutdown()
@@ -203,10 +274,7 @@ internal sealed partial class AutoShopController
             EndShopRun(ending, RunState.Stopped, "stopped by the player");
             ending.Outcome ??= RunOutcome.Stopped;
             ReleaseHelpers();
-            if (shopRun is null)
-            {
-                AbandonTravel();
-            }
+            AbandonTravel("the run was stopped");
         }
 
         FinalizeRun(ending);
@@ -305,19 +373,24 @@ internal sealed partial class AutoShopController
         _ => RunPhase.Preparing,
     };
 
-    // A stopped run is over for good: its journey must not come back at the next login, and a transfer Lifestream
-    // still has in hand would otherwise carry the character off after the Stop.
-    private static void AbandonTravel()
+    // A stopped or paused trip must not come back at the next login, and a world change Lifestream still has in hand
+    // for this run would otherwise carry the character off after it. Lifestream work the run did not start is left alone.
+    private void AbandonTravel(string reason)
     {
-        Plugin.Instance.Configuration.ClearPendingJourney();
-        var lifestream = LifestreamIPC.Instance;
-        if (!lifestream.IsBusy())
+        var configuration = Plugin.Instance.Configuration;
+        configuration.ClearPendingJourney();
+        configuration.ClearPendingContinuation();
+        if (shopRun is not { } run)
         {
             return;
         }
 
-        lifestream.Abort();
-        Diag("Stop: Lifestream was busy and its travel was aborted with the run.");
+        run.EndTransfer();
+        run.ClearTravel();
+        if (!TravelOwnership.AbortIfOwnedBy(run, reason) && LifestreamIPC.Instance.IsBusy())
+        {
+            Diag($"{reason}; Lifestream is busy with work this run did not start, so it is left alone.");
+        }
     }
 
     // The movement library fires OnCompleted off the game thread: its await of the task does not return to the framework

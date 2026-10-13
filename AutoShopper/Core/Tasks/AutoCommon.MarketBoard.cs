@@ -99,7 +99,7 @@ public abstract partial class AutoCommon
     private static bool BoardInReach(out MarketBoardSighting board)
         => MarketBoards.TryFindNearestBoard(out board) && MarketBoardDriver.IsWithinReach(board);
 
-    private async Task CloseMarketWindows(string scope)
+    private protected async Task CloseMarketWindows(string scope)
     {
         if (!MarketBoardDriver.AnyMarketWindowOpen())
         {

@@ -8,7 +8,7 @@ internal enum RunIssueReason : byte
     NoStock = 1,
     InventoryFull = 2,
     InsufficientGil = 3,
-    TravelNotYetSupported = 4,
+    TravelFailed = 4,
     DependencyBusy = 5,
     UncertainPurchase = 6,
     UnsupportedGameVersion = 7,

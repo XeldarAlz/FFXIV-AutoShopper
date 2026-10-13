@@ -1,3 +1,4 @@
+using AutoShopper.Core.Execution.Model;
 using AutoShopper.Core.Game.Ops;
 using AutoShopper.Core.Ipc;
 using AutoShopper.Core.Travel;
@@ -42,6 +43,9 @@ public abstract partial class AutoCommon
     private const string ReturnLabel = "Journey home";
     private const string NoWorld = "none";
 
+    // When the hop under way was asked for, so a congestion message from an earlier trip is not taken for this one.
+    private long hopRequestedAtMs;
+
     protected Task<JourneyOutcome> TravelHome()
     {
         if (Worlds.TryHome(out var home))
@@ -58,7 +62,16 @@ public abstract partial class AutoCommon
     // A data center transfer gives up at the earlier of its own budget and giveUpAtUtc, when one is given.
     protected async Task<JourneyOutcome> TravelToWorld(JourneyPlan plan, bool resumed = false, DateTime? giveUpAtUtc = null)
     {
-        var outcome = await RunJourney(plan, resumed, plan.ReturnTrip ? ReturnLabel : JourneyLabel, giveUpAtUtc);
+        JourneyOutcome outcome;
+        try
+        {
+            outcome = await RunJourney(plan, resumed, plan.ReturnTrip ? ReturnLabel : JourneyLabel, giveUpAtUtc);
+        }
+        finally
+        {
+            TravelOwnership.Release(TravelOwner);
+        }
+
         if (outcome != JourneyOutcome.Cancelled)
         {
             Plugin.Instance.Configuration.ClearPendingJourney();
@@ -66,6 +79,12 @@ public abstract partial class AutoCommon
 
         return outcome;
     }
+
+    // Who a world change this task asks Lifestream for belongs to, so a Stop aborts only travel of its own.
+    protected virtual object TravelOwner => this;
+
+    // A task that must carry on after the relog a data center transfer brings returns what the login should check.
+    private protected virtual TransferContinuation? ContinuationFor(in JourneyPlan plan, in WorldInfo target) => null;
 
     private async Task<JourneyOutcome> RunJourney(JourneyPlan plan, bool resumed, string label, DateTime? giveUpAtUtc)
     {
@@ -134,6 +153,7 @@ public abstract partial class AutoCommon
             return AbandonTransfer(target, label);
         }
 
+        hopRequestedAtMs = Environment.TickCount64;
         var reachable = crossDataCenter ? lifestream.CanVisitCrossDataCenter(target.Name) : lifestream.CanVisitSameDataCenter(target.Name);
         if (!reachable)
         {
@@ -155,12 +175,13 @@ public abstract partial class AutoCommon
         {
             if (crossDataCenter && !await PrepareDataCenterTransfer(target, label))
             {
-                return Unreached(JourneyOutcome.Refused);
+                return Unreached(JourneyOutcome.Blocked);
             }
 
-            if (!await StartHop(target, crossDataCenter, plan, kind, label))
+            var start = await StartHop(target, crossDataCenter, plan, kind, label);
+            if (start != JourneyOutcome.Arrived)
             {
-                return Unreached(JourneyOutcome.WorldUnreached);
+                return Unreached(start);
             }
         }
 
@@ -181,13 +202,14 @@ public abstract partial class AutoCommon
         return JourneyOutcome.Arrived;
     }
 
-    private async Task<bool> StartHop(WorldInfo target, bool crossDataCenter, JourneyPlan plan, string kind, string label)
+    // Arrived here means the hop started; the arrival itself is waited for afterwards.
+    private async Task<JourneyOutcome> StartHop(WorldInfo target, bool crossDataCenter, JourneyPlan plan, string kind, string label)
     {
         var lifestream = LifestreamIPC.Instance;
         await PrepareForTeleport($"{label}-prepare");
         if (CancelToken.IsCancellationRequested)
         {
-            return false;
+            return JourneyOutcome.Cancelled;
         }
 
         if (lifestream.IsBusy())
@@ -200,29 +222,44 @@ public abstract partial class AutoCommon
                 {
                     Warn($"{label}: Lifestream stayed busy, so the {kind} to {target.Name} was not requested");
                     Svc.Chat.PrintError($"{AshopConstants.LogPrefix} Lifestream is busy with something else; the trip to {target.Name} was not started.");
+                    return JourneyOutcome.LifestreamBusy;
                 }
 
-                return false;
+                return JourneyOutcome.Cancelled;
             }
         }
 
         if (crossDataCenter)
         {
             // Written before the request, because Lifestream logs the character out to make the transfer.
-            Plugin.Instance.Configuration.SetPendingJourney(plan);
+            if (ContinuationFor(plan, target) is { } continuation)
+            {
+                Plugin.Instance.Configuration.SetPendingJourney(plan, continuation);
+            }
+            else
+            {
+                Plugin.Instance.Configuration.SetPendingJourney(plan);
+            }
         }
 
         Status = crossDataCenter ? $"Travelling to {target.Name} on {target.DataCenterName}" : $"Changing world to {target.Name}";
-        Diag($"{label}: asking Lifestream for a {kind} to {target.Name} ({ConditionTag()})");
-        lifestream.TeleportAndChangeWorld(target.Name, crossDataCenter);
+        Diag($"{label}: asking Lifestream for a {kind} to {target.Name}{(plan.Gateway > 0 ? $" through gateway {plan.Gateway}" : string.Empty)} ({ConditionTag()})");
+        hopRequestedAtMs = Environment.TickCount64;
+        lifestream.TeleportAndChangeWorld(target.Name, crossDataCenter, plan.Gateway);
         if (await WaitUntilTimed(() => HopStarted(target.Id), HopStartWindowMs, $"{label}-hop-start", JourneyPollFrames))
         {
-            return true;
+            // Lifestream was idle right before the request, so busy now is this task's own operation.
+            if (lifestream.IsBusy())
+            {
+                TravelOwnership.Claim(TravelOwner);
+            }
+
+            return JourneyOutcome.Arrived;
         }
 
         if (CancelToken.IsCancellationRequested)
         {
-            return false;
+            return JourneyOutcome.Cancelled;
         }
 
         if (crossDataCenter)
@@ -236,7 +273,7 @@ public abstract partial class AutoCommon
             Svc.Chat.PrintError($"{AshopConstants.LogPrefix} Lifestream did not start the world change to {target.Name}. The log has the details.");
         }
 
-        return false;
+        return JourneyOutcome.NotStarted;
     }
 
     // The game refuses a data center transfer to a party member, so a party is left first rather than ending the
@@ -277,6 +314,7 @@ public abstract partial class AutoCommon
         var nextLogAt = startedAt + HopProgressLogMs;
         var idleSinceMs = startedAt;
         var loggedOut = false;
+        var congestion = Plugin.Instance.Congestion;
         while (!CancelToken.IsCancellationRequested)
         {
             var now = Environment.TickCount64;
@@ -292,6 +330,11 @@ public abstract partial class AutoCommon
             {
                 Diag($"{label}: arrived on {target.Name} after {(now - startedAt) / TimeUnits.MillisecondsPerSecond}s");
                 return JourneyOutcome.Arrived;
+            }
+
+            if (loggedIn && congestion.SeenSince(hopRequestedAtMs))
+            {
+                return TurnedAway(target, kind, label);
             }
 
             var busy = lifestream.IsBusy();
@@ -315,7 +358,8 @@ public abstract partial class AutoCommon
             {
                 Warn($"{label}: {target.Name} not reached within {budgetMs / TimeUnits.MillisecondsPerMinute} minutes (logged in {loggedIn}, world {WorldNameOf(player)}, Lifestream busy {busy})");
                 Svc.Chat.PrintError($"{AshopConstants.LogPrefix} The trip to {target.Name} did not complete in time.");
-                return JourneyOutcome.WorldUnreached;
+                TravelOwnership.AbortIfOwnedBy(TravelOwner, $"{label}: the trip to {target.Name} ran out of time");
+                return JourneyOutcome.TimedOut;
             }
 
             if (now >= nextLogAt)
@@ -329,6 +373,17 @@ public abstract partial class AutoCommon
         }
 
         return JourneyOutcome.Cancelled;
+    }
+
+    // The world turned the character away. Lifestream may still be retrying it, so its operation is stopped when it is
+    // this task's own, and the world list left open is closed; the run then plans around the world.
+    private JourneyOutcome TurnedAway(WorldInfo target, string kind, string label)
+    {
+        Warn($"{label}: the game reported {target.Name} congested during the {kind} ({ConditionTag()})");
+        Svc.Chat.PrintError($"{AshopConstants.LogPrefix} {target.Name} is congested; the trip there is given up.");
+        TravelOwnership.AbortIfOwnedBy(TravelOwner, $"{label}: {target.Name} is congested");
+        WorldTravelWindow.CloseIfOpen();
+        return JourneyOutcome.Congested;
     }
 
     // Lifestream is told to stop, so a transfer still in its queue does not carry the character off after the journey.

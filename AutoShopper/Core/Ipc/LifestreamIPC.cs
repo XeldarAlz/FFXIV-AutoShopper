@@ -85,10 +85,11 @@ internal sealed class LifestreamIPC
         => IpcGate.Invoke(changeWorld.HasFunction, () => changeWorld.InvokeFunc(world), false, ChangeWorldFailed);
 
     // No secondary teleport of Lifestream's own, no notification, no return to the gateway: the journey does the rest.
-    public void TeleportAndChangeWorld(string world, bool dataCenterTransfer)
+    // A gateway of 0 leaves the city the change happens at to Lifestream.
+    public void TeleportAndChangeWorld(string world, bool dataCenterTransfer, int gateway)
         => IpcGate.Run(
             teleportAndChangeWorld.HasAction,
-            () => teleportAndChangeWorld.InvokeAction(world, dataCenterTransfer, null, true, null, false, false),
+            () => teleportAndChangeWorld.InvokeAction(world, dataCenterTransfer, null, true, gateway > 0 ? gateway : null, false, false),
             TeleportAndChangeWorldFailed);
 
     public bool CanVisitSameDataCenter(string world)

@@ -13,8 +13,10 @@ namespace AutoShopper.Core.Tasks;
 internal enum StopReach : byte
 {
     Reached = 0,
-    TravelNotYetSupported = 1,
+    TravelFailed = 1,
     BoardUnreachable = 2,
+    // Logged out, or back from a transfer in a way only the player's Resume may carry on from.
+    LeftForResume = 3,
 }
 
 internal enum ItemEnd : byte
@@ -47,33 +49,34 @@ internal sealed partial class AutoShopRun
 
     private ItemRetryBudget itemBudget;
 
-    private async Task<RunEnd> ShopStops()
+    // Null when the run was left for the player's Resume; nothing is concluded then.
+    private async Task<RunEnd?> ShopStops()
     {
-        var plan = run.Plan!;
-        for (var stopIndex = 0; stopIndex < plan.Stops.Length; stopIndex++)
+        while (run.Route is { } route && route.NextIndex() is var stopIndex and >= 0)
         {
-            var stop = plan.Stops[stopIndex];
-            if (run.IsWorldCompleted(stop.World.WorldId))
-            {
-                continue;
-            }
-
+            var stop = route[stopIndex].Stop;
+            run.BeginStop(stopIndex);
             var reach = await ReachStop(stop);
             if (CancelToken.IsCancellationRequested)
             {
                 return Cancelled;
             }
 
-            if (reach == StopReach.TravelNotYetSupported)
+            switch (reach)
             {
-                NoteStopElsewhere(stop);
-                continue;
-            }
+                case StopReach.LeftForResume:
+                    return LeaveForResume();
+                case StopReach.BoardUnreachable:
+                    run.AddIssue(RunIssueReason.BoardUnreachable, 0, stop.World.WorldId, 0);
+                    return new RunEnd(RunState.Failed, "no market board could be reached");
+                case StopReach.TravelFailed:
+                    await AfterTravelFailure(stopIndex, stop.World);
+                    if (CancelToken.IsCancellationRequested)
+                    {
+                        return Cancelled;
+                    }
 
-            if (reach == StopReach.BoardUnreachable)
-            {
-                run.AddIssue(RunIssueReason.BoardUnreachable, 0, stop.World.WorldId, 0);
-                return new RunEnd(RunState.Failed, "no market board could be reached");
+                    continue;
             }
 
             if (await ShopAt(stop) is { } end)
@@ -81,8 +84,13 @@ internal sealed partial class AutoShopRun
                 return end;
             }
 
-            run.MarkWorldCompleted(stop.World.WorldId);
+            run.CompleteStop(stopIndex);
             run.Checkpoint(DateTime.UtcNow);
+            await ReplanRemaining();
+            if (CancelToken.IsCancellationRequested)
+            {
+                return Cancelled;
+            }
         }
 
         return run.Tally.AllSatisfied
@@ -90,17 +98,22 @@ internal sealed partial class AutoShopRun
             : new RunEnd(RunState.CompletedPartial, "some lines could not be bought");
     }
 
-    // Travel between worlds arrives later; until then only a stop on the world the character stands on is shopped.
     private async Task<StopReach> ReachStop(PlanStop stop)
     {
         if (stop.World.WorldId != Svc.PlayerState.CurrentWorld.RowId)
         {
-            RunLog.Info($"Run: the stop on {stop.World.Name} is on another world; travel is not supported yet.");
-            return StopReach.TravelNotYetSupported;
+            var travel = await TravelToStop(stop.World);
+            if (travel != StopReach.Reached || CancelToken.IsCancellationRequested)
+            {
+                return travel;
+            }
         }
 
         run.SetState(RunState.GoingToBoard);
-        return await EnsureBoardOpen() ? StopReach.Reached : StopReach.BoardUnreachable;
+        run.SetTravel(TravelPhase.GoingToBoard, stop.World.Name);
+        var opened = await EnsureBoardOpen();
+        run.ClearTravel();
+        return opened ? StopReach.Reached : StopReach.BoardUnreachable;
     }
 
     private async Task<bool> EnsureBoardOpen()
@@ -118,24 +131,6 @@ internal sealed partial class AutoShopRun
 
         var arrival = await GoToMarketBoard(city, Scope);
         return arrival.Opened;
-    }
-
-    private void NoteStopElsewhere(PlanStop stop)
-    {
-        var items = RunPlanning.ItemsOf(stop);
-        for (var itemIndex = 0; itemIndex < items.Length; itemIndex++)
-        {
-            var planned = 0;
-            for (var lineIndex = 0; lineIndex < stop.Lines.Length; lineIndex++)
-            {
-                if (stop.Lines[lineIndex].Demand.ItemId == items[itemIndex])
-                {
-                    planned += stop.Lines[lineIndex].Offer.Quantity;
-                }
-            }
-
-            run.AddIssue(RunIssueReason.TravelNotYetSupported, items[itemIndex], stop.World.WorldId, planned);
-        }
     }
 
     private async Task<RunEnd?> ShopAt(PlanStop stop)
