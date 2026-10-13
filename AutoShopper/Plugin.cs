@@ -4,6 +4,7 @@ using AutoShopper.Core.Game.Watchers;
 using AutoShopper.Core.Inventory;
 using AutoShopper.Core.Items;
 using AutoShopper.Core.Localization;
+using AutoShopper.Core.Market;
 using AutoShopper.Core.Shopping;
 using AutoShopper.Core.Stats;
 using AutoShopper.Core.Tasks;
@@ -46,6 +47,7 @@ public sealed class Plugin : IDalamudPlugin
     internal ItemCatalog Items { get; }
     internal InventoryReader Inventory { get; }
     internal ShoppingListStore Lists { get; }
+    internal MarketServices Market { get; }
 
     private readonly DutyWatcher dutyWatcher;
     private readonly GmAlertWatcher gmAlertWatcher;
@@ -72,6 +74,7 @@ public sealed class Plugin : IDalamudPlugin
         Items = new ItemCatalog();
         Inventory = new InventoryReader();
         Lists = new ShoppingListStore(Configuration, Items, Inventory);
+        Market = new MarketServices();
         dutyWatcher = new DutyWatcher();
         gmAlertWatcher = new GmAlertWatcher();
 
@@ -119,6 +122,7 @@ public sealed class Plugin : IDalamudPlugin
         dutyWatcher.Dispose();
         gmAlertWatcher.Dispose();
         Inventory.Dispose();
+        Market.Dispose();
 
         CLibMain.Dispose();
         ECommonsMain.Dispose();
@@ -186,6 +190,14 @@ public sealed class Plugin : IDalamudPlugin
         else if (HasSubcommand(trimmed, AddSubcommand))
         {
             AddItemCommand.Handle(trimmed[AddSubcommand.Length..].Trim(), Items, Lists);
+        }
+        else if (trimmed.Equals(MarketDebugCommands.StatusSubcommand, StringComparison.OrdinalIgnoreCase))
+        {
+            MarketDebugCommands.PrintStatus(Market);
+        }
+        else if (HasSubcommand(trimmed, MarketDebugCommands.LookSubcommand))
+        {
+            MarketDebugCommands.Look(trimmed[MarketDebugCommands.LookSubcommand.Length..].Trim(), Market, Items, Controller.Running);
         }
         else
         {
