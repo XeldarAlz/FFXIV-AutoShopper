@@ -13,8 +13,8 @@ using ECommons.DalamudServices;
 namespace AutoShopper.Core.Preview;
 
 // Keeps a plan for the selected list up to date. Inputs are read on the framework thread and frozen into a
-// PreviewInput; the planner runs on the thread pool, a newer input cancels the run in flight, and a result whose
-// generation is no longer the newest is dropped. Nothing here acts in game.
+// PreviewInput; the planner runs on the thread pool, a newer input cancels the run in flight, and the framework thread
+// adopts a result, and ends planning, only for the newest generation. Nothing here acts in game.
 internal sealed class PlanPreview : IDisposable
 {
     // Edits arrive on every frame while a field is dragged, so planning waits for this quiet time after the last one.
@@ -24,6 +24,7 @@ internal sealed class PlanPreview : IDisposable
     private readonly ShoppingListStore lists;
     private readonly InventoryReader inventory;
     private readonly PriceService prices;
+    private readonly PreviewHandoff handoff = new();
 
     private ScopeKey scopeKey;
     private ResolvedScope? scope;
@@ -76,6 +77,7 @@ internal sealed class PlanPreview : IDisposable
 
     private void OnUpdate(IFramework framework)
     {
+        AdoptPlanning();
         RefreshScope();
         RefreshDemands();
         RefreshPlanningKey();
@@ -95,6 +97,25 @@ internal sealed class PlanPreview : IDisposable
     }
 
     private void MarkChanged() => changedAtMs = Environment.TickCount64;
+
+    private void AdoptPlanning()
+    {
+        if (!planningRunning)
+        {
+            return;
+        }
+
+        switch (handoff.Take(Volatile.Read(ref inputGeneration), out var result))
+        {
+            case PlanningProgress.Planned:
+                Volatile.Write(ref latest, result);
+                planningRunning = false;
+                break;
+            case PlanningProgress.Failed:
+                planningRunning = false;
+                break;
+        }
+    }
 
     private void RefreshScope()
     {
@@ -276,14 +297,7 @@ internal sealed class PlanPreview : IDisposable
     {
         try
         {
-            var result = PreviewRunner.Run(input, TimeProvider.System, token);
-            if (input.Generation != Volatile.Read(ref inputGeneration))
-            {
-                return;
-            }
-
-            Volatile.Write(ref latest, result);
-            planningRunning = false;
+            handoff.Complete(PreviewRunner.Run(input, TimeProvider.System, token));
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -291,10 +305,7 @@ internal sealed class PlanPreview : IDisposable
         catch (Exception exception)
         {
             RunLog.Error(exception, "Planning the selected list failed");
-            if (input.Generation == Volatile.Read(ref inputGeneration))
-            {
-                planningRunning = false;
-            }
+            handoff.Fail(input.Generation);
         }
     }
 

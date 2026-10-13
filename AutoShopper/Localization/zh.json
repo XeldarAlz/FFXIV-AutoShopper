@@ -823,5 +823,8 @@
   "export.checklistHelp": "将此计划复制为购物核对表：停靠、物品、数量和估算。不含任何角色信息。",
   "export.checklistAsText": "复制为文本",
   "export.checklistAsMarkdown": "复制为 Markdown",
-  "export.checklistCopied": "核对表已复制到剪贴板"
+  "export.checklistCopied": "核对表已复制到剪贴板",
+  "lists.import.problem.ambiguous": "可能是小数：请只使用数字",
+  "plan.reason.capped": "已达上限：某个服务器只提供了最便宜的 100 个挂单，市场布告板上可能还有更多",
+  "lists.problem.mergedOverLimit": "该物品的各行合计超过 999,999"
 }

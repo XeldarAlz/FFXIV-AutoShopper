@@ -6,6 +6,11 @@ namespace AutoShopper.Core.Planning;
 internal sealed class IncrementalSubsetSearch
 {
     private const long Unreachable = long.MaxValue;
+    private const int BitsPerCost = 64;
+
+    // The stack allocator's table budget, 2^28 bits (32 MiB): one cost per reachable quantity, single-line item and
+    // depth. A search past it is left to the heuristic world search.
+    private const long MaximumTableBits = 1L << 28;
 
     private readonly WorldSelector selector;
     private readonly SearchBudget budget;
@@ -44,6 +49,28 @@ internal sealed class IncrementalSubsetSearch
         levels = new long[stopLimit + 1][][];
     }
 
+    public static bool Fits(PlanningProblem problem, int stopLimit)
+    {
+        var levelCount = (long)stopLimit + 1;
+        long bits = 0;
+        for (var itemIndex = 0; itemIndex < problem.Items.Length; itemIndex++)
+        {
+            var item = problem.Items[itemIndex];
+            if (item.Lines.Length != 1)
+            {
+                continue;
+            }
+
+            bits += (CeilingOf(item) + 1L) * levelCount * BitsPerCost;
+            if (bits > MaximumTableBits)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public void Run()
     {
         var root = Level(0);
@@ -77,6 +104,13 @@ internal sealed class IncrementalSubsetSearch
 
         for (var worldIndex = firstWorld; worldIndex < candidateCount && !exhausted; worldIndex++)
         {
+            // Extending a level is a knapsack pass over every single-line item, so the clock is read before each one.
+            if (!budget.HasTimeLeft())
+            {
+                exhausted = true;
+                return;
+            }
+
             Extend(depth, worldIndex);
             Visit(depth + 1, worldIndex + 1, mask | WorldMasks.Bit(worldIndex));
         }
@@ -167,6 +201,22 @@ internal sealed class IncrementalSubsetSearch
         return (required, 0);
     }
 
+    // The most units a single-line item's knapsack tracks: its total allowance, or every eligible unit when fewer.
+    private static int CeilingOf(ItemProblem item)
+    {
+        var eligible = item.Eligible[0];
+        long supply = 0;
+        for (var offerIndex = 0; offerIndex < item.Offers.Length; offerIndex++)
+        {
+            if (eligible[offerIndex])
+            {
+                supply += item.Offers[offerIndex].Quantity;
+            }
+        }
+
+        return (int)Math.Min(item.Lines[0].MaximumTotal, supply);
+    }
+
     private long[][] Level(int depth)
     {
         var level = levels[depth];
@@ -207,7 +257,6 @@ internal sealed class IncrementalSubsetSearch
                 payables[worldIndex] = new List<long>();
             }
 
-            long supply = 0;
             for (var offerIndex = 0; offerIndex < item.Offers.Length; offerIndex++)
             {
                 if (!eligible[offerIndex])
@@ -218,7 +267,6 @@ internal sealed class IncrementalSubsetSearch
                 var worldIndex = item.WorldIndexes[offerIndex];
                 quantities[worldIndex].Add(item.Offers[offerIndex].Quantity);
                 payables[worldIndex].Add(item.Payables[offerIndex]);
-                supply += item.Offers[offerIndex].Quantity;
             }
 
             var quantityArrays = new int[candidateCount][];
@@ -232,7 +280,7 @@ internal sealed class IncrementalSubsetSearch
             return new KnapsackItem
             {
                 Required = line.RequiredQuantity,
-                Ceiling = (int)Math.Min(line.MaximumTotal, supply),
+                Ceiling = CeilingOf(item),
                 Quantities = quantityArrays,
                 Payables = payableArrays,
             };

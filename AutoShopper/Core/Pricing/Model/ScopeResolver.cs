@@ -35,6 +35,9 @@ internal static class ScopeResolver
     public static bool IsLeftOut(in ScopeWorld world, in ScopeWorld current, bool allowJapanese)
         => !allowJapanese && world.RegionId == JapanRegion && world.DataCenterId != current.DataCenterId;
 
+    // Travel never leaves the region the character stands in, so no run can reach a world of another region.
+    public static bool IsOutsideRegion(in ScopeWorld world, in ScopeWorld current) => world.RegionId != current.RegionId;
+
     public static ImmutableArray<ScopeWorld> Resolve(
         ScopePreset preset,
         in ScopeWorld current,
@@ -48,7 +51,7 @@ internal static class ScopeResolver
         for (var index = 0; index < candidates.Length; index++)
         {
             var world = candidates[index];
-            if (!world.IsKnown || IsLeftOut(world, current, allowJapanese) || !IsIncluded(preset, world, current, home, added, excluded))
+            if (!world.IsKnown || IsOutsideRegion(world, current) || IsLeftOut(world, current, allowJapanese) || !IsIncluded(preset, world, current, home, added, excluded))
             {
                 continue;
             }
@@ -73,13 +76,51 @@ internal static class ScopeResolver
         for (var index = 0; index < candidates.Length; index++)
         {
             var world = candidates[index];
-            if (world.IsKnown && IsLeftOut(world, current, allowJapanese) && IsIncluded(preset, world, current, home, added, excluded))
+            if (world.IsKnown && !IsOutsideRegion(world, current) && IsLeftOut(world, current, allowJapanese) && IsIncluded(preset, world, current, home, added, excluded))
             {
                 count++;
             }
         }
 
         return count;
+    }
+
+    // A world sits on at most one of the two lists, so the last click decides it whatever preset is chosen later.
+    // True when either list changed.
+    public static bool SetIncluded(List<uint> added, List<uint> excluded, uint worldId, bool inPreset, bool included)
+    {
+        var list = inPreset ? excluded : added;
+        var wantListed = inPreset ? !included : included;
+        if (!wantListed)
+        {
+            return RemoveEvery(list, worldId);
+        }
+
+        var changed = RemoveEvery(inPreset ? added : excluded, worldId);
+        if (Contains(list, worldId))
+        {
+            return changed;
+        }
+
+        list.Add(worldId);
+        return true;
+    }
+
+    private static bool RemoveEvery(List<uint> worldIds, uint worldId)
+    {
+        var removed = false;
+        for (var index = worldIds.Count - 1; index >= 0; index--)
+        {
+            if (worldIds[index] != worldId)
+            {
+                continue;
+            }
+
+            worldIds.RemoveAt(index);
+            removed = true;
+        }
+
+        return removed;
     }
 
     public static bool Contains(IReadOnlyList<uint> worldIds, uint worldId)

@@ -5,6 +5,8 @@ namespace AutoShopper.Core.Shopping.Import;
 
 // The documented header is ItemId,Name,Quality,Mode,Quantity,MaxUnitPrice,ExcessAllowance. Columns may come in any
 // order and only ItemId or Name is required; when a row carries both, the item id decides and the name is ignored.
+// A semicolon file comes from a locale whose decimal mark is the comma, so a comma in one of its numbers is refused
+// rather than read as a digit group.
 internal static class CsvListParser
 {
     public const string Header = "ItemId,Name,Quality,Mode,Quantity,MaxUnitPrice,ExcessAllowance";
@@ -80,7 +82,7 @@ internal static class CsvListParser
             }
 
             Csv.Split(line, delimiter, fields, scratch);
-            result.Rows.Add(ReadRow(lineNumber, line, columns, fields));
+            result.Rows.Add(ReadRow(lineNumber, line, columns, fields, delimiter == Csv.Semicolon));
         }
 
         if (result.Rows.Count == 0)
@@ -156,13 +158,13 @@ internal static class CsvListParser
         return ImportFields.Is(key, "excessallowance") || ImportFields.Is(key, "excess") ? Column.ExcessAllowance : Column.Ignored;
     }
 
-    private static ImportRow ReadRow(int lineNumber, ReadOnlySpan<char> line, Column[] columns, List<string> fields)
+    private static ImportRow ReadRow(int lineNumber, ReadOnlySpan<char> line, Column[] columns, List<string> fields, bool decimalComma)
     {
         var row = new ImportRow(lineNumber, TextLines.Clip(line));
         var count = Math.Min(columns.Length, fields.Count);
         for (var index = 0; index < count; index++)
         {
-            ReadField(row, columns[index], fields[index]);
+            ReadField(row, columns[index], fields[index], decimalComma);
         }
 
         if (row.RequestedItemId == 0 && row.Name.Length == 0)
@@ -173,13 +175,13 @@ internal static class CsvListParser
         return row;
     }
 
-    private static void ReadField(ImportRow row, Column column, string value)
+    private static void ReadField(ImportRow row, Column column, string value, bool decimalComma)
     {
         long number;
         switch (column)
         {
             case Column.ItemId:
-                var status = ImportFields.TryParseWhole(value, out number);
+                var status = ImportFields.TryParseWhole(value, out number, decimalComma);
                 if (status == NumberStatus.Valid && number is > 0 and <= uint.MaxValue)
                 {
                     row.RequestedItemId = (uint)number;
@@ -224,13 +226,13 @@ internal static class CsvListParser
 
                 break;
             case Column.Quantity:
-                ImportFields.SetQuantity(row, ImportFields.TryParseWhole(value, out number), number);
+                ImportFields.SetQuantity(row, ImportFields.TryParseWhole(value, out number, decimalComma), number);
                 break;
             case Column.MaxUnitPrice:
-                ImportFields.SetUnitCap(row, ImportFields.TryParseWhole(value, out number), number);
+                ImportFields.SetUnitCap(row, ImportFields.TryParseWhole(value, out number, decimalComma), number);
                 break;
             case Column.ExcessAllowance:
-                ImportFields.SetExcess(row, ImportFields.TryParseWhole(value, out number), number);
+                ImportFields.SetExcess(row, ImportFields.TryParseWhole(value, out number, decimalComma), number);
                 break;
         }
     }

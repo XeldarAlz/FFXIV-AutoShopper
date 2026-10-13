@@ -6,7 +6,8 @@ public sealed class ListValidation
         | LineProblems.InvalidQuantity
         | LineProblems.InvalidUnitCap
         | LineProblems.InvalidExcess
-        | LineProblems.QualityUnavailable;
+        | LineProblems.QualityUnavailable
+        | LineProblems.MergedOverLimit;
 
     public const LineProblems WarningMask = LineProblems.Duplicate;
 

@@ -823,5 +823,8 @@
   "export.checklistHelp": "Копирует этот план как чек-лист покупок: остановки, предметы, количества и оценки. Ничего о вашем персонаже.",
   "export.checklistAsText": "Копировать как текст",
   "export.checklistAsMarkdown": "Копировать как Markdown",
-  "export.checklistCopied": "Чек-лист скопирован в буфер обмена"
+  "export.checklistCopied": "Чек-лист скопирован в буфер обмена",
+  "lists.import.problem.ambiguous": "Может быть дробным числом: укажите только цифры",
+  "plan.reason.capped": "Предел: мир передал только 100 самых дешёвых лотов, на рыночной доске может быть больше",
+  "lists.problem.mergedOverLimit": "Строки этого предмета в сумме дают больше 999 999"
 }

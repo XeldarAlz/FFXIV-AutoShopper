@@ -22,27 +22,22 @@ internal static class ScopeWorlds
             configuration.ScopePreset,
             From(current),
             From(home),
-            Candidates(home.Region, current.Region),
+            Candidates(current.Region),
             configuration.AllowedWorlds,
             configuration.ExcludedWorlds,
             configuration.AllowJapaneseDataCenters);
     }
 
-    // A character visiting another region (Japan and Oceania share travel) may also shop where it stands. The sheet
-    // interleaves data centers, so the worlds are sorted to keep each data center together.
-    private static ImmutableArray<ScopeWorld> Candidates(WorldRegion homeRegion, WorldRegion currentRegion)
+    // Travel never leaves the region the character stands in, so the picker offers only that region's worlds, also
+    // while the character visits a region other than its home's. The sheet interleaves data centers, so the worlds are
+    // sorted to keep each data center together.
+    private static ImmutableArray<ScopeWorld> Candidates(WorldRegion currentRegion)
     {
-        var home = Worlds.InRegion(homeRegion);
-        var visited = currentRegion == homeRegion ? [] : Worlds.InRegion(currentRegion);
-        var candidates = new ScopeWorld[home.Length + visited.Length];
-        for (var index = 0; index < home.Length; index++)
+        var worlds = Worlds.InRegion(currentRegion);
+        var candidates = new ScopeWorld[worlds.Length];
+        for (var index = 0; index < worlds.Length; index++)
         {
-            candidates[index] = From(home[index]);
-        }
-
-        for (var index = 0; index < visited.Length; index++)
-        {
-            candidates[home.Length + index] = From(visited[index]);
+            candidates[index] = From(worlds[index]);
         }
 
         Array.Sort(candidates, CompareForPicker);

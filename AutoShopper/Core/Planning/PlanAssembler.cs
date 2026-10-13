@@ -224,6 +224,17 @@ internal static class PlanAssembler
             for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
             {
                 var offer = lines[lineIndex].Offer;
+                if (offer.IsEstimate)
+                {
+                    estimated++;
+                }
+
+                // An offer of unknown age has no observed time, so it widens neither end of the range.
+                if (offer.ObservedAtUtc == default)
+                {
+                    continue;
+                }
+
                 if (offer.ObservedAtUtc < oldest)
                 {
                     oldest = offer.ObservedAtUtc;
@@ -232,11 +243,6 @@ internal static class PlanAssembler
                 if (offer.ObservedAtUtc > newest)
                 {
                     newest = offer.ObservedAtUtc;
-                }
-
-                if (offer.IsEstimate)
-                {
-                    estimated++;
                 }
             }
         }

@@ -823,5 +823,8 @@
   "export.checklistHelp": "Copies this plan as a shopping checklist: stops, items, quantities and estimates. Nothing about your character.",
   "export.checklistAsText": "Copy as text",
   "export.checklistAsMarkdown": "Copy as Markdown",
-  "export.checklistCopied": "Checklist copied to the clipboard"
+  "export.checklistCopied": "Checklist copied to the clipboard",
+  "lists.import.problem.ambiguous": "Could be a decimal: use plain digits",
+  "plan.reason.capped": "Capped: a world sent only its 100 cheapest listings, so more may be on the board",
+  "lists.problem.mergedOverLimit": "This item's lines add up to more than 999,999"
 }

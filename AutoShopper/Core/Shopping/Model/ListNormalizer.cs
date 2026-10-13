@@ -89,15 +89,46 @@ public static class ListNormalizer
             problems[lineIndex] |= lineProblems;
         }
 
+        FlagMergedOverLimit(lines, problems);
         return new ListValidation(problems, traits is not null);
     }
 
+    // The planner turns every usable line of one item and quality into one demand: the Buy lines added up plus the
+    // largest Top up target, with the two extra allowances added. A total past the per-line limit is flagged on each
+    // of those lines instead of being clamped, so the list cannot run with a quantity nobody wrote.
+    private static void FlagMergedOverLimit(IReadOnlyList<ShoppingLine> lines, LineProblems[] problems)
+    {
+        var totals = new Dictionary<MergeKey, MergeTotal>(lines.Count);
+        for (var lineIndex = 0; lineIndex < lines.Count; lineIndex++)
+        {
+            var line = lines[lineIndex];
+            if (!IsUsable(line))
+            {
+                continue;
+            }
+
+            var key = new MergeKey(line.ItemId, line.Quality);
+            totals.TryGetValue(key, out var total);
+            totals[key] = total.With(line);
+        }
+
+        for (var lineIndex = 0; lineIndex < lines.Count; lineIndex++)
+        {
+            var line = lines[lineIndex];
+            if (IsUsable(line) && totals[new MergeKey(line.ItemId, line.Quality)].IsOverLimit)
+            {
+                problems[lineIndex] |= LineProblems.MergedOverLimit;
+            }
+        }
+    }
+
     // Two Buy lines ask for two purchases, so they add up; two ReachInventory lines describe the same stock, so only
-    // the larger target counts. Merged lines keep the strictest unit cap and the smallest excess allowance.
+    // the larger target counts. Merged lines keep the strictest unit cap and the smallest excess allowance. A sum past
+    // the per-line limit stays as it is: validation flags it and the planner refuses it, so no line is quietly cut.
     private static NormalizedDemand Merge(NormalizedDemand demand, ShoppingLine line)
     {
         var quantity = demand.Mode == QuantityMode.Buy
-            ? (int)Math.Min((long)demand.Quantity + line.Quantity, ShoppingLimits.MaximumQuantity)
+            ? (int)Math.Min((long)demand.Quantity + line.Quantity, int.MaxValue)
             : Math.Max(demand.Quantity, line.Quantity);
 
         return demand with
@@ -153,5 +184,33 @@ public static class ListNormalizer
         return line.Quality == ItemQuality.HighQuality && !traits.CanBeHighQuality(line.ItemId)
             ? LineProblems.QualityUnavailable
             : LineProblems.None;
+    }
+
+    private readonly record struct MergeKey(uint ItemId, ItemQuality Quality);
+
+    private readonly record struct MergeTotal(long Bought, int Target, int BuyExcess, int TargetExcess, bool HasBuy, bool HasTarget)
+    {
+        public bool IsOverLimit
+            => Bought + Target > ShoppingLimits.MaximumQuantity || (long)BuyExcess + TargetExcess > ShoppingLimits.MaximumExcessAllowance;
+
+        public MergeTotal With(ShoppingLine line)
+        {
+            if (line.Mode == QuantityMode.Buy)
+            {
+                return this with
+                {
+                    Bought = Bought + line.Quantity,
+                    BuyExcess = HasBuy ? Math.Min(BuyExcess, line.ExcessAllowance) : line.ExcessAllowance,
+                    HasBuy = true,
+                };
+            }
+
+            return this with
+            {
+                Target = Math.Max(Target, line.Quantity),
+                TargetExcess = HasTarget ? Math.Min(TargetExcess, line.ExcessAllowance) : line.ExcessAllowance,
+                HasTarget = true,
+            };
+        }
     }
 }

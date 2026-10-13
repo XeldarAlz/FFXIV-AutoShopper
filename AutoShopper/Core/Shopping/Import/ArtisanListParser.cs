@@ -171,15 +171,7 @@ internal static class ArtisanListParser
             }
             else if (JsonListParser.Is(property, ArtisanListFormat.QuantityProperty))
             {
-                var status = JsonListParser.NumberOf(value, out crafts);
-                if (status == NumberStatus.Malformed)
-                {
-                    problem = Keep(problem, ImportRowProblem.MalformedNumber);
-                }
-                else if (status == NumberStatus.Overflow)
-                {
-                    problem = Keep(problem, ImportRowProblem.QuantityOutOfRange);
-                }
+                problem = Keep(problem, ImportFields.ProblemOf(JsonListParser.NumberOf(value, out crafts), ImportRowProblem.QuantityOutOfRange));
             }
             else if (JsonListParser.Is(property, ArtisanListFormat.OptionsProperty))
             {

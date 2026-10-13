@@ -10,4 +10,5 @@ public enum LineProblems : byte
     InvalidExcess = 1 << 3,
     QualityUnavailable = 1 << 4,
     Duplicate = 1 << 5,
+    MergedOverLimit = 1 << 6,
 }

@@ -23,4 +23,5 @@ public enum ImportRowProblem : byte
     SkippedCraft,
     NotMarketable,
     CraftedFromOtherRows,
+    AmbiguousNumber,
 }

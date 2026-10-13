@@ -823,5 +823,8 @@
   "export.checklistHelp": "Bu planı alışveriş kontrol listesi olarak kopyalar: duraklar, eşyalar, miktarlar ve tahminler. Karakterin hakkında hiçbir şey yok.",
   "export.checklistAsText": "Metin olarak kopyala",
   "export.checklistAsMarkdown": "Markdown olarak kopyala",
-  "export.checklistCopied": "Kontrol listesi panoya kopyalandı"
+  "export.checklistCopied": "Kontrol listesi panoya kopyalandı",
+  "lists.import.problem.ambiguous": "Ondalık sayı olabilir: yalnızca rakam kullanın",
+  "plan.reason.capped": "Sınırda: Bir dünya yalnızca en ucuz 100 ilanını gönderdi, pazar panosunda daha fazlası olabilir",
+  "lists.problem.mergedOverLimit": "Bu eşyanın satırları toplamda 999.999'u aşıyor"
 }

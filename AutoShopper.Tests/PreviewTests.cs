@@ -147,7 +147,7 @@ public sealed class PreviewTests
     private static PriceSnapshot Snapshot()
     {
         var chunk = Chunk(PriceQueryKind.DataCenter, "Aether", Allowed, HighQualityItem, FireShard, Gil, OneGilItem);
-        var prices = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk, FetchedAt);
+        var prices = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk);
         return PriceSnapshotBuilder.Build(1, FetchedAt, Allowed, [prices], null);
     }
 

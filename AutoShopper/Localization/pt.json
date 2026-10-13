@@ -823,5 +823,8 @@
   "export.checklistHelp": "Copia este plano como checklist de compras: paradas, itens, quantidades e estimativas. Nada sobre o seu personagem.",
   "export.checklistAsText": "Copiar como texto",
   "export.checklistAsMarkdown": "Copiar como Markdown",
-  "export.checklistCopied": "Checklist copiado para a área de transferência"
+  "export.checklistCopied": "Checklist copiado para a área de transferência",
+  "lists.import.problem.ambiguous": "Pode ser um decimal: use apenas dígitos",
+  "plan.reason.capped": "Limitado: um mundo enviou só os seus 100 anúncios mais baratos, pode haver mais no quadro do mercado",
+  "lists.problem.mergedOverLimit": "As linhas deste item somam mais de 999.999"
 }

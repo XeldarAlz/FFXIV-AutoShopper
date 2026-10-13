@@ -751,6 +751,7 @@ internal sealed partial class ListsPage
         ImportRowProblem.UnitCapOutOfRange => L.Lists.ImportProblemCap,
         ImportRowProblem.ExcessOutOfRange => L.Lists.ImportProblemExcess,
         ImportRowProblem.MalformedNumber => L.Lists.ImportProblemNumber,
+        ImportRowProblem.AmbiguousNumber => L.Lists.ImportProblemAmbiguous,
         ImportRowProblem.UnknownQuality => L.Lists.ImportProblemQuality,
         ImportRowProblem.UnknownMode => L.Lists.ImportProblemMode,
         ImportRowProblem.NameTooLong => L.Lists.ImportProblemName,

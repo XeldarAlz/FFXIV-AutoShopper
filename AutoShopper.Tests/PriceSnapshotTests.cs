@@ -50,7 +50,7 @@ public sealed class PriceSnapshotTests
     public void AllowedWorldNoQueryCoveredIsMissing()
     {
         var chunk = Chunk(PriceQueryKind.DataCenter, "Aether", [Jenova, Faerie], FireShard);
-        var prices = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk, FetchedAt);
+        var prices = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk);
 
         var snapshot = PriceSnapshotBuilder.Build(1, FetchedAt, [Jenova, Faerie, Exodus], [prices], null);
 
@@ -65,8 +65,8 @@ public sealed class PriceSnapshotTests
     {
         var aether = Chunk(PriceQueryKind.DataCenter, "Aether", [Jenova, Faerie], HighQualityItem);
         var primal = Chunk(PriceQueryKind.World, "53", [Exodus], HighQualityItem);
-        var aetherPrices = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), aether, FetchedAt);
-        var primalPrices = UniversalisTranslator.Translate(Read("region-multi-trimmed.json"), primal with { Query = primal.Query with { Kind = PriceQueryKind.Region } }, FetchedAt);
+        var aetherPrices = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), aether);
+        var primalPrices = UniversalisTranslator.Translate(Read("region-multi-trimmed.json"), primal with { Query = primal.Query with { Kind = PriceQueryKind.Region } });
 
         var snapshot = PriceSnapshotBuilder.Build(1, FetchedAt, [Jenova, Faerie, Exodus], [aetherPrices, primalPrices], null);
 
@@ -92,7 +92,7 @@ public sealed class PriceSnapshotTests
     {
         var first = Build([Translate("dc-multi-trimmed.json", HighQualityItem)]);
         var chunk = Chunk(PriceQueryKind.World, "54", [Faerie], FireShard);
-        var prices = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk with { Query = chunk.Query with { Kind = PriceQueryKind.DataCenter } }, FetchedAt);
+        var prices = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk with { Query = chunk.Query with { Kind = PriceQueryKind.DataCenter } });
 
         var second = PriceSnapshotBuilder.Build(2, FetchedAt, [Faerie], [prices], first);
 
@@ -164,7 +164,7 @@ public sealed class PriceSnapshotTests
 
     private static ChunkPrices Translate(string fixture, params uint[] itemIds)
     {
-        return UniversalisTranslator.Translate(Read(fixture), Chunk(PriceQueryKind.DataCenter, "Aether", Allowed, itemIds), FetchedAt);
+        return UniversalisTranslator.Translate(Read(fixture), Chunk(PriceQueryKind.DataCenter, "Aether", Allowed, itemIds));
     }
 
     private static int CountOffers(PriceSnapshot snapshot)

@@ -271,6 +271,7 @@ internal sealed partial class PlanPage
         PreviewReason.NotMarketable => Loc.T(L.Plan.ReasonNotMarketable),
         PreviewReason.RequestFailed => Loc.T(L.Plan.ReasonRequestFailed),
         PreviewReason.NoMarketData => Loc.T(L.Plan.ReasonNoMarketData),
+        PreviewReason.Capped => Loc.T(L.Plan.ReasonCapped),
         _ => Loc.T(L.Plan.ReasonNoListings),
     };
 }

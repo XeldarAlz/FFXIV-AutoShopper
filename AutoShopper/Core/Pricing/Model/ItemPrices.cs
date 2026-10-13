@@ -66,6 +66,8 @@ internal enum PriceFailure : byte
     Timeout,
     Malformed,
     RetriesExhausted,
+    // Never sent: the server had asked every request to wait longer than a fetch holds.
+    ServerPaused,
 }
 
 internal sealed class ChunkPrices
@@ -78,9 +80,12 @@ internal sealed class ChunkPrices
 
     public bool Failed => Failure != PriceFailure.None;
 
+    // True when the server answered for these items, so their new prices replace the old ones.
+    public bool Answered => !Failed || MeansNotTracked(Chunk, Failure);
+
     public static ChunkPrices FailedWith(PriceChunk chunk, PriceFailure failure)
     {
-        var coverage = failure == PriceFailure.NotFound ? PriceCoverage.NotFound : PriceCoverage.RequestFailed;
+        var coverage = MeansNotTracked(chunk, failure) ? PriceCoverage.NotFound : PriceCoverage.RequestFailed;
         var items = new ItemPrices[chunk.ItemIds.Length];
         for (var index = 0; index < items.Length; index++)
         {
@@ -94,4 +99,9 @@ internal sealed class ChunkPrices
             Items = ImmutableCollectionsMarshal.AsImmutableArray(items),
         };
     }
+
+    // Universalis answers a request for several items with the ones it does not track listed as unresolved, so a 404
+    // names an untracked item only when the request asked for that item alone; for several items it is a failure.
+    private static bool MeansNotTracked(PriceChunk chunk, PriceFailure failure)
+        => failure == PriceFailure.NotFound && chunk.ItemIds.Length == 1;
 }
