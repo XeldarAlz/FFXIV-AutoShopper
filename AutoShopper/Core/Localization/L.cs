@@ -255,6 +255,13 @@ internal static partial class L
         public static readonly LocString New = new("changelog.new", "New");
         public static readonly LocPlural Changes = new("changelog.changes", "{0} change", "{0} changes");
 
+        public static readonly LocString[] Release1100 =
+        [
+            new("changelog.r1100.1", "Other plugins can price items and start runs of their own lists through the new Buying API, once you allow them on the Shop page"),
+            new("changelog.r1100.2", "Their runs keep your dry run, worlds, gil reserve and purchase checks, and History names the plugin that started a run"),
+            new("changelog.r1100.3", "Settings, General lists the plugins you answered, with Revoke and Allow"),
+        ];
+
         public static readonly LocString[] Release1000 =
         [
             new("changelog.r1000.1", "Shopping lists: Any, HQ or NQ, buy an amount or top up to a target, with a max price per unit including the 5% fee"),
