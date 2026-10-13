@@ -759,6 +759,7 @@
   "history.units.one": "{0} unidade",
   "history.units.other": "{0} unidades",
   "history.tooltip.list": "Lista: {0}",
+  "history.tooltip.via": "Via {0}",
   "lists.noSelectionTitle": "Nenhuma lista selecionada",
   "lists.noSelectionBody": "Escolha uma lista à esquerda para editá-la ou crie uma nova.",
   "lists.import.craftingHelp": "Listas de criação exportadas como JSON e listas copiadas do Teamcraft também funcionam.",
@@ -846,5 +847,16 @@
   "api.reason.schema": "o pedido usa um esquema da Buying API que esta versão do Auto Shopper não conhece",
   "api.reason.invalid": "o pedido não é válido ({0})",
   "api.reason.consent": "permita {0} primeiro na página Compras do Auto Shopper",
-  "api.reason.denied": "{0} está negado; permita-o em Configurações, Geral do Auto Shopper"
+  "api.reason.denied": "{0} está negado; permita-o em Configurações, Geral do Auto Shopper",
+  "api.consent.title": "{0} quer comprar pelo Auto Shopper.",
+  "api.consent.body": "Ele envia a própria lista de compras e um limite de gasto para cada rodada. Sua simulação, seus mundos, o gil a manter e as verificações de compra continuam valendo, e você pode revogar isso em Configurações, Geral.",
+  "api.allow": "Permitir",
+  "api.deny": "Negar",
+  "api.revoke": "Revogar",
+  "api.allowed": "Permitido",
+  "api.denied": "Negado",
+  "api.group": "Outros plugins",
+  "api.groupNone": "Nenhum plugin pediu ainda para comprar pelo Auto Shopper.",
+  "api.allowedHelp": "Ele pode cotar itens e iniciar rodadas pelo Auto Shopper. Ao revogar, ele pede de novo.",
+  "api.deniedHelp": "As rodadas dele são recusadas até você permitir."
 }

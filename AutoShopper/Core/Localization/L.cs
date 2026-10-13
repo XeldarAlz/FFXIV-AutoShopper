@@ -187,6 +187,7 @@ internal static partial class L
         public static readonly LocString WouldSpend = new("history.wouldSpend", "{0} would be spent");
         public static readonly LocPlural Units = new("history.units", "{0} unit", "{0} units");
         public static readonly LocString TooltipList = new("history.tooltip.list", "List: {0}");
+        public static readonly LocString TooltipVia = new("history.tooltip.via", "Via {0}");
     }
 
     internal static class Plugins

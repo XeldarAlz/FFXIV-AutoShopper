@@ -759,6 +759,7 @@
   "history.units.one": "{0} unit",
   "history.units.other": "{0} units",
   "history.tooltip.list": "List: {0}",
+  "history.tooltip.via": "Via {0}",
   "lists.noSelectionTitle": "No list selected",
   "lists.noSelectionBody": "Pick a list on the left to edit it, or start a new one.",
   "lists.import.craftingHelp": "Crafting lists exported as JSON and lists copied from Teamcraft work too.",
@@ -846,5 +847,16 @@
   "api.reason.schema": "the request uses a Buying API schema this version of Auto Shopper does not know",
   "api.reason.invalid": "the request is not valid ({0})",
   "api.reason.consent": "allow {0} on Auto Shopper's Shop page first",
-  "api.reason.denied": "{0} is denied; allow it in Auto Shopper's Settings, General"
+  "api.reason.denied": "{0} is denied; allow it in Auto Shopper's Settings, General",
+  "api.consent.title": "{0} wants to buy through Auto Shopper.",
+  "api.consent.body": "It sends its own shopping list and a spend cap for each run. Your dry run, worlds, gil reserve and purchase checks still apply, and you can revoke this in Settings, General.",
+  "api.allow": "Allow",
+  "api.deny": "Deny",
+  "api.revoke": "Revoke",
+  "api.allowed": "Allowed",
+  "api.denied": "Denied",
+  "api.group": "Other plugins",
+  "api.groupNone": "No plugin has asked to buy through Auto Shopper yet.",
+  "api.allowedHelp": "It can price items and start runs through Auto Shopper. Revoke makes it ask again.",
+  "api.deniedHelp": "Its runs are refused until you allow it."
 }

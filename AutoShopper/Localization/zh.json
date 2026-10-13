@@ -759,6 +759,7 @@
   "history.units.one": "{0} 个",
   "history.units.other": "{0} 个",
   "history.tooltip.list": "清单：{0}",
+  "history.tooltip.via": "通过 {0}",
   "lists.noSelectionTitle": "未选择清单",
   "lists.noSelectionBody": "在左侧选择一个清单进行编辑，或新建一个。",
   "lists.import.craftingHelp": "以 JSON 导出的制作清单和从 Teamcraft 复制的清单也可以使用。",
@@ -846,5 +847,16 @@
   "api.reason.schema": "请求使用了此版本 Auto Shopper 不认识的 Buying API 架构",
   "api.reason.invalid": "请求无效（{0}）",
   "api.reason.consent": "请先在 Auto Shopper 的购物页面允许 {0}",
-  "api.reason.denied": "{0} 已被拒绝；请在 Auto Shopper 的设置、常规中允许它"
+  "api.reason.denied": "{0} 已被拒绝；请在 Auto Shopper 的设置、常规中允许它",
+  "api.consent.title": "{0} 想通过 Auto Shopper 购买。",
+  "api.consent.body": "它会为每次运行发送自己的购物清单和花费上限。你的试运行、服务器、保留金币和购买检查依然适用，你可以在设置、常规中撤销。",
+  "api.allow": "允许",
+  "api.deny": "拒绝",
+  "api.revoke": "撤销",
+  "api.allowed": "已允许",
+  "api.denied": "已拒绝",
+  "api.group": "其他插件",
+  "api.groupNone": "还没有插件请求通过 Auto Shopper 购买。",
+  "api.allowedHelp": "它可以通过 Auto Shopper 为物品报价并开始运行。撤销后它会再次请求。",
+  "api.deniedHelp": "在你允许之前，它的运行都会被拒绝。"
 }

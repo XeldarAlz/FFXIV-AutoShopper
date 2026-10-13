@@ -759,6 +759,7 @@
   "history.units.one": "{0} unidad",
   "history.units.other": "{0} unidades",
   "history.tooltip.list": "Lista: {0}",
+  "history.tooltip.via": "Vía {0}",
   "lists.noSelectionTitle": "Ninguna lista seleccionada",
   "lists.noSelectionBody": "Elige una lista a la izquierda para editarla o crea una nueva.",
   "lists.import.craftingHelp": "También sirven las listas de fabricación exportadas como JSON y las listas copiadas de Teamcraft.",
@@ -846,5 +847,16 @@
   "api.reason.schema": "la solicitud usa un esquema de la Buying API que esta versión de Auto Shopper no conoce",
   "api.reason.invalid": "la solicitud no es válida ({0})",
   "api.reason.consent": "permite primero a {0} en la página Compras de Auto Shopper",
-  "api.reason.denied": "{0} está denegado; permítelo en Ajustes, General de Auto Shopper"
+  "api.reason.denied": "{0} está denegado; permítelo en Ajustes, General de Auto Shopper",
+  "api.consent.title": "{0} quiere comprar a través de Auto Shopper.",
+  "api.consent.body": "Envía su propia lista de compra y un límite de gasto para cada ronda. Tu simulacro, tus mundos, tus guiles a conservar y las comprobaciones de compra siguen aplicándose, y puedes revocarlo en Ajustes, General.",
+  "api.allow": "Permitir",
+  "api.deny": "Denegar",
+  "api.revoke": "Revocar",
+  "api.allowed": "Permitido",
+  "api.denied": "Denegado",
+  "api.group": "Otros plugins",
+  "api.groupNone": "Ningún plugin ha pedido todavía comprar a través de Auto Shopper.",
+  "api.allowedHelp": "Puede tasar objetos e iniciar rondas a través de Auto Shopper. Al revocarlo, vuelve a preguntar.",
+  "api.deniedHelp": "Sus rondas se rechazan hasta que lo permitas."
 }

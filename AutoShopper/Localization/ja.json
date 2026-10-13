@@ -759,6 +759,7 @@
   "history.units.one": "{0} 個",
   "history.units.other": "{0} 個",
   "history.tooltip.list": "リスト：{0}",
+  "history.tooltip.via": "{0} 経由",
   "lists.noSelectionTitle": "リストが選ばれていません",
   "lists.noSelectionBody": "左のリストを選んで編集するか、新しいリストを作成してください。",
   "lists.import.craftingHelp": "JSON で書き出したクラフトリストや、Teamcraft からコピーしたリストも使えます。",
@@ -846,5 +847,16 @@
   "api.reason.schema": "このバージョンの Auto Shopper が知らない Buying API のスキーマが使われています",
   "api.reason.invalid": "リクエストが正しくありません（{0}）",
   "api.reason.consent": "まず Auto Shopper の買い物ページで {0} を許可してください",
-  "api.reason.denied": "{0} は拒否されています。Auto Shopper の設定の一般で許可してください"
+  "api.reason.denied": "{0} は拒否されています。Auto Shopper の設定の一般で許可してください",
+  "api.consent.title": "{0} が Auto Shopper を通じて購入しようとしています。",
+  "api.consent.body": "実行ごとに独自の買い物リストと支出上限を送ってきます。ドライラン、ワールド、手元に残すギル、購入の確認はそのまま適用され、設定の一般でいつでも取り消せます。",
+  "api.allow": "許可",
+  "api.deny": "拒否",
+  "api.revoke": "取り消す",
+  "api.allowed": "許可済み",
+  "api.denied": "拒否済み",
+  "api.group": "他のプラグイン",
+  "api.groupNone": "Auto Shopper を通じた購入を求めたプラグインはまだありません。",
+  "api.allowedHelp": "アイテムの価格を出し、Auto Shopper を通じて実行を開始できます。取り消すと、もう一度確認を求めます。",
+  "api.deniedHelp": "許可するまで、このプラグインの実行は拒否されます。"
 }

@@ -759,6 +759,7 @@
   "history.units.one": "{0} adet",
   "history.units.other": "{0} adet",
   "history.tooltip.list": "Liste: {0}",
+  "history.tooltip.via": "{0} üzerinden",
   "lists.noSelectionTitle": "Liste seçilmedi",
   "lists.noSelectionBody": "Düzenlemek için soldan bir liste seç ya da yeni bir tane başlat.",
   "lists.import.craftingHelp": "JSON olarak dışa aktarılan üretim listeleri ve Teamcraft'tan kopyalanan listeler de çalışır.",
@@ -846,5 +847,16 @@
   "api.reason.schema": "istek, Auto Shopper'ın bu sürümünün bilmediği bir Buying API şeması kullanıyor",
   "api.reason.invalid": "istek geçerli değil ({0})",
   "api.reason.consent": "önce Auto Shopper'ın Alışveriş sayfasında {0} eklentisine izin verin",
-  "api.reason.denied": "{0} reddedildi; Auto Shopper'da Ayarlar, Genel bölümünden izin verin"
+  "api.reason.denied": "{0} reddedildi; Auto Shopper'da Ayarlar, Genel bölümünden izin verin",
+  "api.consent.title": "{0}, Auto Shopper üzerinden satın almak istiyor.",
+  "api.consent.body": "Her tur için kendi alışveriş listesini ve bir harcama sınırı gönderir. Deneme turunuz, dünyalarınız, elde tutulacak gil ve satın alma denetimleri geçerli kalır; bunu Ayarlar, Genel bölümünden geri alabilirsiniz.",
+  "api.allow": "İzin ver",
+  "api.deny": "Reddet",
+  "api.revoke": "Geri al",
+  "api.allowed": "İzinli",
+  "api.denied": "Reddedildi",
+  "api.group": "Diğer eklentiler",
+  "api.groupNone": "Henüz hiçbir eklenti Auto Shopper üzerinden satın almak istemedi.",
+  "api.allowedHelp": "Eşyaların fiyatını çıkarabilir ve Auto Shopper üzerinden tur başlatabilir. Geri alırsanız yeniden sorar.",
+  "api.deniedHelp": "Siz izin verene kadar turları reddedilir."
 }

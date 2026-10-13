@@ -759,6 +759,7 @@
   "history.units.one": "{0} Stück",
   "history.units.other": "{0} Stück",
   "history.tooltip.list": "Liste: {0}",
+  "history.tooltip.via": "Über {0}",
   "lists.noSelectionTitle": "Keine Liste ausgewählt",
   "lists.noSelectionBody": "Wähle links eine Liste zum Bearbeiten oder lege eine neue an.",
   "lists.import.craftingHelp": "Als JSON exportierte Handwerkslisten und aus Teamcraft kopierte Listen funktionieren auch.",
@@ -846,5 +847,16 @@
   "api.reason.schema": "die Anfrage nutzt ein Schema der Buying API, das diese Version von Auto Shopper nicht kennt",
   "api.reason.invalid": "die Anfrage ist ungültig ({0})",
   "api.reason.consent": "erlaube {0} zuerst auf der Seite Einkauf von Auto Shopper",
-  "api.reason.denied": "{0} ist abgelehnt; erlaube es in Auto Shopper unter Einstellungen, Allgemein"
+  "api.reason.denied": "{0} ist abgelehnt; erlaube es in Auto Shopper unter Einstellungen, Allgemein",
+  "api.consent.title": "{0} möchte über Auto Shopper einkaufen.",
+  "api.consent.body": "Es schickt für jeden Lauf eine eigene Einkaufsliste und ein Ausgabelimit. Dein Probelauf, deine Welten, deine Gil-Reserve und die Kaufprüfungen gelten weiter, und du kannst das unter Einstellungen, Allgemein widerrufen.",
+  "api.allow": "Erlauben",
+  "api.deny": "Ablehnen",
+  "api.revoke": "Widerrufen",
+  "api.allowed": "Erlaubt",
+  "api.denied": "Abgelehnt",
+  "api.group": "Andere Plugins",
+  "api.groupNone": "Noch kein Plugin hat gefragt, ob es über Auto Shopper einkaufen darf.",
+  "api.allowedHelp": "Es kann Gegenstände bepreisen und Läufe über Auto Shopper starten. Nach dem Widerrufen fragt es erneut.",
+  "api.deniedHelp": "Seine Läufe werden abgelehnt, bis du es erlaubst."
 }
