@@ -254,11 +254,18 @@ internal static partial class L
         public static readonly LocString New = new("changelog.new", "New");
         public static readonly LocPlural Changes = new("changelog.changes", "{0} change", "{0} changes");
 
-        public static readonly LocString[] Release0100 =
+        public static readonly LocString[] Release1000 =
         [
-            new("changelog.r0100.1", "The first scaffold of Auto Shopper: the window, settings, History, Plugins and About pages are in place"),
-            new("changelog.r0100.2", "The travel engine carries over: world and data center travel through Lifestream, walking and flying, and /ashop goto to try it"),
-            new("changelog.r0100.3", "The console logs every step and copies a ready-made report for bug reports"),
+            new("changelog.r1000.1", "Shopping lists: add any marketable item by name or id, pick Any, HQ or NQ, buy a set amount or top up to what you want to own, and cap the price per unit, 5% fee included"),
+            new("changelog.r1000.2", "Imports plain text, CSV, Auto Shopper JSON, Artisan crafting lists and Teamcraft lists, expanding crafting lists into the ingredients to buy, with a crystal top-up helper and text, CSV or JSON exports"),
+            new("changelog.r1000.3", "Gets Universalis prices across the worlds and data centers of your region you allow, from a preset or picked world by world; Japanese data centers other than the one you are on stay off by default"),
+            new("changelog.r1000.4", "Plans the basket three ways (Cheapest, Balanced, Fewest stops) from whole listings only, within the extra units you allow, and shows the route, estimated totals and every unit it cannot cover; the plan copies as a checklist"),
+            new("changelog.r1000.5", "Travels between worlds and across data centers with Lifestream, carries on by itself after a data center transfer, and walks to a market board, in your preferred city when none is in reach"),
+            new("changelog.r1000.6", "Reads the live listings at every stop and plans what is left again from what the board really shows before it buys"),
+            new("changelog.r1000.7", "Checks every purchase before it is sent, one at a time: character, world, item, quality, stack size, the line's price cap, the run spend cap you must set, the gil you keep and your bag space; listings from your own retainers, mannequins and sets are never bought"),
+            new("changelog.r1000.8", "Writes each purchase to a journal before sending it, confirms it by the server's answer and the change in your gil and bags, and stops to ask you whenever an answer is unclear"),
+            new("changelog.r1000.9", "Pause, resume and stop a run from the window or with /ashop, then a way home and an after-run action, and History with copyable run summaries that hold no names or ids"),
+            new("changelog.r1000.10", "Dry run is on until you switch it off: a run does everything except buy; the switch sits next to Start and asks before it turns off"),
         ];
     }
 
