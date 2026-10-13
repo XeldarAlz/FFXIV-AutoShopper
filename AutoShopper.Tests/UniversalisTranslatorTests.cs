@@ -15,7 +15,7 @@ public sealed class UniversalisTranslatorTests
     {
         var chunk = Chunk(PriceQueryKind.DataCenter, "Aether", AetherWorlds, HighQualityItem, FireShard, Gil, OneGilItem);
 
-        var result = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk, FetchedAt);
+        var result = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk);
 
         Assert.False(result.Failed);
         Assert.Equal(4, result.Items.Length);
@@ -31,7 +31,7 @@ public sealed class UniversalisTranslatorTests
     {
         var chunk = Chunk(PriceQueryKind.DataCenter, "Aether", AetherWorlds, HighQualityItem, FireShard);
 
-        var result = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk, FetchedAt);
+        var result = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk);
         var offer = Item(result, HighQualityItem).Offers[0];
 
         Assert.Equal(Faerie.WorldId, offer.WorldId);
@@ -51,7 +51,7 @@ public sealed class UniversalisTranslatorTests
         var body = Read("dc-multi-full.json");
         var chunk = Chunk(PriceQueryKind.DataCenter, "Aether", AetherWorlds, HighQualityItem, FireShard);
 
-        var result = UniversalisTranslator.Translate(body, chunk, FetchedAt);
+        var result = UniversalisTranslator.Translate(body, chunk);
 
         using var document = JsonDocument.Parse(body);
         var checkedListings = 0;
@@ -78,8 +78,8 @@ public sealed class UniversalisTranslatorTests
     {
         var chunk = Chunk(PriceQueryKind.DataCenter, "Aether", AetherWorlds, HighQualityItem, FireShard);
 
-        var full = UniversalisTranslator.Translate(Read("dc-multi-full.json"), chunk, FetchedAt);
-        var trimmed = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk, FetchedAt);
+        var full = UniversalisTranslator.Translate(Read("dc-multi-full.json"), chunk);
+        var trimmed = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk);
 
         var fullOffers = Item(full, FireShard).Offers;
         var trimmedOffers = Item(trimmed, FireShard).Offers;
@@ -94,7 +94,7 @@ public sealed class UniversalisTranslatorTests
     {
         var chunk = Chunk(PriceQueryKind.DataCenter, "Aether", [Jenova, Faerie], HighQualityItem, FireShard);
 
-        var result = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk, FetchedAt);
+        var result = UniversalisTranslator.Translate(Read("dc-multi-trimmed.json"), chunk);
 
         Assert.Equal(3, Item(result, HighQualityItem).Offers.Length);
         var fireShards = Item(result, FireShard).Offers;
@@ -112,7 +112,7 @@ public sealed class UniversalisTranslatorTests
     {
         var chunk = Chunk(PriceQueryKind.Region, "North-America", [Exodus, Rafflesia, Phantom], HighQualityItem, OneGilItem);
 
-        var result = UniversalisTranslator.Translate(Read("region-multi-trimmed.json"), chunk, FetchedAt);
+        var result = UniversalisTranslator.Translate(Read("region-multi-trimmed.json"), chunk);
         var item = Item(result, HighQualityItem);
 
         Assert.Equal(2, item.Offers.Length);
@@ -131,7 +131,7 @@ public sealed class UniversalisTranslatorTests
     {
         var chunk = Chunk(PriceQueryKind.World, "73", [Adamantoise], HighQualityItem);
 
-        var result = UniversalisTranslator.Translate(Read("world-single-trimmed.json"), chunk, FetchedAt);
+        var result = UniversalisTranslator.Translate(Read("world-single-trimmed.json"), chunk);
         var item = Item(result, HighQualityItem);
 
         Assert.Equal(4, item.Offers.Length);
@@ -151,7 +151,7 @@ public sealed class UniversalisTranslatorTests
     {
         var chunk = Chunk(PriceQueryKind.DataCenter, "Aether", AetherWorlds, OneGilItem);
 
-        var result = UniversalisTranslator.Translate(Read("dc-single-trimmed.json"), chunk, FetchedAt);
+        var result = UniversalisTranslator.Translate(Read("dc-single-trimmed.json"), chunk);
         var item = Item(result, OneGilItem);
 
         Assert.Equal(3, item.Offers.Length);
@@ -174,7 +174,7 @@ public sealed class UniversalisTranslatorTests
             """;
         var chunk = Chunk(PriceQueryKind.DataCenter, "Aether", [Faerie], 10, 11);
 
-        var result = UniversalisTranslator.Translate(Encoding.UTF8.GetBytes(body), chunk, FetchedAt);
+        var result = UniversalisTranslator.Translate(Encoding.UTF8.GetBytes(body), chunk);
         var item = Item(result, 10);
 
         var offer = Assert.Single(item.Offers);
@@ -190,7 +190,7 @@ public sealed class UniversalisTranslatorTests
         const string body = """{"itemIDs":[10,11],"items":{"10":{"itemID":10,"lastUploadTime":0,"hasData":false,"listings":[]},"11":{"itemID":11,"hasData":true,"listings":[]}},"unresolvedItems":[]}""";
         var chunk = Chunk(PriceQueryKind.DataCenter, "Aether", [Faerie, Jenova], 10, 11);
 
-        var result = UniversalisTranslator.Translate(Encoding.UTF8.GetBytes(body), chunk, FetchedAt);
+        var result = UniversalisTranslator.Translate(Encoding.UTF8.GetBytes(body), chunk);
 
         Assert.Equal(PriceCoverage.NoData, Item(result, 10).Coverage);
         Assert.False(Item(result, 10).HasAnyUpload);
@@ -214,7 +214,7 @@ public sealed class UniversalisTranslatorTests
         builder.Append("]}");
         var chunk = Chunk(PriceQueryKind.World, "54", [Faerie], 10);
 
-        var result = UniversalisTranslator.Translate(Encoding.UTF8.GetBytes(builder.ToString()), chunk, FetchedAt);
+        var result = UniversalisTranslator.Translate(Encoding.UTF8.GetBytes(builder.ToString()), chunk);
 
         Assert.Equal(PriceCoverage.Truncated, Item(result, 10).Coverage);
         Assert.Equal(UniversalisTranslator.TruncationThreshold, Item(result, 10).Offers.Length);
@@ -228,7 +228,7 @@ public sealed class UniversalisTranslatorTests
     {
         var chunk = Chunk(PriceQueryKind.DataCenter, "Aether", [Faerie], 10, 11);
 
-        var result = UniversalisTranslator.Translate(Encoding.UTF8.GetBytes(body), chunk, FetchedAt);
+        var result = UniversalisTranslator.Translate(Encoding.UTF8.GetBytes(body), chunk);
 
         Assert.Equal(PriceFailure.Malformed, result.Failure);
         Assert.Equal(PriceCoverage.RequestFailed, Item(result, 10).Coverage);

@@ -25,7 +25,7 @@ internal static class UniversalisTranslator
     private const long MaximumUnixMilliseconds = 253_402_300_799_999;
     private const long MaximumUnixSeconds = MaximumUnixMilliseconds / 1000;
 
-    public static ChunkPrices Translate(ReadOnlySpan<byte> body, PriceChunk chunk, DateTime fetchedAtUtc)
+    public static ChunkPrices Translate(ReadOnlySpan<byte> body, PriceChunk chunk)
     {
         UniversalisView? view;
         try
@@ -37,10 +37,10 @@ internal static class UniversalisTranslator
             return ChunkPrices.FailedWith(chunk, PriceFailure.Malformed);
         }
 
-        return view is null ? ChunkPrices.FailedWith(chunk, PriceFailure.Malformed) : Translate(view, chunk, fetchedAtUtc);
+        return view is null ? ChunkPrices.FailedWith(chunk, PriceFailure.Malformed) : Translate(view, chunk);
     }
 
-    public static ChunkPrices Translate(UniversalisView view, PriceChunk chunk, DateTime fetchedAtUtc)
+    public static ChunkPrices Translate(UniversalisView view, PriceChunk chunk)
     {
         var query = chunk.Query;
         var worldKeys = new string[query.Worlds.Length];
@@ -63,7 +63,7 @@ internal static class UniversalisTranslator
             var itemView = FindItem(view, itemId);
             items[index] = itemView is null
                 ? ItemPrices.WithoutData(itemId, query.Worlds, PriceCoverage.NotReturned)
-                : TranslateItem(itemView, itemId, query, worldKeys, fetchedAtUtc);
+                : TranslateItem(itemView, itemId, query, worldKeys);
         }
 
         return new ChunkPrices
@@ -84,7 +84,7 @@ internal static class UniversalisTranslator
         return view.ItemId == itemId ? view : null;
     }
 
-    private static ItemPrices TranslateItem(UniversalisView item, uint itemId, PriceQuery query, string[] worldKeys, DateTime fetchedAtUtc)
+    private static ItemPrices TranslateItem(UniversalisView item, uint itemId, PriceQuery query, string[] worldKeys)
     {
         var worlds = query.Worlds;
         var uploads = new DateTime[worlds.Length];
@@ -107,7 +107,9 @@ internal static class UniversalisTranslator
                 continue;
             }
 
-            var observedAt = uploads[worldIndex] != default ? uploads[worldIndex] : FromUnixSeconds(listing.LastReviewTime, fetchedAtUtc);
+            // A listing with neither an upload time nor a review time has an unknown age: its offer carries no observed
+            // time and the world keeps its coverage flag, rather than passing the fetch time off as a fresh upload.
+            var observedAt = uploads[worldIndex] != default ? uploads[worldIndex] : FromUnixSeconds(listing.LastReviewTime);
             if (!TryCreateOffer(listing, worlds[worldIndex], itemId, observedAt, out var offer))
             {
                 itemCoverage |= PriceCoverage.InvalidListings;
@@ -116,7 +118,7 @@ internal static class UniversalisTranslator
 
             offers.Add(offer);
             counts[worldIndex]++;
-            if (uploads[worldIndex] == default)
+            if (uploads[worldIndex] == default && observedAt != default)
             {
                 uploads[worldIndex] = observedAt;
                 coverages[worldIndex] &= ~(PriceCoverage.NoData | PriceCoverage.MissingWorld);
@@ -203,11 +205,11 @@ internal static class UniversalisTranslator
         return PlanOffer.TryCreateEstimate(world.WorldId, world.DataCenterId, itemId, listing.IsHq, (int)listing.Quantity, listing.PricePerUnit, key, observedAt, out offer);
     }
 
-    private static DateTime FromUnixSeconds(long seconds, DateTime fallback)
+    private static DateTime FromUnixSeconds(long seconds)
     {
         if (seconds <= 0 || seconds > MaximumUnixSeconds)
         {
-            return fallback;
+            return default;
         }
 
         return DateTimeOffset.FromUnixTimeSeconds(seconds).UtcDateTime;

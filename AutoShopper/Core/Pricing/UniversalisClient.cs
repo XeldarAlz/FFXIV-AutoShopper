@@ -134,7 +134,7 @@ internal sealed class UniversalisClient : IDisposable
             {
                 case ResponseClass.Success:
                     var body = await response.Content.ReadAsByteArrayAsync(timeout.Token).ConfigureAwait(false);
-                    return Attempt.Done(UniversalisTranslator.Translate(body, chunk, time.GetUtcNow().UtcDateTime));
+                    return Attempt.Done(UniversalisTranslator.Translate(body, chunk));
                 case ResponseClass.NotFound:
                     return Attempt.Done(ChunkPrices.FailedWith(chunk, PriceFailure.NotFound));
                 case ResponseClass.Retry:
