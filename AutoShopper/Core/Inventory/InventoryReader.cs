@@ -1,9 +1,15 @@
+using System.Collections.Immutable;
 using AutoShopper.Core.Shopping.Model;
 using Dalamud.Plugin.Services;
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace AutoShopper.Core.Inventory;
+
+internal readonly record struct LiveInventory(bool Available, long Gil, int FreeSlots, int OwnedNormal, int OwnedHigh)
+{
+    public int Owned => OwnedNormal + OwnedHigh;
+}
 
 // Owned counts for the items the window is showing, read on the framework thread about once a second and cached for
 // the draw code. The game's count covers the four bags, the crystal pouch, the armory chest and equipped gear;
@@ -54,6 +60,45 @@ internal sealed unsafe class InventoryReader : IDisposable
 
         owned = default;
         return false;
+    }
+
+    // Read straight from the game, for a check right before a purchase; framework thread only.
+    public static LiveInventory ReadLive(uint itemId)
+    {
+        var manager = InventoryManager.Instance();
+        if (manager == null || !Svc.ClientState.IsLoggedIn)
+        {
+            return default;
+        }
+
+        return new LiveInventory(
+            true,
+            manager->GetGil(),
+            (int)manager->GetEmptySlotsInBag(),
+            itemId == 0 ? 0 : manager->GetInventoryItemCount(itemId, isHq: false, checkEquipped: true, checkArmory: true),
+            itemId == 0 ? 0 : manager->GetInventoryItemCount(itemId, isHq: true, checkEquipped: true, checkArmory: true));
+    }
+
+    // Empty until the game has loaded the retainer list, which it does at a summoning bell.
+    public static ImmutableArray<ulong> OwnRetainerIds()
+    {
+        var retainers = RetainerManager.Instance();
+        if (retainers == null || !retainers->IsReady)
+        {
+            return ImmutableArray<ulong>.Empty;
+        }
+
+        var builder = ImmutableArray.CreateBuilder<ulong>(retainers->Retainers.Length);
+        for (var index = 0; index < retainers->Retainers.Length; index++)
+        {
+            var retainerId = retainers->Retainers[index].RetainerId;
+            if (retainerId != 0)
+            {
+                builder.Add(retainerId);
+            }
+        }
+
+        return builder.ToImmutable();
     }
 
     private void OnUpdate(IFramework framework)

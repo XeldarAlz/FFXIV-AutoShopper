@@ -19,7 +19,7 @@ internal static class Formatting
         return $"{t.Minutes}m {t.Seconds:D2}s";
     }
 
-    public static string Gil(long amount) => Loc.T(L.Plan.Gil, amount.ToString("N0", Loc.Culture));
+    public static string Gil(long amount) => Loc.Gil(amount);
 
     public static string RelativeTime(DateTime utc) => RelativeTime(utc, DateTime.UtcNow);
 

@@ -57,6 +57,8 @@ internal static class Loc
 
     public static string T(LocString entry, params object[] args) => string.Format(culture, T(entry), args);
 
+    public static string Gil(long amount) => T(L.Plan.Gil, amount.ToString("N0", culture));
+
     public static string Plural(LocPlural entry, int count) => string.Format(culture, FormatFor(PluralTemplate(entry, count)), count);
 
     public static string Plural<T1>(LocPlural entry, int count, T1 arg1) => string.Format(culture, FormatFor(PluralTemplate(entry, count)), count, arg1);

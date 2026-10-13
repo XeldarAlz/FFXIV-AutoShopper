@@ -3,6 +3,7 @@ using AutoShopper.Core.Debug;
 using AutoShopper.Core.Game.Watchers;
 using AutoShopper.Core.Inventory;
 using AutoShopper.Core.Items;
+using AutoShopper.Core.Ledger;
 using AutoShopper.Core.Localization;
 using AutoShopper.Core.Market;
 using AutoShopper.Core.Preview;
@@ -31,6 +32,8 @@ public sealed class Plugin : IDalamudPlugin
     private const string GotoSubcommand = "goto";
     private const string BoardSubcommand = "board";
     private const string AddSubcommand = "add";
+    private const string StartSubcommand = "start";
+    private const string StopSubcommand = "stop";
     private const string NavmeshIpcProviderMarker = "Navmesh.IPCProvider";
     // Lifestream's own budget for a data center transfer is up to an hour; a plan older than this is a leftover, not a journey in flight.
     private static readonly TimeSpan PendingJourneyMaxAge = TimeSpan.FromMinutes(90);
@@ -53,6 +56,7 @@ public sealed class Plugin : IDalamudPlugin
     internal PriceService Prices { get; }
     internal PlanPreview Preview { get; }
     internal MarketServices Market { get; }
+    internal ShopLedger Ledger { get; }
 
     private readonly DutyWatcher dutyWatcher;
     private readonly GmAlertWatcher gmAlertWatcher;
@@ -82,6 +86,8 @@ public sealed class Plugin : IDalamudPlugin
         Prices = new PriceService(typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "0");
         Preview = new PlanPreview(Configuration, Lists, Inventory, Prices);
         Market = new MarketServices(Configuration);
+        Ledger = new ShopLedger(PluginInterface.ConfigDirectory.FullName);
+        RotateLedger();
         dutyWatcher = new DutyWatcher();
         gmAlertWatcher = new GmAlertWatcher();
 
@@ -100,6 +106,7 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
 
         Svc.ClientState.Login += OnLogin;
+        Svc.ClientState.Logout += OnLogout;
         if (Svc.ClientState.IsLoggedIn)
         {
             OnLogin();
@@ -110,13 +117,14 @@ public sealed class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
-        Controller.Stop();
+        Controller.Shutdown();
         TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
 
         PluginInterface.UiBuilder.Draw -= OnDraw;
         PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfigUi;
         PluginInterface.UiBuilder.OpenMainUi -= ToggleMainUi;
         Svc.ClientState.Login -= OnLogin;
+        Svc.ClientState.Logout -= OnLogout;
         Configuration.SaveIfPending();
 
         WindowSystem.RemoveAllWindows();
@@ -183,6 +191,14 @@ public sealed class Plugin : IDalamudPlugin
         else if (trimmed.Equals("changelog", StringComparison.OrdinalIgnoreCase))
         {
             ToggleChangelogUi();
+        }
+        else if (trimmed.Equals(StartSubcommand, StringComparison.OrdinalIgnoreCase))
+        {
+            Controller.Start();
+        }
+        else if (trimmed.Equals(StopSubcommand, StringComparison.OrdinalIgnoreCase))
+        {
+            Controller.Stop();
         }
         else if (trimmed.Equals("pause", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("resume", StringComparison.OrdinalIgnoreCase))
         {
@@ -275,6 +291,27 @@ public sealed class Plugin : IDalamudPlugin
 
         var osLanguage = CultureInfo.InstalledUICulture.TwoLetterISOLanguageName;
         return Languages.IsKnown(osLanguage) ? Languages.Resolve(osLanguage).Code : Languages.English.Code;
+    }
+
+    private void OnLogout(int type, int code)
+    {
+        Controller.Interrupt();
+    }
+
+    // Finished runs move to a dated archive at load, so the journal only holds what may still need an answer.
+    private void RotateLedger()
+    {
+        var rotation = Ledger.Rotate(DateTime.UtcNow);
+        if (!rotation.Succeeded)
+        {
+            RunLog.Warning($"Journal: rotating the purchase journal failed: {rotation.Error}.");
+            return;
+        }
+
+        if (rotation.ArchivedRuns > 0)
+        {
+            RunLog.Info($"Journal: {rotation.ArchivedRuns} finished run(s) moved to {rotation.ArchivePath}; {rotation.KeptRuns} kept.");
+        }
     }
 
     private void OnLogin()

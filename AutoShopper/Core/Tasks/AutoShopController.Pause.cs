@@ -10,7 +10,7 @@ internal sealed partial class AutoShopController
 
     public bool Paused => PauseReason != PauseReason.None;
 
-    public bool CanPause => session is not null && Phase is not (RunPhase.Idle or RunPhase.Paused or RunPhase.Finishing);
+    public bool CanPause => session is not null && Phase is not (RunPhase.Idle or RunPhase.Paused or RunPhase.Finishing or RunPhase.Stopping);
 
     public void Pause(PauseReason reason)
     {
@@ -43,6 +43,7 @@ internal sealed partial class AutoShopController
         var pausing = session!;
         PauseReason = reason;
         progress.SetPhase(RunPhase.Paused);
+        shopRun?.SetState(Execution.Model.RunState.Paused);
         pausing.BeginPause();
         currentTask = null;
         Svc.Automation.Stop();

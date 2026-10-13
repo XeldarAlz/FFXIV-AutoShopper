@@ -1,3 +1,4 @@
+using AutoShopper.Core.Execution.Model;
 using AutoShopper.Core.Stats;
 using AutoShopper.Core.Travel;
 
@@ -31,6 +32,11 @@ internal sealed partial class AutoShopController
 
     private void EndRun(ShopSession owningSession)
     {
+        if (ReferenceEquals(session, owningSession) && owningSession.Outcome is null)
+        {
+            EndShopRun(owningSession, owningSession.EndedWithFault ? RunState.Failed : RunState.Stopped, owningSession.EndedWithFault ? "an unexpected error" : "the run task ended");
+        }
+
         FinalizeRun(owningSession);
         if (!ReferenceEquals(session, owningSession))
         {
@@ -161,6 +167,12 @@ internal sealed partial class AutoShopController
 
         ending.Recorded = true;
         ending.End();
+        if (ending.Interrupted)
+        {
+            Diag("Run was interrupted; it stays in the journal to resume and leaves no history row yet.");
+            return;
+        }
+
         try
         {
             var outcome = ending.Outcome ?? (ending.EndedWithFault ? RunOutcome.Failed : RunOutcome.Stopped);
@@ -180,9 +192,14 @@ internal sealed partial class AutoShopController
                 DataCenterName = ending.DataCenterName,
                 CrossedDataCenter = ending.CrossedDataCenter,
                 Outcome = outcome,
+                ListName = ending.ListName,
+                DryRun = ending.DryRun,
+                Spent = ending.Spent,
+                Units = ending.Units,
+                Purchases = ending.Purchases,
             };
             Plugin.Instance.History.Append(record);
-            Diag($"Run recorded to history ({outcome}): {record.Duration} on {record.WorldName} ({record.DataCenterName}){(record.CrossedDataCenter ? ", across data centers" : string.Empty)}.");
+            Diag($"Run recorded to history ({outcome}{(record.DryRun ? ", dry run" : string.Empty)}): {record.Duration} on {record.WorldName} ({record.DataCenterName}), {record.Units} unit(s) for {record.Spent} gil{(record.CrossedDataCenter ? ", across data centers" : string.Empty)}.");
         }
         catch (Exception exception)
         {

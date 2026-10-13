@@ -18,6 +18,9 @@ internal sealed class HistoryPage
     private const string NoValue = "-";
     private const float BadgeGap = 6f;
 
+    private static readonly Dictionary<RunRecord, string> details = new(ReferenceEqualityComparer.Instance);
+    private static LanguageInfo? detailLanguage;
+
     private bool confirmClear;
     private CachedText finishedText;
     private CachedText timeText;
@@ -202,7 +205,7 @@ internal sealed class HistoryPage
         var midY = origin.Y + size.Y * 0.5f;
         var textX = DrawRunIcon(origin.X + padX, midY);
         var when = Formatting.RelativeTime(record.EndedAtUtc);
-        var detail = Loc.T(L.History.RowDetail, WhereText(record.WorldName, record.DataCenterName), Formatting.Elapsed(record.Duration));
+        var detail = RowDetail(record);
 
         var whenSize = TextDraw.Measure(when);
         Vector2 detailSize;
@@ -213,7 +216,12 @@ internal sealed class HistoryPage
 
         var top = midY - (whenSize.Y + 3f * scale + detailSize.Y) * 0.5f;
         TextDraw.At(when, new Vector2(textX, top), Styling.TextStrong);
-        DrawOutcomeBadge(drawList, record, textX + whenSize.X + BadgeGap * 2f * scale, top + whenSize.Y * 0.5f);
+        var badgeX = textX + whenSize.X + BadgeGap * 2f * scale;
+        badgeX += DrawOutcomeBadge(drawList, record, badgeX, top + whenSize.Y * 0.5f);
+        if (record.DryRun)
+        {
+            Badge.DrawLeft(drawList, Loc.T(L.History.DryRun), Styling.AccentBlue, badgeX + BadgeGap * scale, top + whenSize.Y * 0.5f);
+        }
         using (Fonts.PushCaption())
         {
             TextDraw.At(detail, new Vector2(textX, top + whenSize.Y + 3f * scale), Styling.TextDim);
@@ -225,14 +233,39 @@ internal sealed class HistoryPage
         }
     }
 
-    private static void DrawOutcomeBadge(ImDrawListPtr drawList, RunRecord record, float x, float midY)
+    private static float DrawOutcomeBadge(ImDrawListPtr drawList, RunRecord record, float x, float midY)
     {
         if (record.Outcome is not { } outcome)
         {
-            return;
+            return 0f;
         }
 
-        Badge.DrawLeft(drawList, OutcomeLabel(outcome), OutcomeColor(outcome), x, midY);
+        return Badge.DrawLeft(drawList, OutcomeLabel(outcome), OutcomeColor(outcome), x, midY);
+    }
+
+    // Built once per row and language: a recorded run never changes.
+    private static string RowDetail(RunRecord record)
+    {
+        if (!ReferenceEquals(detailLanguage, Loc.Current))
+        {
+            details.Clear();
+            detailLanguage = Loc.Current;
+        }
+
+        if (details.TryGetValue(record, out var cached))
+        {
+            return cached;
+        }
+
+        var detail = Loc.T(L.History.RowDetail, WhereText(record.WorldName, record.DataCenterName), Formatting.Elapsed(record.Duration));
+        if (record.Units > 0 || record.Spent > 0)
+        {
+            var spent = Loc.T(record.DryRun ? L.History.WouldSpend : L.History.Spent, Formatting.Gil(record.Spent));
+            detail = string.Concat(detail, TextDraw.Separator, spent, TextDraw.Separator, Loc.Plural(L.History.Units, record.Units));
+        }
+
+        details[record] = detail;
+        return detail;
     }
 
     private static string OutcomeLabel(RunOutcome outcome) => outcome switch
@@ -240,6 +273,7 @@ internal sealed class HistoryPage
         RunOutcome.Completed => Loc.T(L.History.OutcomeCompleted),
         RunOutcome.CompletedPartial => Loc.T(L.History.OutcomeCompletedPartial),
         RunOutcome.Stopped => Loc.T(L.History.OutcomeStopped),
+        RunOutcome.NeedsReconciliation => Loc.T(L.History.OutcomeNeedsReconciliation),
         _ => Loc.T(L.History.OutcomeFailed),
     };
 
@@ -272,6 +306,11 @@ internal sealed class HistoryPage
         if (record.CrossedDataCenter)
         {
             lines += "\n" + Loc.T(L.History.TooltipCrossed);
+        }
+
+        if (record.ListName.Length > 0)
+        {
+            lines += "\n" + Loc.T(L.History.TooltipList, record.ListName);
         }
 
         return lines;

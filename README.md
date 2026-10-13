@@ -16,7 +16,7 @@
   <em>Your market board shopping list, bought for you. Built on Dalamud.</em>
 </p>
 
-> **In development, not usable yet.** This is an early scaffold: the window, settings, console and travel engine are in place, but the plugin cannot shop. Shopping lists, price planning and buying arrive in the next updates.
+> **In development, not released yet.** Shopping lists, price planning and a guarded buyer for the market board on your current world are in place, with dry run on by default. Travel between worlds arrives in the next updates.
 
 ---
 
@@ -67,6 +67,8 @@ The plugin needs two helpers to be installed and loaded: vnavmesh for movement a
 | `/ashop changelog` | Open the Changelog page |
 | `/ashop about` | Open the About page |
 | `/ashop add <item name or id> [quantity]` | Add an item to the selected shopping list |
+| `/ashop start` | Start a run of the selected list (a dry run while dry run is on) |
+| `/ashop stop` | Stop the run; a purchase already sent is answered first |
 | `/ashop pause` | Pause or resume the current run |
 | `/ashop look <item name or id>` | Log every listing of one item at the market board in reach; it never buys (debug helper) |
 | `/ashop mbstatus` | Report whether the market board addresses and hooks of this game version are in place (debug helper) |

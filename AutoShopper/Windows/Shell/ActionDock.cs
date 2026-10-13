@@ -1,4 +1,5 @@
 using AutoShopper.Core.Localization;
+using AutoShopper.Core.Tasks;
 using AutoShopper.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility;
@@ -51,7 +52,7 @@ internal static class ActionDock
         ImGui.SameLine(0f, gap);
 
         var session = controller.SessionSnapshot;
-        var state = controller.Paused ? Loc.T(L.Shop.StatePaused) : Loc.T(L.Shop.StateRunning);
+        var state = controller.Stopping ? Loc.T(L.Shop.StateStopping) : controller.Paused ? Loc.T(L.Shop.StatePaused) : Loc.T(L.Shop.StateRunning);
         var stopSub = session is null ? state : Loc.T(L.Shop.StopSub, state, Formatting.Elapsed(session.Elapsed));
         if (StopButton.Draw(stopSub, half))
         {
@@ -61,9 +62,8 @@ internal static class ActionDock
 
     private static void DrawStart(float innerWidth)
     {
-        // No readiness enables the button yet: the shop run task arrives with the shopping lists.
         var readiness = ShopLauncher.Assess();
-        if (StartButton.Draw(ShopLauncher.Sublabel(), false, ShopLauncher.Reason(readiness), innerWidth))
+        if (StartButton.Draw(ShopLauncher.Sublabel(), readiness == Readiness.Ready, ShopLauncher.Reason(readiness), innerWidth))
         {
             ShopLauncher.Start();
         }

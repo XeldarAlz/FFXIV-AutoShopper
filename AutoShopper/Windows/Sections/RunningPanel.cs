@@ -24,25 +24,56 @@ internal static class RunningPanel
     private const float BarHeight = 8f;
     private const float HeaderFooterGap = 16f;
     private const int TileCount = 2;
+    private const int ShopTileCount = 4;
+    private const float SectionGap = 18f;
+    private const float RowHeight = 34f;
+    private const float RowIconSize = 24f;
+    private const float RowPadX = 14f;
+    private const float ProgressColumnWidth = 110f;
+    private const float SpentColumnWidth = 120f;
+    private const float RowBarHeight = 3f;
+    private const float IssueRowHeight = 42f;
     private const string NoValue = "-";
 
     private static uint cachedTerritoryId = uint.MaxValue;
     private static string cachedZoneName = string.Empty;
+    private static RunView? view;
 
     public static void Draw(AutoShopController controller)
     {
         var paused = controller.Paused;
         var (accent, accentSoft, label) = PhasePalette(controller);
+        var run = controller.ShopRun;
 
-        DrawHeaderStrip(CurrentZoneName(), accent, accentSoft, paused);
+        DrawHeaderStrip(CurrentZoneName(), accent, accentSoft, paused, run is { DryRun: true });
         Styling.VSpace(6f);
         DrawHeroCard(controller, accent, accentSoft, label);
 
         Styling.VSpace(10f);
-        DrawStatTiles(controller);
+        if (run is null)
+        {
+            DrawStatTiles(controller);
+            return;
+        }
+
+        var current = EnsureView(run);
+        DrawShopTiles(controller, current);
+        DrawLines(current);
+        DrawIssues(current);
     }
 
-    private static void DrawHeaderStrip(string footer, Vector4 accent, Vector4 accentSoft, bool paused)
+    private static RunView EnsureView(ShopRunState run)
+    {
+        var withNames = Plugin.Instance.Items.IsReady;
+        if (view is null || !view.IsCurrent(run, withNames))
+        {
+            view = RunView.Build(run, withNames);
+        }
+
+        return view;
+    }
+
+    private static void DrawHeaderStrip(string footer, Vector4 accent, Vector4 accentSoft, bool paused, bool dryRun)
     {
         var scale = ImGuiHelpers.GlobalScale;
         var drawList = ImGui.GetWindowDrawList();
@@ -59,10 +90,16 @@ internal static class RunningPanel
         var statusSize = TextDraw.SmallCapsSize(status);
         var statusX = origin.X + radius * 2f + 12f * scale;
         TextDraw.SmallCaps(status, new Vector2(statusX, midY - statusSize.Y * 0.5f), Styling.TextSecondary);
+        var statusEnd = statusX + statusSize.X;
+        if (dryRun)
+        {
+            statusEnd += HeaderFooterGap * scale * 0.5f;
+            statusEnd += Badge.DrawLeft(drawList, Loc.T(L.Market.DryRunBadge), Styling.AccentBlue, statusEnd, midY);
+        }
 
         using (Fonts.PushCaption())
         {
-            var footerLeft = statusX + statusSize.X + HeaderFooterGap * scale;
+            var footerLeft = statusEnd + HeaderFooterGap * scale;
             var footerText = TextDraw.Truncate(footer, origin.X + available - footerLeft);
             var footerSize = TextDraw.Measure(footerText);
             TextDraw.At(footerText, new Vector2(origin.X + available - footerSize.X, midY - footerSize.Y * 0.5f), Styling.TextMuted);
@@ -177,6 +214,11 @@ internal static class RunningPanel
             return (Styling.TextDim, Styling.TextSecondary, Loc.T(L.Run.PhaseReady));
         }
 
+        if (controller.Stopping)
+        {
+            return (Styling.AccentAmber, Styling.AccentAmberSoft, Loc.T(L.Run.PhaseStopping));
+        }
+
         if (controller.Paused)
         {
             return controller.PauseReason == PauseReason.InContent
@@ -203,6 +245,136 @@ internal static class RunningPanel
         StatTile.Draw(Loc.T(L.Run.TileElapsed), Formatting.Elapsed(session?.Elapsed ?? TimeSpan.Zero), null, Styling.AccentBlue, tileWidth);
         ImGui.SameLine(0, gap);
         StatTile.Draw(Loc.T(L.Run.TileWorld), known ? current.Name : NoValue, known ? current.DataCenterName : null, Styling.AccentNebula, tileWidth);
+    }
+
+    private static void DrawShopTiles(AutoShopController controller, RunView current)
+    {
+        var session = controller.SessionSnapshot;
+        var scale = ImGuiHelpers.GlobalScale;
+        var gap = 8f * scale;
+        var tileWidth = (ImGui.GetContentRegionAvail().X - gap * (ShopTileCount - 1)) / ShopTileCount;
+        var known = Worlds.TryCurrent(out var world);
+
+        StatTile.Draw(Loc.T(L.Run.TileElapsed), Formatting.Elapsed(session?.Elapsed ?? TimeSpan.Zero), null, Styling.AccentBlue, tileWidth);
+        ImGui.SameLine(0, gap);
+        StatTile.Draw(Loc.T(L.Run.TileWorld), known ? world.Name : NoValue, known ? world.DataCenterName : null, Styling.AccentNebula, tileWidth);
+        ImGui.SameLine(0, gap);
+        StatTile.Draw(current.SpentLabel, current.SpentValue, current.SpentSub, Styling.AccentMint, tileWidth);
+        ImGui.SameLine(0, gap);
+        StatTile.Draw(Loc.T(L.Run.TileBudgetLeft), current.BudgetValue, current.BudgetSub, Styling.AccentAmber, tileWidth);
+    }
+
+    private static void DrawLines(RunView current)
+    {
+        if (current.Lines.Length == 0)
+        {
+            return;
+        }
+
+        GroupLabel.Draw(Loc.T(L.Run.Lines), SectionGap, 6f);
+        var scale = ImGuiHelpers.GlobalScale;
+        var width = ImGui.GetContentRegionAvail().X;
+        var origin = ImGui.GetCursorScreenPos();
+        var height = current.Lines.Length * RowHeight * scale;
+        var drawList = ImGui.GetWindowDrawList();
+        Paint.Surface(drawList, origin, origin + new Vector2(width, height), Styling.CardRounding * scale, Styling.WithAlpha(Styling.Surface1, 0.45f), Styling.WithAlpha(Styling.BorderDim, 0.5f), topLight: false);
+        var rowY = origin.Y;
+        for (var index = 0; index < current.Lines.Length; index++)
+        {
+            DrawLine(current.Lines[index], origin.X, rowY, width, drawList);
+            rowY += RowHeight * scale;
+        }
+
+        ImGui.Dummy(new Vector2(width, height));
+    }
+
+    private static void DrawLine(in RunLineView line, float left, float top, float width, ImDrawListPtr drawList)
+    {
+        var scale = ImGuiHelpers.GlobalScale;
+        var height = RowHeight * scale;
+        if (!ImGui.IsRectVisible(new Vector2(left, top), new Vector2(left + width, top + height)))
+        {
+            return;
+        }
+
+        var padX = RowPadX * scale;
+        var midY = top + height * 0.5f;
+        var iconSize = RowIconSize * scale;
+        ItemIcon.Draw(drawList, line.IconId, new Vector2(left + padX, midY - iconSize * 0.5f), iconSize, line.HighQuality);
+
+        var right = left + width - padX;
+        var progressRight = right - SpentColumnWidth * scale;
+        var nameX = left + padX + iconSize + 10f * scale;
+        var nameRight = progressRight - ProgressColumnWidth * scale;
+        var textY = midY - ImGui.GetTextLineHeight() * 0.5f;
+        var badgeWidth = 0f;
+        if (line.Quality is { } quality)
+        {
+            using (Fonts.PushCaption())
+            {
+                badgeWidth = TextDraw.Measure(quality).X + 24f * scale;
+            }
+        }
+
+        var name = TextDraw.Truncate(line.Name, MathF.Max(0f, nameRight - nameX - badgeWidth));
+        TextDraw.At(name, new Vector2(nameX, textY), line.Satisfied ? Styling.AccentMintSoft : Styling.TextStrong);
+        if (line.Quality is { } label)
+        {
+            Badge.DrawLeft(drawList, label, line.HighQuality ? Styling.AccentAmber : Styling.TextDim, nameX + TextDraw.Measure(name).X + 8f * scale, midY);
+        }
+
+        TextDraw.Right(line.Progress, progressRight, textY, line.Satisfied ? Styling.AccentMintSoft : Styling.TextSecondary);
+        TextDraw.Right(line.Spent, right, textY, Styling.TextDim);
+        var barWidth = ProgressColumnWidth * scale - 12f * scale;
+        Paint.Bar(drawList, new Vector2(progressRight - barWidth, top + height - RowBarHeight * scale - 4f * scale), barWidth, RowBarHeight * scale, line.Fraction, line.Satisfied ? Styling.AccentMint : Styling.AccentBlue);
+    }
+
+    private static void DrawIssues(RunView current)
+    {
+        GroupLabel.Draw(Loc.T(L.Run.Issues), SectionGap, 6f);
+        if (current.Issues.Length == 0)
+        {
+            using (Fonts.PushCaption())
+            {
+                var origin = ImGui.GetCursorScreenPos();
+                TextDraw.At(Loc.T(L.Run.NoIssues), new Vector2(origin.X + 2f * ImGuiHelpers.GlobalScale, origin.Y), Styling.TextMuted);
+                ImGui.Dummy(new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetTextLineHeight()));
+            }
+
+            return;
+        }
+
+        var scale = ImGuiHelpers.GlobalScale;
+        var width = ImGui.GetContentRegionAvail().X;
+        var drawList = ImGui.GetWindowDrawList();
+        for (var index = 0; index < current.Issues.Length; index++)
+        {
+            var issue = current.Issues[index];
+            var origin = ImGui.GetCursorScreenPos();
+            var height = IssueRowHeight * scale;
+            var accent = issue.Blocking ? Styling.AccentRose : Styling.AccentAmber;
+            Paint.Glass(drawList, origin, origin + new Vector2(width, height), Styling.CardRounding * scale, accent, 0.04f);
+            var padX = RowPadX * scale;
+            var lineHeight = ImGui.GetTextLineHeight();
+            float captionHeight;
+            using (Fonts.PushCaption())
+            {
+                captionHeight = ImGui.GetTextLineHeight();
+            }
+
+            var top = origin.Y + (height - lineHeight - 2f * scale - captionHeight) * 0.5f;
+            Paint.Dot(drawList, new Vector2(origin.X + padX, origin.Y + height * 0.5f), 3.5f * scale, accent);
+            var textX = origin.X + padX + 14f * scale;
+            var textWidth = origin.X + width - padX - textX;
+            TextDraw.At(TextDraw.Truncate(issue.Title, textWidth), new Vector2(textX, top), issue.Blocking ? Styling.AccentRoseSoft : Styling.TextStrong);
+            using (Fonts.PushCaption())
+            {
+                TextDraw.At(TextDraw.Truncate(issue.Detail, textWidth), new Vector2(textX, top + lineHeight + 2f * scale), Styling.TextDim);
+            }
+
+            ImGui.Dummy(new Vector2(width, height));
+            Styling.VSpace(4f);
+        }
     }
 
     private static string CurrentZoneName()

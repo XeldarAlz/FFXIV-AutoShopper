@@ -31,6 +31,20 @@ public sealed class ShopSession
 
     public bool CompletedByStopCondition { get; internal set; }
 
+    public string ListName { get; internal set; } = string.Empty;
+
+    public bool DryRun { get; internal set; }
+
+    // For a dry run, what it would have spent and bought.
+    public long Spent { get; internal set; }
+
+    public int Units { get; internal set; }
+
+    public int Purchases { get; internal set; }
+
+    // A run cut off by a logout or an unload is not over: it leaves no history row, and its journal offers to resume.
+    public bool Interrupted { get; internal set; }
+
     public bool EndedWithFault { get; private set; }
 
     public TimeSpan Elapsed => (endedAt ?? DateTime.UtcNow) - StartedAt - TimeSpan.FromMilliseconds(PausedTotalMs);

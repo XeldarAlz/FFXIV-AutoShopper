@@ -3,6 +3,7 @@ using AutoShopper.Core.Preview.Model;
 using AutoShopper.Core.Pricing;
 using AutoShopper.Core.Pricing.Model;
 using AutoShopper.Core.Shopping.Model;
+using AutoShopper.Core.Tasks;
 using AutoShopper.Windows.Components;
 using AutoShopper.Windows.Shell;
 using Dalamud.Bindings.ImGui;
@@ -12,13 +13,15 @@ using System.Numerics;
 
 namespace AutoShopper.Windows.Pages;
 
-// Preview only: prices are fetched on request, plans are built off the UI thread, and nothing here acts in game.
+// Prices are fetched on request and plans are built off the UI thread; only Start acts in game, through the same run
+// as the Shop page.
 internal sealed partial class PlanPage
 {
     private const float SubtitleGap = 5f;
     private const float StatusGap = 6f;
     private const float ProgressHeight = 4f;
     private const float SectionGap = 18f;
+    private const float HeaderButtonGap = 8f;
     private const float EmptyCardHeight = 118f;
     private const float EmptyCardPadX = 24f;
     // Ages and the stale flags are rebuilt once a minute; the text would not change any faster.
@@ -125,8 +128,16 @@ internal sealed partial class PlanPage
         }
 
         var buttonHeight = Layout.ActionPillHeight * scale;
-        ImGui.SetCursorScreenPos(new Vector2(origin.X + width - buttonWidth, origin.Y + (titleHeight - buttonHeight) * 0.5f));
+        var buttonY = origin.Y + (titleHeight - buttonHeight) * 0.5f;
+        ImGui.SetCursorScreenPos(new Vector2(origin.X + width - buttonWidth, buttonY));
         DrawGetPrices(plugin, list, buttonLabel);
+        if (list is not null)
+        {
+            var startLabel = Loc.T(plugin.Configuration.DryRun ? L.Plan.StartPlanDry : L.Plan.StartPlan);
+            var startWidth = PillButton.Width(startLabel, FontAwesomeIcon.Play);
+            ImGui.SetCursorScreenPos(new Vector2(origin.X + width - buttonWidth - HeaderButtonGap * scale - startWidth, buttonY));
+            DrawStart(plugin, startLabel);
+        }
 
         var subtitleY = origin.Y + titleHeight + SubtitleGap * scale;
         if (list is not null)
@@ -140,6 +151,23 @@ internal sealed partial class PlanPage
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, statusY + statusHeight - origin.Y));
         Paint.Divider(12f);
+    }
+
+    // The same Start as the Shop page: it runs the plan of the selected list, never this page's copy of it.
+    private static void DrawStart(Plugin plugin, string label)
+    {
+        var readiness = ShopLauncher.Assess();
+        var enabled = readiness == Readiness.Ready && !plugin.Controller.Running;
+        var tooltip = enabled ? ShopLauncher.Sublabel() : readiness == Readiness.Ready ? null : ShopLauncher.Reason(readiness);
+        if (PillButton.Draw("##ashop_plan_start", label, Styling.AccentMint, PillButton.Emphasis.Tinted, FontAwesomeIcon.Play, enabled, Layout.ActionPillHeight, tooltip))
+        {
+            ShopLauncher.Start();
+        }
+
+        if (!enabled && tooltip is not null && Hit.HoveringRect(ImGui.GetItemRectMin(), ImGui.GetItemRectMax()))
+        {
+            Tooltip.Show(tooltip);
+        }
     }
 
     private void DrawGetPrices(Plugin plugin, ShoppingList? list, string label)

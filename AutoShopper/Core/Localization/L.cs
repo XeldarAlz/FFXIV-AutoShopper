@@ -27,7 +27,8 @@ internal static partial class L
         public static readonly LocString NavAbout = new("shell.nav.about", "About");
         public static readonly LocString StatusRunning = new("shell.status.running", "Running");
         public static readonly LocString StatusPaused = new("shell.status.paused", "Paused");
-        public static readonly LocString StatusComingSoon = new("shell.status.comingSoon", "Coming soon");
+        public static readonly LocString StatusReady = new("shell.status.ready", "Ready");
+        public static readonly LocString StatusBlocked = new("shell.status.blocked", "Not ready");
         public static readonly LocString StatusSetupNeeded = new("shell.status.setupNeeded", "Setup needed");
         public static readonly LocString StatusIdle = new("shell.status.idle", "Idle");
         public static readonly LocString Minimize = new("shell.minimize", "Minimize to the title strip");
@@ -43,8 +44,12 @@ internal static partial class L
     {
         public static readonly LocString TitleSetupNeeded = new("shop.title.setupNeeded", "Setup needed");
         public static readonly LocString DetailSetupNeeded = new("shop.detail.setupNeeded", "Install the required plugins before your first shopping run.");
-        public static readonly LocString TitleComingSoon = new("shop.title.comingSoon", "Shopping is on its way");
-        public static readonly LocString DetailComingSoon = new("shop.detail.comingSoon", "Shopping runs arrive in a later update.");
+        public static readonly LocString TitleReady = new("shop.title.ready", "Ready to shop");
+        public static readonly LocString DetailReady = new("shop.detail.ready", "Start buys the plan for {0}.");
+        public static readonly LocString DetailReadyDry = new("shop.detail.readyDry", "Start runs a dry run of {0}: nothing is bought.");
+        public static readonly LocString TitleBlocked = new("shop.title.blocked", "Not ready yet");
+        public static readonly LocString DetailBlocked = new("shop.detail.blocked", "To start, {0}.");
+        public static readonly LocString TitleStopping = new("shop.title.stopping", "Stopping");
         public static readonly LocString TitleRunning = new("shop.title.running", "Running");
         public static readonly LocString TitlePaused = new("shop.title.paused", "Paused");
         public static readonly LocString DetailPausedInContent = new("shop.detail.pausedInContent", "Resumes once you leave the duty");
@@ -74,10 +79,22 @@ internal static partial class L
         public static readonly LocString ResumeCaps = new("shop.resume", "RESUME");
         public static readonly LocString InContent = new("shop.inContent", "in content");
         public static readonly LocString ReasonInstall = new("shop.reason.install", "install the required plugins");
-        public static readonly LocString ReasonComingSoon = new("shop.reason.comingSoon", "shopping runs arrive in a later update");
+        public static readonly LocString ReasonLoggedOut = new("shop.reason.loggedOut", "log in first");
+        public static readonly LocString ReasonJournal = new("shop.reason.journal", "look at the purchase journal on the Shop page");
+        public static readonly LocString ReasonReconcile = new("shop.reason.reconcile", "say whether the uncertain purchase went through");
+        public static readonly LocString ReasonInterrupted = new("shop.reason.interrupted", "resume or discard the interrupted run");
+        public static readonly LocString ReasonNoList = new("shop.reason.noList", "pick a shopping list");
+        public static readonly LocString ReasonListLoading = new("shop.reason.listLoading", "wait for the item data to load");
+        public static readonly LocString ReasonListErrors = new("shop.reason.listErrors", "fix the lines the list marks");
+        public static readonly LocString ReasonNoCap = new("shop.reason.noCap", "set a run spend cap in Settings, Shopping");
+        public static readonly LocString ReasonReadingOff = new("shop.reason.readingOff", "wait for an update: the market board cannot be read on this game version");
+        public static readonly LocString ReasonBuyingOff = new("shop.reason.buyingOff", "turn on dry run: buying is off on this game version");
+        public static readonly LocString ReasonBusy = new("shop.reason.busy", "stop the task that is running");
         public static readonly LocString StartSub = new("shop.startSub", "buy your shopping list");
+        public static readonly LocString StartSubDry = new("shop.startSubDry", "dry run: nothing is bought");
         public static readonly LocString StateRunning = new("shop.state.running", "running");
         public static readonly LocString StatePaused = new("shop.state.paused", "paused");
+        public static readonly LocString StateStopping = new("shop.state.stopping", "stopping");
         public static readonly LocString StopSub = new("shop.stopSub", "{0} · {1}");
     }
 
@@ -111,6 +128,17 @@ internal static partial class L
         public static readonly LocString SomewhereElse = new("run.somewhereElse", "Somewhere else");
         public static readonly LocString TileElapsed = new("run.tile.elapsed", "Elapsed");
         public static readonly LocString TileWorld = new("run.tile.world", "World");
+        public static readonly LocString PhaseShopping = new("run.phase.shopping", "Shopping");
+        public static readonly LocString PhaseStopping = new("run.phase.stopping", "Stopping");
+        public static readonly LocString TileSpent = new("run.tile.spent", "Spent");
+        public static readonly LocString TileWouldSpend = new("run.tile.wouldSpend", "Would spend");
+        public static readonly LocString TileReserved = new("run.tile.reserved", "{0} reserved");
+        public static readonly LocString TileBudgetLeft = new("run.tile.budgetLeft", "Budget left");
+        public static readonly LocString TilePurse = new("run.tile.purse", "{0} in your purse");
+        public static readonly LocString Lines = new("run.lines", "Shopping list");
+        public static readonly LocString LineProgress = new("run.lineProgress", "{0} of {1}");
+        public static readonly LocString Issues = new("run.issues", "Exceptions");
+        public static readonly LocString NoIssues = new("run.noIssues", "Nothing has gone wrong so far.");
     }
 
     internal static class History
@@ -144,6 +172,12 @@ internal static partial class L
         public static readonly LocString OutcomeCompletedPartial = new("history.outcome.completedPartial", "Partly done");
         public static readonly LocString OutcomeStopped = new("history.outcome.stopped", "Stopped");
         public static readonly LocString OutcomeFailed = new("history.outcome.failed", "Error");
+        public static readonly LocString OutcomeNeedsReconciliation = new("history.outcome.needsReconciliation", "Needs check");
+        public static readonly LocString DryRun = new("history.dryRun", "Dry run");
+        public static readonly LocString Spent = new("history.spent", "{0} spent");
+        public static readonly LocString WouldSpend = new("history.wouldSpend", "{0} would be spent");
+        public static readonly LocPlural Units = new("history.units", "{0} unit", "{0} units");
+        public static readonly LocString TooltipList = new("history.tooltip.list", "List: {0}");
     }
 
     internal static class Plugins
@@ -323,7 +357,7 @@ internal static partial class L
 
     internal static class Plugin
     {
-        public static readonly LocString CommandHelp = new("plugin.commandHelp", "Toggle the Auto Shopper window. /ashop config | stats | deps | log | changelog | about | add <item name or id> [quantity] (add an item to the selected list) | pause (pause or resume the run) | target (dump the current target's BaseId) | look <item name or id> (log the listings at the market board in reach) | mbstatus (market board checks) | board [city] (go to a market board and open it, board stop cancels) | goto <territory> <x> <y> <z>, goto <world> [aetheryte] [i<n>] or goto home (travel helpers, goto stop cancels).");
+        public static readonly LocString CommandHelp = new("plugin.commandHelp", "Toggle the Auto Shopper window. /ashop config | stats | deps | log | changelog | about | add <item name or id> [quantity] (add an item to the selected list) | pause (pause or resume the run) | target (dump the current target's BaseId) | look <item name or id> (log the listings at the market board in reach) | mbstatus (market board checks) | board [city] (go to a market board and open it, board stop cancels) | start (start a run of the selected list) | stop (stop the run) | goto <territory> <x> <y> <z>, goto <world> [aetheryte] [i<n>] or goto home (travel helpers, goto stop cancels).");
         public static readonly LocString CommandHelpAlias = new("plugin.commandHelpAlias", "Alias for /ashop.");
     }
 }

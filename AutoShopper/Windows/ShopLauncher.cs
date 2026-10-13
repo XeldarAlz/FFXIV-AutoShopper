@@ -1,23 +1,31 @@
-using AutoShopper.Core.External;
 using AutoShopper.Core.Localization;
+using AutoShopper.Core.Tasks;
+using Dalamud.Bindings.ImGui;
 
 namespace AutoShopper.Windows;
 
-// What the Start button says. Nothing can start until the shop run task exists, so the only question is which reason to show.
+// What the Start buttons say and whether they are enabled, checked once a frame.
 internal static class ShopLauncher
 {
-    public enum Readiness : byte
-    {
-        SetupNeeded,
-        ComingSoon,
-    }
+    private static int cachedFrame = -1;
+    private static Readiness cached;
 
-    public static Readiness Assess() => ExternalPlugins.AllRequiredInstalled() ? Readiness.ComingSoon : Readiness.SetupNeeded;
+    public static Readiness Assess()
+    {
+        var frame = ImGui.GetFrameCount();
+        if (frame == cachedFrame)
+        {
+            return cached;
+        }
+
+        cached = ShopReadiness.Evaluate(Plugin.Instance);
+        cachedFrame = frame;
+        return cached;
+    }
 
     public static void Start() => Plugin.Instance.Controller.Start();
 
-    public static string Sublabel() => Loc.T(L.Shop.StartSub);
+    public static string Sublabel() => Loc.T(Plugin.Instance.Configuration.DryRun ? L.Shop.StartSubDry : L.Shop.StartSub);
 
-    public static string Reason(Readiness readiness)
-        => Loc.T(readiness == Readiness.SetupNeeded ? L.Shop.ReasonInstall : L.Shop.ReasonComingSoon);
+    public static string Reason(Readiness readiness) => ShopReadiness.Reason(readiness);
 }

@@ -6,4 +6,5 @@ public enum RunOutcome : byte
     CompletedPartial,
     Stopped,
     Failed,
+    NeedsReconciliation,
 }

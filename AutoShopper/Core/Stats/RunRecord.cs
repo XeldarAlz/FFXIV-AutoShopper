@@ -13,6 +13,12 @@ public sealed class RunRecord
     public bool CrossedDataCenter { get; set; }
     public RunOutcome? Outcome { get; set; }
 
+    public string ListName { get; set; } = "";
+    public bool DryRun { get; set; }
+    public long Spent { get; set; }
+    public int Units { get; set; }
+    public int Purchases { get; set; }
+
     public TimeSpan Duration => TimeSpan.FromSeconds(DurationSeconds);
     public bool Finished => Outcome is RunOutcome.Completed or RunOutcome.CompletedPartial;
 }

@@ -5,8 +5,10 @@ internal static partial class L
     internal static class Plan
     {
         public static readonly LocString Title = new("plan.title", "Plan");
-        public static readonly LocString Subtitle = new("plan.subtitle", "{0}  ·  estimates from Universalis. Nothing is bought from this page.");
+        public static readonly LocString Subtitle = new("plan.subtitle", "{0}  ·  estimates from Universalis. A run reads the live listings before it buys.");
         public static readonly LocString GetPrices = new("plan.getPrices", "Get prices");
+        public static readonly LocString StartPlan = new("plan.start", "Start this plan");
+        public static readonly LocString StartPlanDry = new("plan.startDry", "Dry run this plan");
         public static readonly LocString GetPricesHelp = new("plan.getPricesHelp", "Reads the current listings of this list's items from Universalis for the worlds chosen in Settings, Shopping. Nothing happens in game.");
         public static readonly LocString GettingPrices = new("plan.gettingPrices", "Getting prices… {0} of {1}");
         public static readonly LocString Cooldown = new("plan.cooldown", "You can get prices again in {0} s.");

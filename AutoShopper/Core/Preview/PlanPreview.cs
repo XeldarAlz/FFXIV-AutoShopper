@@ -255,7 +255,7 @@ internal sealed class PlanPreview : IDisposable
             Demands = demands,
             Prices = prices.Latest,
             Worlds = scope.PlanWorlds,
-            Settings = BuildSettings(scope),
+            Settings = SettingsFor(configuration, scope),
         };
         CancelPlanning();
         planning = new CancellationTokenSource();
@@ -298,7 +298,7 @@ internal sealed class PlanPreview : IDisposable
         }
     }
 
-    private PlanSettings BuildSettings(ResolvedScope resolved) => new()
+    public static PlanSettings SettingsFor(Configuration configuration, ResolvedScope resolved) => new()
     {
         Mode = ToPlanMode(configuration.PlanningMode),
         StopPenaltyGil = configuration.StopPenaltyGil,

@@ -1,6 +1,6 @@
 namespace AutoShopper.Core.Tasks;
 
-internal enum RunPhase : byte { Idle, Preparing, Travelling, Finishing, Paused }
+internal enum RunPhase : byte { Idle, Preparing, Travelling, Finishing, Paused, Shopping, Stopping }
 
 // What the windows show of a run while it goes: its phase.
 internal sealed class RunProgress
