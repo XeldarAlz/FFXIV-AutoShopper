@@ -29,7 +29,7 @@ internal sealed class BuyingApi : IDisposable
     {
         this.plugin = plugin;
         Consents = new CallerConsents(plugin.Configuration.ApiCallers);
-        Quotes = new ApiQuotes(plugin.Prices, plugin.Preview);
+        Quotes = new ApiQuotes(plugin.Prices, plugin.Preview, plugin.Controller);
 
         var pluginInterface = Plugin.PluginInterface;
         apiVersion = pluginInterface.GetIpcProvider<int>(ApiVersionGate);

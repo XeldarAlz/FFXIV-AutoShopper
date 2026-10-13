@@ -3,10 +3,12 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoShopper.Core.Api.Model;
+using AutoShopper.Core.Execution.Model;
 using AutoShopper.Core.Localization;
 using AutoShopper.Core.Preview;
 using AutoShopper.Core.Pricing;
 using AutoShopper.Core.Pricing.Model;
+using AutoShopper.Core.Tasks;
 using Dalamud.Plugin.Services;
 using ECommons.DalamudServices;
 
@@ -16,15 +18,17 @@ internal sealed class ApiQuotes : IDisposable
 {
     private readonly PriceService prices;
     private readonly PlanPreview preview;
+    private readonly AutoShopController controller;
     private readonly RecentStore<Quote> quotes = new(ApiContract.QuoteCapacity, ApiContract.QuoteLifetime);
-    private readonly List<Quote> waiting = [];
+    private readonly QuoteQueue waiting = new();
     private readonly IFramework.OnUpdateDelegate tick;
     private bool hooked;
 
-    public ApiQuotes(PriceService prices, PlanPreview preview)
+    public ApiQuotes(PriceService prices, PlanPreview preview, AutoShopController controller)
     {
         this.prices = prices;
         this.preview = preview;
+        this.controller = controller;
         tick = _ => StartWaiting();
     }
 
@@ -35,16 +39,23 @@ internal sealed class ApiQuotes : IDisposable
             return QuoteStartResponse.Refuse(ApiRefusal.LoggedOut, Loc.T(L.Api.QuoteRefused, Loc.T(L.Shop.ReasonLoggedOut)));
         }
 
+        var caller = request.Caller!;
+        if (!waiting.HasRoomFor(caller))
+        {
+            RunLog.Info($"Buying API: a quote from {callerDisplayName} was refused: {ApiContract.MaximumWaitingQuotesPerCaller} of its quotes already wait.");
+            return QuoteStartResponse.Refuse(ApiRefusal.Busy, Loc.T(L.Api.QuoteRefused, Loc.T(L.Api.ReasonQuotesWaiting, ApiContract.MaximumWaitingQuotesPerCaller)));
+        }
+
         var quote = new Quote(Guid.NewGuid(), request.Items!, scope.Allowed);
         quotes.Add(quote.Id, quote, DateTime.UtcNow);
-        var started = TryFetch(quote);
+        var started = waiting.Count == 0 && MayStart() && TryFetch(quote);
         if (!started)
         {
-            waiting.Add(quote);
+            waiting.Add(quote.Id, caller);
             Hook();
         }
 
-        RunLog.Info($"Buying API: quote {quote.Id} for {callerDisplayName}, {quote.Items.Length} item(s) on {quote.Worlds.Length} world(s){(started ? string.Empty : ", waiting for the price fetch cooldown")}.");
+        RunLog.Info($"Buying API: quote {quote.Id} for {callerDisplayName}, {quote.Items.Length} item(s) on {quote.Worlds.Length} world(s){(started ? string.Empty : ", waiting for its turn at the price fetch")}.");
         return QuoteStartResponse.Accept(quote.Id);
     }
 
@@ -80,6 +91,9 @@ internal sealed class ApiQuotes : IDisposable
 
     public void Dispose() => Unhook();
 
+    private bool MayStart()
+        => QuoteQueue.MayStart(prices.SinceCooldownEnded, prices.Fetching, controller.ShopRun is { State: RunState.FetchingPrices });
+
     private bool TryFetch(Quote quote)
     {
         var started = prices.TryStartDetached(quote.Worlds, ItemIdsOf(quote.Items), CancellationToken.None, out var fetch);
@@ -100,23 +114,24 @@ internal sealed class ApiQuotes : IDisposable
     private void StartWaiting()
     {
         var now = DateTime.UtcNow;
-        while (waiting.Count > 0 && !quotes.TryGet(waiting[0].Id, now, out _))
+        Quote? first = null;
+        while (waiting.Count > 0 && !quotes.TryGet(waiting.First, now, out first))
         {
-            waiting.RemoveAt(0);
+            waiting.RemoveFirst();
         }
 
-        if (waiting.Count == 0)
+        if (first is null)
         {
             Unhook();
             return;
         }
 
-        if (prices.CooldownRemaining > TimeSpan.Zero || !TryFetch(waiting[0]))
+        if (!MayStart() || !TryFetch(first))
         {
             return;
         }
 
-        waiting.RemoveAt(0);
+        waiting.RemoveFirst();
     }
 
     private static async Task<QuotePricing?> Price(Guid quoteId, Task<PriceSnapshot?> fetch, QuoteRequestItem[] items)

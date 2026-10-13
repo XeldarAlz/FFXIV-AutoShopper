@@ -52,7 +52,8 @@ Lets another Dalamud plugin price items and run a bounded Auto Shopper shopping 
 
 - 1 to 100 items, `itemId` > 0, `quantity` 1 to 9999. Duplicate item ids are refused (`InvalidRequest`).
 - Prices come from Auto Shopper's price service for Auto Shopper's configured world scope, fetched detached (it never replaces the Plan page's prices).
-- Auto Shopper allows one Universalis fetch every 30 seconds across the Plan page, runs and quotes. A quote started inside that window stays `Pending` until the window has passed, then fetches.
+- Auto Shopper allows one Universalis fetch every 30 seconds across the Plan page, runs and quotes, and a quote always lets the player and runs go first: it fetches only once those 30 seconds have been over for 10 more seconds (time for the player to press Get prices on the Plan page), while no Plan page fetch is under way and no run is fetching its prices. Until then it stays `Pending`. Quotes that wait fetch one at a time, in the order they were asked for.
+- A caller can have at most 2 quotes waiting for their turn at a time. Another `QuoteStart` from it is refused with `Busy` until one of them has started fetching.
 
 ## QuoteStart response
 
@@ -66,7 +67,7 @@ or
 { "schema": 1, "accepted": false, "quoteId": null, "refusal": "InvalidRequest", "message": "localized text" }
 ```
 
-- Refusal codes: `UnsupportedSchema`, `InvalidRequest`, `LoggedOut` (no character is logged in, so there is no world scope to price).
+- Refusal codes: `UnsupportedSchema`, `InvalidRequest`, `LoggedOut` (no character is logged in, so there is no world scope to price), `Busy` (the caller already has 2 quotes waiting for their turn).
 - `message` reads "Cannot price these items: <reason>." in Auto Shopper's language. For `InvalidRequest` the reason names the field at fault, for example `items[2].quantity`, `items[1].itemId` (zero or a duplicate), `items`, `caller` or `json` (the text is not a request).
 
 ## QuoteResult response

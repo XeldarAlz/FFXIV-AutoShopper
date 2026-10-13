@@ -13,6 +13,8 @@ internal static class ApiContract
     public const int QuoteCapacity = 16;
     public const int RunResultCapacity = 8;
     public const int PendingConsentCapacity = 8;
+    public const int MaximumWaitingQuotesPerCaller = 2;
 
     public static readonly TimeSpan QuoteLifetime = TimeSpan.FromMinutes(10);
+    public static readonly TimeSpan QuoteYieldWindow = TimeSpan.FromSeconds(10);
 }

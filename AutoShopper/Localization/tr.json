@@ -851,6 +851,7 @@
   "api.reason.invalid": "istek geçerli değil ({0})",
   "api.reason.consent": "önce Auto Shopper'ın Alışveriş sayfasında {0} eklentisine izin verin",
   "api.reason.denied": "{0} reddedildi; Auto Shopper'da Ayarlar, Genel bölümünden izin verin",
+  "api.reason.quotesWaiting": "bu eklentinin fiyat alma sırasını bekleyen {0} fiyat isteği zaten var",
   "api.consent.title": "{0}, Auto Shopper üzerinden satın almak istiyor.",
   "api.consent.body": "Her tur için kendi alışveriş listesini ve bir harcama sınırı gönderir. Deneme turunuz, dünyalarınız, elde tutulacak gil ve satın alma denetimleri geçerli kalır; bunu Ayarlar, Genel bölümünden geri alabilirsiniz.",
   "api.consent.facts": "İç ad: {0}. Bu tur en fazla {1} harcamak istiyor. Bir eklentinin turları, tur başına harcama sınırınız yerine eklentinin gönderdiği sınıra uyar.",
