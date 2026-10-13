@@ -251,11 +251,30 @@ internal sealed partial class ListsPage
             var size = TextDraw.Measure(shown);
             var min = new Vector2(x, y + (height - size.Y) * 0.5f);
             TextDraw.At(shown, min, Styling.TextMuted);
-            if (help is { } helpText && Hit.HoveringRect(min, min + size))
+            var clipped = !ReferenceEquals(shown, text);
+            if ((help is not null || clipped) && Hit.HoveringRect(new Vector2(x, y), new Vector2(x + width, y + height)))
             {
-                Tooltip.Show(Loc.T(helpText));
+                Tooltip.Show(HeaderTooltip(label, clipped, help, null));
             }
         }
+    }
+
+    // A long translation is cut to its column, so the whole header leads the tooltip whenever it does not fit. Built only
+    // while the pointer rests on the header.
+    private static string HeaderTooltip(LocString label, bool clipped, LocString? help, LocString? hint)
+    {
+        var text = clipped ? Loc.T(label) : string.Empty;
+        if (help is { } helpText)
+        {
+            text = text.Length == 0 ? Loc.T(helpText) : string.Concat(text, "\n", Loc.T(helpText));
+        }
+
+        if (hint is { } hintText)
+        {
+            text = text.Length == 0 ? Loc.T(hintText) : string.Concat(text, "\n", Loc.T(hintText));
+        }
+
+        return text;
     }
 
     private void SortHeader(string id, LocString label, SortColumn column, float x, float y, float width, float height, LocString? help)
@@ -286,7 +305,7 @@ internal sealed partial class ListsPage
         TextDraw.Icon(icon, new Vector2(x + textSize.X + 6f * scale, y + (height - iconSize.Y) * 0.5f), active ? color : Styling.WithAlpha(color, 0.6f));
         if (hit.Hovered)
         {
-            Tooltip.Show(help is { } helpText ? string.Concat(Loc.T(helpText), "\n", Loc.T(L.Lists.SortHint)) : Loc.T(L.Lists.SortHint));
+            Tooltip.Show(HeaderTooltip(label, !ReferenceEquals(shown, text), help, L.Lists.SortHint));
         }
 
         if (!hit.Clicked)

@@ -11,7 +11,7 @@ internal static class NumberField
 {
     private const float PadX = 9f;
 
-    public static bool Draw(string id, ref string text, string hint, float width, int maxLength, string? tooltip = null)
+    public static bool Draw(string id, ref string text, string hint, float width, int maxLength, string? tooltip = null, bool takeFocus = false)
     {
         var scale = ImGuiHelpers.GlobalScale;
         var height = ImGui.GetFrameHeight();
@@ -32,6 +32,11 @@ internal static class NumberField
             .Push(ImGuiCol.Text, Styling.TextStrong)
             .Push(ImGuiCol.TextDisabled, Styling.TextMuted))
         {
+            if (takeFocus)
+            {
+                ImGui.SetKeyboardFocusHere();
+            }
+
             changed = ImGui.InputTextWithHint(id, hint, ref text, maxLength, ImGuiInputTextFlags.CharsDecimal);
         }
 

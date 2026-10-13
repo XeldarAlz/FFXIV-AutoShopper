@@ -20,8 +20,6 @@ internal sealed partial class ListsPage
     private const float ConfirmSlide = 12f;
     private const float EmptyCardHeight = 150f;
     private const float EmptyCardPadX = 24f;
-    private const int NoticeMs = 2400;
-    private const float NoticeFadeMs = 400f;
     private const long RevisionStride = 2;
 
     private Guid shownListId;
@@ -32,10 +30,7 @@ internal sealed partial class ListsPage
     private CachedText subtitleText;
     private CachedText errorsText;
     private CachedText warningsText;
-
-    private string? notice;
-    private Vector4 noticeColor;
-    private long noticeAtMs;
+    private TransientNotice notice;
 
     public void Draw(Plugin plugin)
     {
@@ -99,6 +94,12 @@ internal sealed partial class ListsPage
             DrawImportPanel(plugin, list);
         }
 
+        if (crystalsOpen)
+        {
+            Styling.VSpace(SectionGap);
+            DrawCrystalPanel(plugin, list);
+        }
+
         Styling.VSpace(SectionGap);
         DrawLines(plugin, list, analysis);
     }
@@ -111,6 +112,7 @@ internal sealed partial class ListsPage
         capTexts.Clear();
         excessTexts.Clear();
         CloseImport();
+        CloseCrystals();
     }
 
     private void DrawHeader(ShoppingListStore store, ShoppingList list, ListAnalysis analysis)
@@ -329,8 +331,9 @@ internal sealed partial class ListsPage
 
         var padX = EmptyCardPadX * scale;
         var wrapWidth = size.X - padX * 2f;
-        var title = Loc.T(L.Lists.EmptyTitle);
-        var body = Loc.T(L.Lists.EmptyBody);
+        var hasLists = store.Lists.Count > 0;
+        var title = Loc.T(hasLists ? L.Lists.NoSelectionTitle : L.Lists.EmptyTitle);
+        var body = Loc.T(hasLists ? L.Lists.NoSelectionBody : L.Lists.EmptyBody);
         var bodySize = TextDraw.MeasureWrapped(body, wrapWidth);
         var titleSize = TextDraw.SectionTitleSize(title);
         var label = Loc.T(L.Lists.NewList);
@@ -355,34 +358,31 @@ internal sealed partial class ListsPage
         ImGui.Dummy(size);
     }
 
-    private void ShowNotice(string text, Vector4 color)
+    // The title row, close button and help text of an inline panel; true when the close button was clicked.
+    private static bool DrawPanelTitle(string closeId, string title, string help, float width)
     {
-        notice = text;
-        noticeColor = color;
-        noticeAtMs = Environment.TickCount64;
-    }
+        var scale = ImGuiHelpers.GlobalScale;
+        var origin = ImGui.GetCursorScreenPos();
+        var titleSize = TextDraw.SectionTitleSize(title);
+        var closeSize = ImGui.GetFrameHeight();
+        TextDraw.SectionTitle(title, new Vector2(origin.X, origin.Y + (closeSize - titleSize.Y) * 0.5f), Styling.TextStrong);
+        ImGui.SetCursorScreenPos(new Vector2(origin.X + width - closeSize, origin.Y));
+        var closed = IconButton.Draw(FontAwesomeIcon.Times, closeId, closeSize, Styling.TextDim, Loc.T(L.Common.Close));
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, closeSize));
 
-    private void DrawNotice()
-    {
-        if (notice is null)
-        {
-            return;
-        }
-
-        var age = Environment.TickCount64 - noticeAtMs;
-        if (age > NoticeMs)
-        {
-            notice = null;
-            return;
-        }
-
-        var fade = Math.Clamp((NoticeMs - age) / NoticeFadeMs, 0f, 1f);
-        Styling.VSpace(6f);
         using (Fonts.PushCaption())
         {
-            var origin = ImGui.GetCursorScreenPos();
-            TextDraw.At(TextDraw.Truncate(notice, ImGui.GetContentRegionAvail().X), origin, Styling.WithAlpha(noticeColor, fade));
-            ImGui.Dummy(new Vector2(ImGui.GetContentRegionAvail().X, ImGui.GetTextLineHeight()));
+            var helpOrigin = ImGui.GetCursorScreenPos();
+            var helpSize = TextDraw.MeasureWrapped(help, width);
+            TextDraw.Wrapped(help, helpOrigin, width, Styling.TextMuted);
+            ImGui.Dummy(new Vector2(width, helpSize.Y + 6f * scale));
         }
+
+        return closed;
     }
+
+    private void ShowNotice(string text, Vector4 color) => notice.Show(text, color);
+
+    private void DrawNotice() => notice.DrawLine(ImGui.GetContentRegionAvail().X);
 }
