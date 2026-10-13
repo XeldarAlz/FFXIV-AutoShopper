@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Only the latest release published to the custom Dalamud repo is supported. If you're on an older `vX.Y.Z`, please update before reporting.
+Only the latest release published to the custom Dalamud repo is supported. If you're on an older version, please update before reporting.
 
 ## Reporting a vulnerability
 
@@ -14,9 +14,10 @@ Please don't open a public issue or Discussion for anything that could let someo
 
 What counts:
 
-- Code execution or crashes triggerable by crafted game state.
-- The plugin teleporting, buying, or persisting something it shouldn't (beyond the documented shopping automation, which is the feature).
-- Data exfiltration: the only network traffic this plugin is meant to make is reading market prices from the public Universalis API; anything else, or sending your data anywhere, would be a bug.
+- Code execution or crashes triggerable by crafted game state, a crafted Universalis answer, or a crafted list pasted into the importer.
+- The plugin buying something it shouldn't: anything while dry run is on, past the run spend cap or a line's price cap, below the gil you keep, a listing the purchase checks refuse, or more than one purchase in flight at a time.
+- The plugin teleporting, travelling, or persisting something it shouldn't, beyond the documented shopping automation, which is the feature.
+- Data exfiltration: the only network traffic this plugin makes itself is reading market prices from the public Universalis API, and the one-click helper install on the Plugins page only asks Dalamud to add that helper's repository and install it. Anything else, or sending your data anywhere, would be a bug. Run summaries and exports are meant to hold no character names, content ids, retainers or listing ids; one that does is a bug too.
 
 What doesn't:
 

@@ -41,7 +41,7 @@ body:
       label: Plugin version
       description: Shown in `/xlplugins` next to "Auto Shopper".
       options:
-        - 0.1.0.0
+        - 1.0.0.0
         - Older / not sure
     validations:
       required: true
@@ -68,19 +68,34 @@ body:
       placeholder: "Started on Gilgamesh (Aether); failed while buying on Zalera (Crystal)"
 
   - type: dropdown
+    id: dry-run
+    attributes:
+      label: Was dry run on?
+      description: The Dry run switch next to Start on the Shop page, also under Settings, Market board. A dry run never sends a purchase.
+      options:
+        - Yes, it was a dry run
+        - No, it spent real gil
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
     id: stage
     attributes:
       label: Where in the run did it fail?
-      description: The plugin's flow runs planning -> travel -> walking to the market board -> searching -> buying -> confirming -> way home.
+      description: The Shop page and the Console show the stage a run is in. A run goes checking the run -> getting prices -> planning -> travelling -> going to the market board -> searching the listings -> checking a listing -> buying -> waiting for the answer -> way home.
       options:
-        - Planning (prices, worlds, or the plan itself look wrong)
-        - Travel (world change, data center travel, teleport)
-        - Walking to the market board (stuck, wrong board, can't reach it)
-        - Searching (wrong item, listings not read)
-        - Buying (wrong listing, over the price cap, purchase failed)
-        - Confirming (purchase not confirmed, wrong quantity)
-        - Way home (didn't return, wrong world)
-        - Selection / UI (issue before pressing Start)
+        - Before Start (lists, imports, prices or the plan on the Plan page, settings)
+        - Checking the run, getting fresh prices or planning the run
+        - Travelling (world change, data center transfer, the login after it)
+        - Going to the market board (teleport, aethernet, walking, opening the board)
+        - Searching or choosing listings (wrong item, listings not read)
+        - Checking a listing (a good listing refused, or a wrong one allowed)
+        - Buying or waiting for the answer (purchase failed, wrong quantity or price)
+        - A purchase needs checking (the card on the Shop page)
+        - Pausing, resuming, stopping, or resuming an interrupted run
+        - Way home or the after-run action
+        - History, run summaries or exports
         - Other / not sure
     validations:
       required: true
@@ -93,7 +108,7 @@ body:
         **If you can provide any of these, it turns guesswork into a fix.**
 
         - **Plugin console**: open `/ashop log`, press *Copy log* and paste the result into the console field below. It already includes the plugin version, Dalamud version and zone.
-        - **Dalamud log**: open `/xllog`, click the *Open log folder* button at the bottom-right, attach `dalamud.log`. Filter by `[AutoShopper]` if you want to trim it down.
+        - **Dalamud log**: open `/xllog`, click the *Open log folder* button at the bottom-right, attach `dalamud.log`. Filter by `[ASHOP]` if you want to trim it down.
         - **The market board listings** as a screenshot, if the plugin bought or skipped the wrong one.
         - **Screenshots / short clip** if the issue is visual (selection state, wrong tooltip, frozen card, etc.)
         - **Other plugins active** that touch the market board, movement, teleport, or input, which helps rule out conflicts.
@@ -110,4 +125,4 @@ body:
     id: extra
     attributes:
       label: Anything else?
-      description: Whether Lifestream's data center travel is enabled, your price caps, hunches, anything that helps the bug land.
+      description: Whether Lifestream's data center travel is enabled, your run spend cap and price caps, the plan mode, hunches, anything that helps the bug land.

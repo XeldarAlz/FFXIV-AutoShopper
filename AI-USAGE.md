@@ -31,15 +31,15 @@ The human gates, in order, none of them skippable:
 
 1. **The spec comes first.** What to build, and the constraints it has to respect, are written before any agent runs.
 2. **The diff is read.** Output is reviewed before it lands, not after users find the problem.
-3. **It is tested in the game.** On a real client, running at least one shopping run end to end, or the journey alone with `/ashop goto` when the change is to travel. A clean `dotnet build` is not a test.
+3. **It is tested in the game.** On a real client, running at least one dry run end to end, plus a real purchase of one cheap item under a small spend cap when the change touches buying, or the journey alone with `/ashop goto` when the change is to travel. A clean `dotnet build` and a green `dotnet test` do not replace it.
 4. **Ownership transfers.** Every merged line is the maintainer's to defend, explain, and fix. "The AI did it" is not an answer to why something is written the way it is.
 5. **Feedback is taken on its merits.** AI-assisted work invites sharper review, from users and from any reviewer, and that scrutiny is earned rather than unfair. The answer to a review comment is a fix or a reason, never a defense of the tooling.
 
 ## What this does not change
 
-Nothing in this doc lowers a standard. Code produced with AI assistance is held to exactly the bar every other change meets: the CONTRIBUTING.md checklist, the .editorconfig style, one concern per pull request, and `[AutoShopper]` log lines that make every step of the automation loop auditable. A reviewer cannot tell which lines came from where, and that is the point.
+Nothing in this doc lowers a standard. Code produced with AI assistance is held to exactly the bar every other change meets: the CONTRIBUTING.md checklist, the .editorconfig style, one concern per pull request, and `[ASHOP]` log lines that make every step of a run auditable. A reviewer cannot tell which lines came from where, and that is the point.
 
-The one thing AI use does change is where the verification effort goes. AI gets Dalamud and FFXIVClientStructs APIs wrong often enough that any call into either is suspect until it has run in game. The IPC calls into vnavmesh and Lifestream, the helpers listed in `/ashop deps`, deserve the same suspicion: a call that compiles says nothing about whether the other plugin still answers it the same way.
+The one thing AI use does change is where the verification effort goes. AI gets Dalamud and FFXIVClientStructs APIs wrong often enough that any call into either is suspect until it has run in game. The IPC calls into vnavmesh and Lifestream, the helpers listed in `/ashop deps`, deserve the same suspicion: a call that compiles says nothing about whether the other plugin still answers it the same way. The market board reading and the purchase path deserve the most: `/ashop mbstatus` checks them against the running game, and dry run stays on by default so a run can be watched before it spends anything.
 
 ## If you contribute
 
@@ -53,7 +53,7 @@ Nobody is judged for the level they declare. An undeclared one is the problem.
 
 ## Translations
 
-The eight non-English catalogs under AutoShopper/Localization/ are AI-assisted with human review. English is the source: it is the default text of every string in `Core/Localization/L.cs`, and en.json is never loaded when the plugin runs in English. Game data is not translated at all: zone, item, and world names are read from the game client, so they always match what the player sees in their own client.
+The eight non-English catalogs under AutoShopper/Localization/ are AI-assisted with human review. English is the source: it is the default text of every string in the `Core/Localization/L*.cs` files, and en.json is never loaded when the plugin runs in English. Game data is not translated at all: zone, item, and world names are read from the game client, so they always match what the player sees in their own client.
 
 This is the approach Dalamud's policy asks for, and the gap is coverage rather than method: catalogs without a native-speaker pass should be treated as placeholders until one lands. Native corrections are welcome from anyone, through the [translation issue form](https://github.com/XeldarAlz/FFXIV-AutoShopper/issues/new?template=translation_report.yml).
 

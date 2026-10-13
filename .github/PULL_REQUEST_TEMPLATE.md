@@ -11,12 +11,13 @@ Closes #
 ## How to test
 
 <!--
-Minimum steps a reviewer can run to verify the change. Testing usually means building a short shopping list, pressing Start, and watching the plugin plan, travel and buy at least one listing; for travel changes, /ashop goto <world> [aetheryte] runs the journey on its own. Make sure the dependencies listed in /ashop deps are installed first. For UI-only changes, describe what to click.
+Minimum steps a reviewer can run to verify the change. Testing usually means building a short shopping list, getting prices on the Plan page, pressing Start with dry run on, and watching the plugin plan, travel and log what it would buy; for travel changes, /ashop goto <world> [aetheryte] runs the journey on its own. When the change touches sending or confirming a purchase, say which real purchase you made (one cheap item, small spend cap). Make sure the dependencies listed in /ashop deps are installed first. For UI-only changes, describe what to click.
 -->
 
 ## Checklist
 
-- [ ] `dotnet build -c Release` passes
-- [ ] Verified in-game on at least one shopping run, or with /ashop goto for travel-only changes
+- [ ] `dotnet build -c Release` passes and `dotnet test -c Release` is green
+- [ ] Verified in-game on at least one dry run, or with /ashop goto for travel-only changes
+- [ ] New or changed user-facing text is in `L*.cs` and all nine catalogs, same keys in the same order
 - [ ] If this changes user-visible behavior, README is updated
-- [ ] If this touches the automation loop, relevant `[AutoShopper]` log lines make the sequence auditable
+- [ ] If this touches the run or the purchase path, relevant `[ASHOP]` log lines make the sequence auditable
