@@ -22,6 +22,7 @@ internal static class Worlds
     private const string CloudDataCenterMarker = "Cloud";
 
     private static readonly Dictionary<WorldRegion, DataCenterInfo[]> dataCentersByRegion = new();
+    private static readonly Dictionary<WorldRegion, WorldInfo[]> worldsByRegion = new();
 
     private static WorldInfo[]? all;
 
@@ -50,6 +51,29 @@ internal static class Worlds
 
         var resolved = found.ToArray();
         dataCentersByRegion[region] = resolved;
+        return resolved;
+    }
+
+    // The worlds of a region in sheet order.
+    public static WorldInfo[] InRegion(WorldRegion region)
+    {
+        if (worldsByRegion.TryGetValue(region, out var cached))
+        {
+            return cached;
+        }
+
+        var worlds = All;
+        var found = new List<WorldInfo>();
+        for (var index = 0; index < worlds.Length; index++)
+        {
+            if (worlds[index].Region == region)
+            {
+                found.Add(worlds[index]);
+            }
+        }
+
+        var resolved = found.ToArray();
+        worldsByRegion[region] = resolved;
         return resolved;
     }
 

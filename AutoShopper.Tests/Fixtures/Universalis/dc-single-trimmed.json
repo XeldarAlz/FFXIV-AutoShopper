@@ -1,0 +1,44 @@
+{
+  "itemID": 5333,
+  "lastUploadTime": 1791786830582,
+  "listings": [
+    {
+      "lastReviewTime": 1791786827,
+      "pricePerUnit": 1,
+      "quantity": 1,
+      "worldID": 40,
+      "hq": false,
+      "listingID": "2814750595183538",
+      "onMannequin": false
+    },
+    {
+      "lastReviewTime": 1791786827,
+      "pricePerUnit": 1,
+      "quantity": 1,
+      "worldID": 40,
+      "hq": true,
+      "listingID": "2814750592903682",
+      "onMannequin": false
+    },
+    {
+      "lastReviewTime": 1791786827,
+      "pricePerUnit": 1,
+      "quantity": 2,
+      "worldID": 40,
+      "hq": false,
+      "listingID": "2814750593964472",
+      "onMannequin": false
+    }
+  ],
+  "worldUploadTimes": {
+    "40": 1791786830582,
+    "54": 1791784573409,
+    "57": 1791768275508,
+    "63": 1791760382985,
+    "65": 1791740131817,
+    "73": 1791778329511,
+    "79": 1791754494141,
+    "99": 1791727630554
+  },
+  "hasData": true
+}

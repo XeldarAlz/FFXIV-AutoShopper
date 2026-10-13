@@ -1,0 +1,226 @@
+{
+  "itemIDs": [
+    5057,
+    2,
+    1,
+    5333
+  ],
+  "items": {
+    "5057": {
+      "itemID": 5057,
+      "lastUploadTime": 1791790303256,
+      "listings": [
+        {
+          "lastReviewTime": 1791759148,
+          "pricePerUnit": 59,
+          "quantity": 34,
+          "worldID": 54,
+          "hq": true,
+          "listingID": "3799913032187154",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791759148,
+          "pricePerUnit": 74,
+          "quantity": 20,
+          "worldID": 54,
+          "hq": false,
+          "listingID": "3799913086871660",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791759148,
+          "pricePerUnit": 75,
+          "quantity": 13,
+          "worldID": 54,
+          "hq": false,
+          "listingID": "3799913085905118",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791771793,
+          "pricePerUnit": 80,
+          "quantity": 99,
+          "worldID": 63,
+          "hq": false,
+          "listingID": "4433231831877913",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791781264,
+          "pricePerUnit": 99,
+          "quantity": 99,
+          "worldID": 65,
+          "hq": false,
+          "listingID": "4573969224960635",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791774798,
+          "pricePerUnit": 99,
+          "quantity": 99,
+          "worldID": 99,
+          "hq": false,
+          "listingID": "6966506558721549",
+          "onMannequin": false
+        }
+      ],
+      "worldUploadTimes": {
+        "40": 1791790303256,
+        "54": 1791759169759,
+        "57": 1791775351954,
+        "63": 1791771795470,
+        "65": 1791781267484,
+        "73": 1791777279919,
+        "79": 1791778578110,
+        "99": 1791774801060
+      },
+      "hasData": true
+    },
+    "2": {
+      "itemID": 2,
+      "lastUploadTime": 1791793442054,
+      "listings": [
+        {
+          "lastReviewTime": 1791792290,
+          "pricePerUnit": 59,
+          "quantity": 8760,
+          "worldID": 40,
+          "hq": false,
+          "listingID": "9226186787451028713",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791791838,
+          "pricePerUnit": 61,
+          "quantity": 1000,
+          "worldID": 54,
+          "hq": false,
+          "listingID": "9227171949942187298",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791791838,
+          "pricePerUnit": 61,
+          "quantity": 1000,
+          "worldID": 54,
+          "hq": false,
+          "listingID": "9227171949942187366",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791783095,
+          "pricePerUnit": 62,
+          "quantity": 2000,
+          "worldID": 57,
+          "hq": false,
+          "listingID": "9227383056125474884",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791783095,
+          "pricePerUnit": 62,
+          "quantity": 7500,
+          "worldID": 57,
+          "hq": false,
+          "listingID": "9227383056123634878",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791783095,
+          "pricePerUnit": 62,
+          "quantity": 8760,
+          "worldID": 57,
+          "hq": false,
+          "listingID": "9227383056125100104",
+          "onMannequin": false
+        }
+      ],
+      "worldUploadTimes": {
+        "40": 1791792294149,
+        "54": 1791791842650,
+        "57": 1791783098607,
+        "63": 1791776101942,
+        "65": 1791791214917,
+        "73": 1791788630464,
+        "79": 1791793442054,
+        "99": 1791769617808
+      },
+      "hasData": true
+    },
+    "5333": {
+      "itemID": 5333,
+      "lastUploadTime": 1791786830582,
+      "listings": [
+        {
+          "lastReviewTime": 1791786827,
+          "pricePerUnit": 1,
+          "quantity": 1,
+          "worldID": 40,
+          "hq": false,
+          "listingID": "2814750595183538",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791786827,
+          "pricePerUnit": 1,
+          "quantity": 1,
+          "worldID": 40,
+          "hq": true,
+          "listingID": "2814750592903682",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791786827,
+          "pricePerUnit": 1,
+          "quantity": 2,
+          "worldID": 40,
+          "hq": false,
+          "listingID": "2814750593964472",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791786827,
+          "pricePerUnit": 1,
+          "quantity": 99,
+          "worldID": 40,
+          "hq": false,
+          "listingID": "2814750595884552",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791786827,
+          "pricePerUnit": 1,
+          "quantity": 99,
+          "worldID": 40,
+          "hq": false,
+          "listingID": "2814750595884554",
+          "onMannequin": false
+        },
+        {
+          "lastReviewTime": 1791784572,
+          "pricePerUnit": 1,
+          "quantity": 2,
+          "worldID": 54,
+          "hq": false,
+          "listingID": "3799913085108105",
+          "onMannequin": false
+        }
+      ],
+      "worldUploadTimes": {
+        "40": 1791786830582,
+        "54": 1791784573409,
+        "57": 1791768275508,
+        "63": 1791760382985,
+        "65": 1791740131817,
+        "73": 1791778329511,
+        "79": 1791754494141,
+        "99": 1791727630554
+      },
+      "hasData": true
+    }
+  },
+  "unresolvedItems": [
+    1
+  ]
+}

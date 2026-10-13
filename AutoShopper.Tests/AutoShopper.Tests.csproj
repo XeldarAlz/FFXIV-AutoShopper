@@ -12,6 +12,17 @@
     <Compile Include="..\AutoShopper\Core\Shared\**\*.cs" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\AutoShopper\Core\Planning\**\*.cs" Link="Planning\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\AutoShopper\Core\Execution\Model\**\*.cs" Link="Execution\Model\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\AutoShopper\Core\Shopping\Model\**\*.cs" Link="Shopping\Model\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\AutoShopper\Core\Shopping\Import\**\*.cs" Link="Shopping\Import\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\AutoShopper\Core\Pricing\Model\**\*.cs" Link="Pricing\Model\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\AutoShopper\Core\Pricing\Universalis\**\*.cs" Link="Pricing\Universalis\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\AutoShopper\Core\Pricing\RequestThrottle.cs" Link="Pricing\RequestThrottle.cs" />
+    <Compile Include="..\AutoShopper\Core\Pricing\UniversalisClient.cs" Link="Pricing\UniversalisClient.cs" />
+    <Compile Include="..\AutoShopper\Core\Preview\Model\**\*.cs" Link="Preview\Model\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Fixtures\**\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
