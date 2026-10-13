@@ -172,7 +172,7 @@ internal sealed partial class AutoShopRun
 
         run.SetState(RunState.FetchingPrices);
         Status = Loc.T(L.Buyer.StatusPrices);
-        if (!await EnsureFreshPrices(scope, ItemIdsOf(authorization)) || Owner.Prices.Latest is not { } prices)
+        if (await ResumePrices(authorization, scope) is not { } prices)
         {
             return Refused(ApiRefusal.PricesUnavailable, L.Buyer.RefusePrices);
         }
@@ -278,6 +278,17 @@ internal sealed partial class AutoShopRun
             var unresolved = plan.Unresolved[index];
             run.AddIssue(RunIssue.ForUnresolved(unresolved.Reason), unresolved.Demand.ItemId, 0, unresolved.MissingQuantity);
         }
+    }
+
+    private async Task<PriceSnapshot?> ResumePrices(RunAuthorization authorization, ResolvedScope scope)
+    {
+        var itemIds = ItemIdsOf(authorization);
+        if (authorization.Caller is not null)
+        {
+            return await ExternalPrices(scope, itemIds);
+        }
+
+        return await EnsureFreshPrices(scope, itemIds) ? Owner.Prices.Latest : null;
     }
 
     // Prices count as fresh when they cover the allowed worlds and every item, and are younger than the stale setting.
