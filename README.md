@@ -41,7 +41,7 @@ Dry run is on until you switch it off: a dry run does everything except send the
 - **Humanizer**: short random delays before the character moves off or casts a teleport.
 - **GM alert**: ends a run when a GM is near, with an optional toast, chat line, beeps, custom commands, or closing the game.
 - **History and console**: every run recorded with its outcome, list, world, data center, units, gil and time, with a summary to copy for each real run and for the last dry run. Every step is logged on the Console page, ready to copy into a bug report.
-- **Other plugins**: another plugin can price items and start a run of its own list through the [Buying API](docs/BUYING_API.md), once you allow it on the Shop page. Its runs keep your dry run, worlds, gil reserve and purchase checks, never take an after-run action, and are marked with the plugin's name in History. Settings, General lists every plugin you answered, with Revoke.
+- **Other plugins**: another plugin can price items and start a run of its own list through the [Buying API](docs/BUYING_API.md), once you allow it on the Shop page. Its runs keep your dry run, worlds, gil reserve and purchase checks, never take an after-run action, and are marked with the plugin's name in History. Settings, General lists every plugin you answered, with Revoke, which also stops a run that plugin has under way.
 
 ## How a run works
 
