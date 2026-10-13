@@ -7,3 +7,10 @@ public enum AfterRunAction
     ReturnToInn,
     CloseGame,
 }
+
+public enum PlanningMode : byte
+{
+    Cheapest,
+    Balanced,
+    FewestStops,
+}

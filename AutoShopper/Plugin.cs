@@ -4,6 +4,8 @@ using AutoShopper.Core.Game.Watchers;
 using AutoShopper.Core.Inventory;
 using AutoShopper.Core.Items;
 using AutoShopper.Core.Localization;
+using AutoShopper.Core.Preview;
+using AutoShopper.Core.Pricing;
 using AutoShopper.Core.Shopping;
 using AutoShopper.Core.Stats;
 using AutoShopper.Core.Tasks;
@@ -46,6 +48,8 @@ public sealed class Plugin : IDalamudPlugin
     internal ItemCatalog Items { get; }
     internal InventoryReader Inventory { get; }
     internal ShoppingListStore Lists { get; }
+    internal PriceService Prices { get; }
+    internal PlanPreview Preview { get; }
 
     private readonly DutyWatcher dutyWatcher;
     private readonly GmAlertWatcher gmAlertWatcher;
@@ -72,6 +76,8 @@ public sealed class Plugin : IDalamudPlugin
         Items = new ItemCatalog();
         Inventory = new InventoryReader();
         Lists = new ShoppingListStore(Configuration, Items, Inventory);
+        Prices = new PriceService(typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "0");
+        Preview = new PlanPreview(Configuration, Lists, Inventory, Prices);
         dutyWatcher = new DutyWatcher();
         gmAlertWatcher = new GmAlertWatcher();
 
@@ -118,6 +124,8 @@ public sealed class Plugin : IDalamudPlugin
 
         dutyWatcher.Dispose();
         gmAlertWatcher.Dispose();
+        Preview.Dispose();
+        Prices.Dispose();
         Inventory.Dispose();
 
         CLibMain.Dispose();

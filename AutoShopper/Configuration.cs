@@ -8,8 +8,10 @@ namespace AutoShopper;
 [Serializable]
 public sealed partial class Configuration : IPluginConfiguration
 {
-    // 1: the first version of these settings; a later layout change bumps it and adds its step to Migrate.
-    public const int CurrentVersion = 1;
+    // 1: the first version of these settings. 2: adds the budget, scope and planning settings, and a line's
+    // MaxUnitPrice now reads as the price of one unit including the 5% market fee. A later layout change bumps it and
+    // adds its step to Migrate.
+    public const int CurrentVersion = 2;
 
     [JsonIgnore]
     private bool savePending;
@@ -35,12 +37,13 @@ public sealed partial class Configuration : IPluginConfiguration
         Version = CurrentVersion,
     };
 
-    // True when the loaded config was older and changed, so the caller saves it once.
+    // True when the loaded config was older or needed a repair, so the caller saves it once.
     public bool Migrate()
     {
+        var changed = RepairShoppingSettings();
         if (Version >= CurrentVersion)
         {
-            return false;
+            return changed;
         }
 
         Version = CurrentVersion;
