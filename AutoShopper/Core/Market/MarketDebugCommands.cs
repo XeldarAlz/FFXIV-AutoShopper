@@ -129,26 +129,17 @@ internal sealed class MarketLookTask(uint itemId, MarketServices market, ItemCat
 
     private async Task<bool> OpenBoard()
     {
-        var driver = market.Driver;
-        var state = driver.BeginOpen();
-        while (state.Status == BoardOpenStatus.Opening)
-        {
-            if (CancelToken.IsCancellationRequested)
-            {
-                driver.ResetOpen();
-                return false;
-            }
-
-            await NextFrame(PollFrames);
-            state = driver.PollOpen();
-        }
-
+        var state = await OpenMarketBoard(market.Driver);
         if (state.Status == BoardOpenStatus.Open)
         {
             return true;
         }
 
-        MarketDebugCommands.PrintError($"Market: the board did not open ({state.Failure}).");
+        if (!CancelToken.IsCancellationRequested)
+        {
+            MarketDebugCommands.PrintError($"Market: the board did not open ({state.Failure}).");
+        }
+
         return false;
     }
 

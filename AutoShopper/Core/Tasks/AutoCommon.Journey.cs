@@ -550,12 +550,10 @@ public abstract partial class AutoCommon
         && !LifestreamIPC.Instance.IsBusy();
 
     private static IGameObject? FindNearestAetheryteObject()
-    {
-        if (Svc.Objects.LocalPlayer is not { } player)
-        {
-            return null;
-        }
+        => Svc.Objects.LocalPlayer is { } player ? FindNearestAetheryteObject(player.Position) : null;
 
+    private static IGameObject? FindNearestAetheryteObject(Vector3 origin)
+    {
         var objects = Svc.Objects;
         IGameObject? nearest = null;
         var bestDistance = float.MaxValue;
@@ -566,7 +564,7 @@ public abstract partial class AutoCommon
                 continue;
             }
 
-            var distance = Vector3.DistanceSquared(player.Position, candidate.Position);
+            var distance = Vector3.DistanceSquared(origin, candidate.Position);
             if (distance >= bestDistance)
             {
                 continue;
