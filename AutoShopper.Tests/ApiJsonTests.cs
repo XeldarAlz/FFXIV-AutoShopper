@@ -60,7 +60,7 @@ public sealed class ApiJsonTests
             FetchedAtUtc = new DateTime(2026, 10, 13, 18, 22, 5, DateTimeKind.Utc),
             Items =
             [
-                new QuoteItemResult(5_057, 3, new QuoteCover(true, 3, 1_890, 630, 4.5, 1), default),
+                new QuoteItemResult(5_057, 3, new QuoteCover(true, 3, 1_890, 630, 640, 4.5, 1), default),
             ],
         };
 
@@ -71,9 +71,12 @@ public sealed class ApiJsonTests
         Assert.Equal("Ready", Property(json, "state").GetString());
         Assert.Equal("2026-10-13T18:22:05Z", Property(json, "fetchedAtUtc").GetString());
         var normal = Property(json, "items")[0].GetProperty("normal");
-        Assert.Equal(["available", "units", "total", "unitPrice", "oldestListingHours", "worlds"], Names(normal));
+        Assert.Equal(["available", "units", "total", "unitPrice", "highestUnitPrice", "oldestListingHours", "worlds"], Names(normal));
+        Assert.Equal(640, normal.GetProperty("highestUnitPrice").GetInt64());
         Assert.Equal(4.5, normal.GetProperty("oldestListingHours").GetDouble());
-        Assert.False(Property(json, "items")[0].GetProperty("high").GetProperty("available").GetBoolean());
+        var high = Property(json, "items")[0].GetProperty("high");
+        Assert.False(high.GetProperty("available").GetBoolean());
+        Assert.Equal(0, high.GetProperty("highestUnitPrice").GetInt64());
 
         var read = Read(json, ApiJsonContext.Default.QuoteResultResponse);
         Assert.Equal(response.FetchedAtUtc, read.FetchedAtUtc);

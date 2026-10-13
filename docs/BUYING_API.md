@@ -81,8 +81,8 @@ or
     {
       "itemId": 5057,
       "quantity": 3,
-      "normal": { "available": true, "units": 3, "total": 1890, "unitPrice": 630, "oldestListingHours": 4.5, "worlds": 1 },
-      "high":   { "available": false, "units": 0, "total": 0, "unitPrice": 0, "oldestListingHours": 0, "worlds": 0 }
+      "normal": { "available": true, "units": 3, "total": 1890, "unitPrice": 630, "highestUnitPrice": 630, "oldestListingHours": 4.5, "worlds": 1 },
+      "high":   { "available": false, "units": 0, "total": 0, "unitPrice": 0, "highestUnitPrice": 0, "oldestListingHours": 0, "worlds": 0 }
     }
   ]
 }
@@ -91,7 +91,7 @@ or
 - `state`: `Pending`, `Ready`, `Failed`, `Unknown` (no such quote id, or expired).
 - `items` is filled and `fetchedAtUtc` set only when `state` is `Ready`; otherwise `items` is `[]` and `fetchedAtUtc` is `null`. `items` keeps the order of the request.
 - `Failed` means the price fetch did not come back complete (any Universalis request of it failed, or it could not start); `refusal` is then `PricesUnavailable`. Ask for a new quote.
-- Per quality, `total` is the cheapest combination of whole listings that covers `quantity` units within the scope, with the 5% market fee included. `units` is how many units that combination buys (it can exceed `quantity` when only bigger stacks exist, or when a bigger stack is cheaper). `unitPrice` is `total / units` rounded up. `available` is false when no combination covers the quantity, and every other number of that quality is then 0.
+- Per quality, `total` is the cheapest combination of whole listings that covers `quantity` units within the scope, with the 5% market fee included. `units` is how many units that combination buys (it can exceed `quantity` when only bigger stacks exist, or when a bigger stack is cheaper). `unitPrice` is `total / units` rounded up. `highestUnitPrice` is the dearest listing of that combination per unit: each listing's stack price with the fee, divided by its units and rounded up, and the highest of those. A `StartRun` line whose `maxUnitPrice` is at least `highestUnitPrice` lets every listing of the combination through at its quoted price, where `unitPrice`, an average, can turn the dearer ones away. `available` is false when no combination covers the quantity, and every other number of that quality is then 0.
 - `oldestListingHours` is the age of the oldest listing in the chosen combination at `fetchedAtUtc`, in hours with one decimal; a listing Universalis gives no age for is left out. `worlds` is how many worlds the chosen combination spans.
 - `normal` covers NQ listings only, `high` HQ listings only. Items that have no HQ version report `high.available = false`.
 - Quotes are kept 10 minutes or until 16 newer quotes exist.

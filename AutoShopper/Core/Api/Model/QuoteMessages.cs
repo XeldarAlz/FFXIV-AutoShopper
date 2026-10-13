@@ -38,7 +38,7 @@ internal sealed record QuoteStartResponse
     public static QuoteStartResponse Refuse(ApiRefusal refusal, string message) => new() { Refusal = refusal, Message = message };
 }
 
-internal readonly record struct QuoteCover(bool Available, int Units, long Total, long UnitPrice, double OldestListingHours, int Worlds);
+internal readonly record struct QuoteCover(bool Available, int Units, long Total, long UnitPrice, long HighestUnitPrice, double OldestListingHours, int Worlds);
 
 internal readonly record struct QuoteItemResult(uint ItemId, int Quantity, QuoteCover Normal, QuoteCover High);
 

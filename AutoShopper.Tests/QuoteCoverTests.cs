@@ -17,7 +17,7 @@ public sealed class QuoteCoverTests
     {
         var result = Single([new QuoteRequestItem(Ore, 3)], Offer(Alpha, Ore, 3, 600));
 
-        Assert.Equal(new QuoteCover(true, 3, 1_890, 630, 4.5, 1), result.Normal);
+        Assert.Equal(new QuoteCover(true, 3, 1_890, 630, 630, 4.5, 1), result.Normal);
         Assert.Equal(Ore, result.ItemId);
         Assert.Equal(3, result.Quantity);
     }
@@ -31,6 +31,7 @@ public sealed class QuoteCoverTests
         Assert.Equal(10, result.Normal.Units);
         Assert.Equal(1_050, result.Normal.Total);
         Assert.Equal(105, result.Normal.UnitPrice);
+        Assert.Equal(105, result.Normal.HighestUnitPrice);
     }
 
     [Fact]
@@ -43,6 +44,31 @@ public sealed class QuoteCoverTests
         Assert.Equal(10, result.Normal.Units);
         Assert.Equal(63 + 46, result.Normal.Total);
         Assert.Equal(2, result.Normal.Worlds);
+    }
+
+    [Fact]
+    public void TheHighestUnitPriceIsTheDearestChosenListingNotTheAverage()
+    {
+        var result = Single(
+            [new QuoteRequestItem(Ore, 10)],
+            Offer(Alpha, Ore, 6, 10), Offer(Beta, Ore, 4, 11), Offer(Alpha, Ore, 10, 12), Offer(Gamma, Ore, 20, 6));
+
+        Assert.Equal(11, result.Normal.UnitPrice);
+        Assert.Equal(12, result.Normal.HighestUnitPrice);
+    }
+
+    [Fact]
+    public void ACapAtTheHighestUnitPriceLetsEveryChosenListingThrough()
+    {
+        ImmutableArray<PlanOffer> offers = [Offer(Alpha, Ore, 6, 10), Offer(Beta, Ore, 4, 11), Offer(Gamma, Ore, 20, 6)];
+        var cover = Single([new QuoteRequestItem(Ore, 10)], [.. offers]).Normal;
+
+        var capped = Assert.Single(StackAllocator.AllocateAll(
+            [PlanDemand.ForPurchase(Ore, DemandQuality.NormalQuality, 10, 19, cover.HighestUnitPrice)],
+            offers));
+
+        Assert.Equal(cover.Total, capped.Payable);
+        Assert.Equal(cover.Units, capped.PlannedQuantity);
     }
 
     [Fact]
@@ -64,6 +90,7 @@ public sealed class QuoteCoverTests
 
         Assert.Equal(default, result.Normal);
         Assert.False(result.Normal.Available);
+        Assert.Equal(0, result.Normal.HighestUnitPrice);
         Assert.Equal(default, result.High);
     }
 

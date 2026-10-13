@@ -90,8 +90,29 @@ internal static class QuoteCovers
 
         var units = allocation.PlannedQuantity;
         var total = allocation.Payable;
-        var unitPrice = (total / units) + (total % units == 0 ? 0 : 1);
-        return new QuoteCover(true, units, total, unitPrice, OldestHours(allocation.Offers, fetchedAtUtc), WorldCount(allocation.Offers));
+        return new QuoteCover(
+            true,
+            units,
+            total,
+            UnitPriceOf(total, units),
+            HighestUnitPrice(allocation.Offers),
+            OldestHours(allocation.Offers, fetchedAtUtc),
+            WorldCount(allocation.Offers));
+    }
+
+    private static long UnitPriceOf(long payable, int units) => (payable / units) + (payable % units == 0 ? 0 : 1);
+
+    private static long HighestUnitPrice(ImmutableArray<PlanOffer> offers)
+    {
+        long highest = 0;
+        for (var index = 0; index < offers.Length; index++)
+        {
+            var offer = offers[index];
+            var payable = checked((offer.UnitPrice * offer.Quantity) + offer.Fee);
+            highest = Math.Max(highest, UnitPriceOf(payable, offer.Quantity));
+        }
+
+        return highest;
     }
 
     private static double OldestHours(ImmutableArray<PlanOffer> offers, DateTime fetchedAtUtc)
