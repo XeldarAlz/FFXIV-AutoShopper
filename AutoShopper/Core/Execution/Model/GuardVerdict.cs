@@ -12,7 +12,6 @@ internal enum GuardRejection : byte
     PurchasePending = 7,
     InvalidListing = 8,
     Mannequin = 9,
-    SetListing = 10,
     OwnRetainer = 11,
     ItemMismatch = 12,
     QualityMismatch = 13,

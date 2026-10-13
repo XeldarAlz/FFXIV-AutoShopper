@@ -9,4 +9,8 @@ internal readonly record struct OfferedListing(
     uint Quantity,
     uint UnitPrice,
     uint TotalTax,
-    bool OnMannequin);
+    bool OnMannequin)
+{
+    public override string ToString()
+        => ListingFields.Describe(ListingId, RetainerId, ItemId, IsHq, Quantity, UnitPrice, TotalTax, OnMannequin);
+}

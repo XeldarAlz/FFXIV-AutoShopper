@@ -68,7 +68,7 @@ public sealed class StopSelectionTests
     public void MarkedListingsAreNeverOffered()
     {
         var listings = Listings(Listing(1, 10, 1), Listing(2, 10, 2), Listing(3, 10, 3), Listing(4, 10, 100));
-        ImmutableArray<ListingMarks> marks = [ListingMarks.Own, ListingMarks.Mannequin, ListingMarks.Set, ListingMarks.None];
+        ImmutableArray<ListingMarks> marks = [ListingMarks.Own, ListingMarks.Mannequin, ListingMarks.Own | ListingMarks.Mannequin, ListingMarks.None];
 
         var choice = StopSelection.Choose(NewPlanner(), RunPlan([OreAny]), [OreAny], [], [], Alpha, listings, marks);
 
@@ -198,7 +198,7 @@ public sealed class StopSelectionTests
     private static ImmutableArray<ObservedListing> Listings(params ObservedListing[] listings) => [.. listings];
 
     private static ObservedListing Listing(ulong listingId, int quantity, long unitPrice, long? tax = null, bool highQuality = false)
-        => new(listingId, 400 + listingId, 0, Ore, highQuality, quantity, unitPrice, tax ?? unitPrice * quantity * 5 / 100, false, false, Alpha.WorldId, Generation, ObservedAt);
+        => new(listingId, 400 + listingId, 0, Ore, highQuality, quantity, unitPrice, tax ?? unitPrice * quantity * 5 / 100, false, Alpha.WorldId, Generation, ObservedAt);
 
     private static int Quantity(StopChoice choice)
     {

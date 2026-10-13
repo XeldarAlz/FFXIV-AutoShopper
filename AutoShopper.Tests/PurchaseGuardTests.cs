@@ -22,7 +22,6 @@ public sealed class PurchaseGuardTests
         [GuardRejection.PurchasePending] = input => input with { Spend = new SpendState(MaxSpend, 0, 5_050, Guid.NewGuid()) },
         [GuardRejection.InvalidListing] = input => input with { Current = input.Current with { Quantity = 0 } },
         [GuardRejection.Mannequin] = input => input with { Current = input.Current with { IsMannequin = true } },
-        [GuardRejection.SetListing] = input => input with { Current = input.Current with { IsSellingAsSet = true } },
         [GuardRejection.OwnRetainer] = input => input with { Current = input.Current with { RetainerId = OwnRetainer } },
         [GuardRejection.ItemMismatch] = input => input with
         {

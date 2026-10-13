@@ -40,7 +40,7 @@ internal static class ExecutionFixtures
 
     public static ObservedListing Listing(int quantity = 5, long unitPrice = 1_000, long totalTax = 50)
     {
-        return new ObservedListing(77, 501, 2_002, Ore, false, quantity, unitPrice, totalTax, false, false, HomeWorld, SearchGeneration, Now);
+        return new ObservedListing(77, 501, 2_002, Ore, false, quantity, unitPrice, totalTax, false, HomeWorld, SearchGeneration, Now);
     }
 
     public static GuardInput ValidInput()

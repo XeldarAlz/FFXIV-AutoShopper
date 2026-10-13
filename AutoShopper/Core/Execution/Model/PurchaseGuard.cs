@@ -110,11 +110,6 @@ internal static class PurchaseGuard
             return GuardRejection.Mannequin;
         }
 
-        if (listing.IsSellingAsSet)
-        {
-            return GuardRejection.SetListing;
-        }
-
         if (IsOwnListing(input))
         {
             return GuardRejection.OwnRetainer;

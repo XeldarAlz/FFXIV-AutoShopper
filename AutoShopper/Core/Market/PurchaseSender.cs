@@ -83,7 +83,7 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
             return PurchaseSendResult.NotSent(PurchaseRefusal.ListingChanged, difference);
         }
 
-        if (live->IsMannequin || live->IsSellingAsSet || (live->ContentId != 0 && live->ContentId == Svc.PlayerState.ContentId))
+        if (live->IsSellingAsSet || (live->ContentId != 0 && live->ContentId == Svc.PlayerState.ContentId))
         {
             return PurchaseSendResult.NotSent(PurchaseRefusal.ListingKindRefused);
         }

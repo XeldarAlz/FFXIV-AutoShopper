@@ -12,6 +12,7 @@ internal enum ListingField : byte
     UnitPrice = 5,
     TotalTax = 6,
     Quality = 7,
+    Mannequin = 8,
 }
 
 // The fields a purchase is identified and charged by, in the game's own widths, so the guarded listing, the live
@@ -68,5 +69,8 @@ internal readonly record struct ListingFields(ulong ListingId, ulong RetainerId,
     }
 
     public override string ToString()
-        => $"listing {ListingId}, retainer {RetainerId}, item {ItemId}{(IsHq ? " HQ" : string.Empty)}, {Quantity} x {UnitPrice} + tax {TotalTax}";
+        => Describe(ListingId, RetainerId, ItemId, IsHq, Quantity, UnitPrice, TotalTax, false);
+
+    public static string Describe(ulong listingId, ulong retainerId, uint itemId, bool isHq, long quantity, long unitPrice, long totalTax, bool onMannequin)
+        => $"listing {listingId}, retainer {retainerId}, item {itemId}{(isHq ? " HQ" : string.Empty)}, {quantity} x {unitPrice} + tax {totalTax}{(onMannequin ? ", mannequin" : string.Empty)}";
 }

@@ -184,6 +184,8 @@ internal sealed unsafe class ListingRequestTracker : IDisposable
         return -1;
     }
 
+    // The game keeps the packet's mannequin flag in the field ClientStructs calls IsSellingAsSet; the IsMannequin byte
+    // beside it is never written, so it is never read.
     public static ObservedListing Observe(in MarketBoardListing listing, uint worldId, int generation, DateTime observedAtUtc)
     {
         return new ObservedListing(
@@ -195,7 +197,6 @@ internal sealed unsafe class ListingRequestTracker : IDisposable
             (int)Math.Min(listing.Quantity, int.MaxValue),
             listing.UnitPrice,
             listing.TotalTax,
-            listing.IsMannequin,
             listing.IsSellingAsSet,
             worldId,
             generation,
@@ -241,9 +242,9 @@ internal sealed unsafe class ListingRequestTracker : IDisposable
 
         var captured = captureBuffer.AsSpan(0, count);
         var check = ListingCrossCheck.Compare(captured, machine.Offered);
-        if (check != CrossCheckResult.Match)
+        if (check.Result != CrossCheckResult.Match)
         {
-            RunLog.Info($"Market: copy of item {machine.ItemId} refused ({check}): proxy {count}, pages {machine.Offered.Length}, announced {machine.ExpectedCount}.");
+            RunLog.Info($"Market: copy of item {machine.ItemId} refused ({check.Result}): proxy {count}, pages {machine.Offered.Length}, announced {machine.ExpectedCount}.{DescribeDifference(check, captured)}");
             machine.OnCaptureFailed(now);
             return;
         }
@@ -252,6 +253,16 @@ internal sealed unsafe class ListingRequestTracker : IDisposable
         machine.OnCaptured();
         var endedBy = machine.EndSeen ? "end of search" : machine.StartSeen ? "announced count" : "quiet window";
         RunLog.Info($"Market: item {machine.ItemId} on world {worldId}: {count} listing(s), announced {machine.ExpectedCount}, generation {machine.Generation}, completed by {endedBy}.");
+    }
+
+    private string DescribeDifference(in CrossCheck check, ReadOnlySpan<ObservedListing> captured)
+    {
+        if (check.Result != CrossCheckResult.FieldMismatch)
+        {
+            return string.Empty;
+        }
+
+        return $" First difference {check.Field}: proxy [{captured[check.CapturedIndex]}], page [{machine.Offered[check.OfferedIndex]}].";
     }
 
     private void ReportFailures()

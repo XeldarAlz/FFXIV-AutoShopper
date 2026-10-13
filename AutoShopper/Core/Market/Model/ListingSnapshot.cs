@@ -10,7 +10,6 @@ internal enum ListingMarks : byte
     None = 0,
     Own = 1,
     Mannequin = 2,
-    Set = 4,
 }
 
 // One completed search, copied out of the game: every listing tagged with the world, the search generation and the
@@ -81,11 +80,6 @@ internal sealed class ListingSnapshot
         if (listing.IsMannequin)
         {
             marks |= ListingMarks.Mannequin;
-        }
-
-        if (listing.IsSellingAsSet)
-        {
-            marks |= ListingMarks.Set;
         }
 
         return marks;

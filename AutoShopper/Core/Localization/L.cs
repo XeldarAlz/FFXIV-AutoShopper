@@ -255,6 +255,12 @@ internal static partial class L
         public static readonly LocString New = new("changelog.new", "New");
         public static readonly LocPlural Changes = new("changelog.changes", "{0} change", "{0} changes");
 
+        public static readonly LocString[] Release1101 =
+        [
+            new("changelog.r1101.1", "Fixed every market search being refused as mismatched, which left runs standing at the board and buying nothing"),
+            new("changelog.r1101.2", "When a search copy is refused, the Console names the listing field that differed"),
+        ];
+
         public static readonly LocString[] Release1100 =
         [
             new("changelog.r1100.1", "Other plugins can price items and start runs of their own lists through the new Buying API, once you allow them on the Shop page"),

@@ -170,6 +170,8 @@
   "changelog.r1100.1": "D'autres plugins peuvent estimer le prix d'objets et lancer des tournées de leurs propres listes avec la nouvelle Buying API, une fois autorisés sur la page Achats",
   "changelog.r1100.2": "Leurs tournées respectent votre simulation, vos mondes, vos gils à garder et les vérifications d'achat, et l'Historique nomme le plugin qui a lancé une tournée",
   "changelog.r1100.3": "Réglages, Général liste les plugins auxquels vous avez répondu, avec Révoquer et Autoriser ; Révoquer arrête aussi la tournée que le plugin a en cours",
+  "changelog.r1101.1": "Correction : chaque recherche au tableau des ventes était refusée pour divergence, si bien que les sessions restaient devant le tableau sans rien acheter",
+  "changelog.r1101.2": "Quand une copie de recherche est refusée, la Console nomme le champ de l'annonce qui différait",
   "changelog.r1001.1": "Correction : le trajet par le réseau d'éthérites vers le tableau des ventes s'interrompait à l'arrivée, pendant que la zone se chargeait encore",
   "changelog.r1001.2": "Correction : la marche jusqu'au tableau des ventes s'arrêtait à quelques mètres hors de portée, comme à Ul'dah",
   "changelog.r1000.1": "Listes de courses : Toutes, HQ ou NQ, acheter une quantité ou compléter jusqu'à un objectif, avec un prix maximal par unité taxe de 5 % comprise",

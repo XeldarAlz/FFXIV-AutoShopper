@@ -170,6 +170,8 @@
   "changelog.r1100.1": "Diğer eklentiler, Alışveriş sayfasında izin verdiğinizde yeni Buying API ile eşya fiyatı çıkarabilir ve kendi listeleriyle tur başlatabilir",
   "changelog.r1100.2": "Bu turlar deneme turunuza, dünyalarınıza, elde tutulacak gile ve satın alma denetimlerine uyar; Geçmiş, turu başlatan eklentiyi gösterir",
   "changelog.r1100.3": "Ayarlar, Genel bölümü yanıt verdiğiniz eklentileri Geri al ve İzin ver düğmeleriyle listeler; Geri al, eklentinin süren turunu da durdurur",
+  "changelog.r1101.1": "Düzeltildi: her pazar araması uyuşmazlık gerekçesiyle reddediliyor, çalıştırmalar panoda bekleyip hiçbir şey almıyordu",
+  "changelog.r1101.2": "Bir arama kopyası reddedildiğinde Konsol artık farklı çıkan ilan alanını belirtiyor",
   "changelog.r1001.1": "Düzeltildi: pazar panosuna aethernet yolculuğu, bölge daha yüklenirken varış noktasında vazgeçiyordu",
   "changelog.r1001.2": "Düzeltildi: pazar panosuna yürüyüş, Ul'dah'ta olduğu gibi birkaç metre erişim dışında bitiyordu",
   "changelog.r1000.1": "Alışveriş listeleri: Herhangi, HQ ya da NQ, bir miktar alın ya da bir hedefe tamamlayın, %5 ücret dahil birim fiyat üst sınırıyla",
