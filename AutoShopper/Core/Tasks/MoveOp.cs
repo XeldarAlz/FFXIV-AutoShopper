@@ -36,6 +36,10 @@ internal sealed class MoveOp(Func<MoveOp, Task> body) : TaskBase
     public Task Aethernet(uint territoryId, Vector3 destination)
         => UseAethernet(territoryId, destination);
 
+    // A straight step with no path search, so it crosses floor the mesh does not have.
+    public Task StepTo(Vector3 destination, Func<bool> stopCondition)
+        => MoveToDirectly(destination, stopCondition);
+
     public Task Interact(IGameObject gameObject, Func<bool>? waitUntil, UiSkipOptions skip)
         => InteractWith(gameObject, waitUntil, null, skip);
 
