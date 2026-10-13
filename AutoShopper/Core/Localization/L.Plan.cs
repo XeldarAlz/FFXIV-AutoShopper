@@ -91,5 +91,6 @@ internal static partial class L
         public static readonly LocString FreshnessCapped = new("plan.freshnessCapped", "{0} of {1} items, some at the 100 listing cap");
         public static readonly LocString NoUpload = new("plan.noUpload", "no upload");
         public static readonly LocString RequestFailed = new("plan.requestFailed", "request failed");
+        public static readonly LocString EmptyList = new("plan.emptyList", "This list has no lines yet. Add items on the Lists page to plan it.");
     }
 }
