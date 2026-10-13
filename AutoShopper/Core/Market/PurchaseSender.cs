@@ -49,10 +49,11 @@ internal readonly record struct PurchaseSendResult(PurchaseSendStatus Status, Pu
 // Sends one whole listing exactly as guarded. The live listing is found by id, must equal the guarded one field
 // for field, and the pending purchase the game copies from it must equal it again before the packet goes out. The
 // quantity is never touched. Framework thread only.
-internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, PurchaseResultWatcher watcher, MarketCompatibilityReport compatibility)
+internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, PurchaseResultWatcher watcher, MarketCompatibilityReport compatibility, Configuration configuration)
 {
-    // Public tools space purchases 1.3 to 2 s apart.
-    public const int MinimumIntervalMs = 2_000;
+    // Public tools space purchases 1.3 to 2 s apart; a setting may ask for longer pauses, never for shorter ones.
+    public const int MinimumIntervalMs = 1_500;
+    public const int DefaultIntervalMs = 2_000;
 
     public long NextAllowedAtMs { get; private set; }
 
@@ -126,14 +127,14 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
         }
 
         var now = Environment.TickCount64;
-        NextAllowedAtMs = now + MinimumIntervalMs;
+        NextAllowedAtMs = now + Math.Max(MinimumIntervalMs, configuration.PurchaseIntervalMs);
         if (dryRun)
         {
             RunLog.Info($"Market: dry run, would buy {guarded} for {payable} gil (purchase {attempt.AttemptId}).");
             return PurchaseSendResult.DryRunWouldBuy(payable);
         }
 
-        watcher.Arm(new PurchaseExpectation(attempt.AttemptId, guarded, payable), now, MarketGil.Read());
+        watcher.Arm(new PurchaseExpectation(attempt.AttemptId, guarded, payable), now, MarketGil.Read(), configuration.ResultTimeoutMs);
         var sent = proxy->SendPurchaseRequestPacket();
         RunLog.Info($"Market: purchase {attempt.AttemptId} sent: returned {sent}, request event seen {watcher.RequestObserved}.");
 

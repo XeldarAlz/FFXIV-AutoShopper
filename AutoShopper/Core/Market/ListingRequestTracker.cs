@@ -40,8 +40,11 @@ internal sealed unsafe class ListingRequestTracker : IDisposable
     private bool offeringsThreadReported;
     private bool requestResultThreadReported;
 
-    public ListingRequestTracker()
+    private readonly Configuration configuration;
+
+    public ListingRequestTracker(Configuration configuration)
     {
+        this.configuration = configuration;
         requestResultHook = MarketHooks.FromAddress<InfoProxyItemSearch.Delegates.ProcessRequestResult>(
             InfoProxyItemSearch.Addresses.ProcessRequestResult.Value,
             OnProcessRequestResult,
@@ -89,6 +92,7 @@ internal sealed unsafe class ListingRequestTracker : IDisposable
     {
         snapshot = null;
         reportedFailures = 0;
+        machine.IntervalMs = configuration.SearchIntervalMs;
         machine.Begin(itemId);
         var wait = Math.Max(0, machine.NextSendAtMs - Environment.TickCount64);
         RunLog.Info($"Market: search for item {itemId} queued; it goes out in {wait} ms.");

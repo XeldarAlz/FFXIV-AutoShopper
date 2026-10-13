@@ -14,6 +14,9 @@ internal sealed class MarketCompatibilityReport
     public required bool ExecutionAvailable { get; init; }
 
     public required string Reason { get; init; }
+
+    // The name of the first check that failed, or empty when every check passed.
+    public required string FirstFailure { get; init; }
 }
 
 // Buying needs every address and hook below; reading listings needs only the search ones. Anything missing turns
@@ -65,6 +68,7 @@ internal static unsafe class MarketCompatibility
             ReadingAvailable = reading,
             ExecutionAvailable = execution,
             Reason = Describe(firstFailure, reading),
+            FirstFailure = firstFailure ?? string.Empty,
         };
     }
 

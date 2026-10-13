@@ -99,7 +99,7 @@ internal sealed class AutoBoard(MarketCity city) : AutoCommon
             return false;
         }
 
-        if (MarketCityChoice.TryChoose(Svc.ClientState.TerritoryType, MarketCityChoice.DefaultPreferred, ZoneAetherytes.IsAttuned, out city))
+        if (MarketCityChoice.TryChoose(Svc.ClientState.TerritoryType, Plugin.Instance.Configuration.PreferredMarketCity, ZoneAetherytes.IsAttuned, out city))
         {
             return true;
         }

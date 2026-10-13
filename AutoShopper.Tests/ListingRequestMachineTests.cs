@@ -27,6 +27,31 @@ public sealed class ListingRequestMachineTests
     }
 
     [Fact]
+    public void LongerIntervalPacesTheNextSearch()
+    {
+        const int interval = 4_000;
+        var machine = new ListingRequestMachine { IntervalMs = interval };
+        machine.Begin(Item);
+        Assert.Equal(ListingRequestStep.Send, machine.Poll(0, 0, 0));
+        machine.OnSent(0, true);
+        machine.OnRequestResult(0, 0, 100);
+        Assert.Equal(ListingRequestStep.Capture, machine.Poll(150, Item, 0));
+        machine.OnCaptured();
+
+        machine.Begin(OtherItem);
+        Assert.Equal(ListingRequestStep.None, machine.Poll(interval - 1, Item, 0));
+        Assert.Equal(ListingRequestStep.Send, machine.Poll(interval, Item, 0));
+    }
+
+    [Fact]
+    public void IntervalNeverGoesBelowTheFloor()
+    {
+        var machine = new ListingRequestMachine { IntervalMs = 500 };
+
+        Assert.Equal(ListingRequestMachine.MinimumIntervalMs, machine.IntervalMs);
+    }
+
+    [Fact]
     public void SearchCompletesWhenTheAnnouncedListingsArrive()
     {
         var machine = Sent();

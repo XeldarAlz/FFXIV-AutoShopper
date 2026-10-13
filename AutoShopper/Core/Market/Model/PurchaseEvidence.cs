@@ -37,16 +37,22 @@ internal readonly record struct PurchaseExpectation(Guid AttemptId, ListingField
 // Everything heard about the one purchase in flight. The purchase response hook is the primary signal; Dalamud's
 // request and purchase events must agree with it before a purchase counts as confirmed, and the chat log lines may
 // only corroborate. Silence past the deadline, or any two signals that disagree, leaves the purchase Unknown.
-internal sealed class PurchaseEvidence(PurchaseExpectation expected, long sentAtMs)
+internal sealed class PurchaseEvidence(PurchaseExpectation expected, long sentAtMs, int deadlineMs = PurchaseEvidence.DeadlineMs)
 {
     // Late log lines and the second signal normally land in the same frame as the response; this covers a slow frame.
     public const int SettleMs = 1_000;
     public const int AgreementMs = 3_000;
+    // The default; a setting may move it between the minimum and the maximum. Below the minimum a slow server answer
+    // would read as uncertain, above the maximum an unanswered purchase holds the run for too long.
     public const int DeadlineMs = 15_000;
+    public const int MinimumDeadlineMs = 10_000;
+    public const int MaximumDeadlineMs = 30_000;
 
     public PurchaseExpectation Expected { get; } = expected;
 
     public long SentAtMs { get; } = sentAtMs;
+
+    public int ResultDeadlineMs { get; } = Math.Clamp(deadlineMs, MinimumDeadlineMs, MaximumDeadlineMs);
 
     public int RequestCount { get; private set; }
 
@@ -142,7 +148,7 @@ internal sealed class PurchaseEvidence(PurchaseExpectation expected, long sentAt
 
         if (ResponseCount == 0)
         {
-            return nowMs - SentAtMs >= DeadlineMs ? PurchaseDecision.Unknown(PurchaseUnknownCause.Timeout) : PurchaseDecision.Pending;
+            return nowMs - SentAtMs >= ResultDeadlineMs ? PurchaseDecision.Unknown(PurchaseUnknownCause.Timeout) : PurchaseDecision.Pending;
         }
 
         var sinceResponse = nowMs - ResponseAtMs;

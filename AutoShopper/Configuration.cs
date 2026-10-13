@@ -41,6 +41,7 @@ public sealed partial class Configuration : IPluginConfiguration
     public bool Migrate()
     {
         var changed = RepairShoppingSettings();
+        changed |= RepairMarketSettings();
         if (Version >= CurrentVersion)
         {
             return changed;

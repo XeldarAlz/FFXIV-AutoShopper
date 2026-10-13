@@ -81,7 +81,7 @@ public sealed class Plugin : IDalamudPlugin
         Lists = new ShoppingListStore(Configuration, Items, Inventory);
         Prices = new PriceService(typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "0");
         Preview = new PlanPreview(Configuration, Lists, Inventory, Prices);
-        Market = new MarketServices();
+        Market = new MarketServices(Configuration);
         dutyWatcher = new DutyWatcher();
         gmAlertWatcher = new GmAlertWatcher();
 

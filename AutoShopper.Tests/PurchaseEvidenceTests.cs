@@ -164,6 +164,20 @@ public sealed class PurchaseEvidenceTests
         Assert.Equal(PurchaseDecision.Unknown(PurchaseUnknownCause.Timeout), evidence.Decide(PurchaseEvidence.DeadlineMs));
     }
 
+    [Theory]
+    [InlineData(20_000, 20_000)]
+    [InlineData(1_000, PurchaseEvidence.MinimumDeadlineMs)]
+    [InlineData(90_000, PurchaseEvidence.MaximumDeadlineMs)]
+    public void ConfiguredDeadlineIsKeptInRange(int configured, int expected)
+    {
+        var evidence = new PurchaseEvidence(new PurchaseExpectation(Attempt, Normal, 5_050), 0, configured);
+        evidence.RecordRequest(Normal);
+
+        Assert.Equal(expected, evidence.ResultDeadlineMs);
+        Assert.Equal(PurchaseOutcomeKind.Pending, evidence.Decide(expected - 1).Kind);
+        Assert.Equal(PurchaseDecision.Unknown(PurchaseUnknownCause.Timeout), evidence.Decide(expected));
+    }
+
     [Fact]
     public void SearchFailureLineIsNotPurchaseEvidence()
     {

@@ -5,12 +5,12 @@ namespace AutoShopper.Core.Market;
 // purchase in flight could lose its answer. Each detour is a few field writes.
 internal sealed class MarketServices : IDisposable
 {
-    public MarketServices()
+    public MarketServices(Configuration configuration)
     {
-        Tracker = new ListingRequestTracker();
+        Tracker = new ListingRequestTracker(configuration);
         Watcher = new PurchaseResultWatcher();
         Compatibility = MarketCompatibility.Evaluate(Tracker.HasRequestResultHook, Tracker.HasEndRequestHook, Watcher.HasResponseHook);
-        Sender = new PurchaseSender(Tracker, Watcher, Compatibility);
+        Sender = new PurchaseSender(Tracker, Watcher, Compatibility, configuration);
         Driver = new MarketBoardDriver();
         Report();
     }

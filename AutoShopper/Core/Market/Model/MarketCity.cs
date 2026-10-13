@@ -1,7 +1,7 @@
 namespace AutoShopper.Core.Market.Model;
 
 // In the catalog's order, which is indexed by it.
-internal enum MarketCity : byte
+public enum MarketCity : byte
 {
     LimsaLominsa = 0,
     Gridania = 1,

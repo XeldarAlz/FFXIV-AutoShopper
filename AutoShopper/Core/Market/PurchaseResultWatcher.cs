@@ -71,12 +71,12 @@ internal sealed unsafe class PurchaseResultWatcher : IDisposable
         responseHook?.Dispose();
     }
 
-    public void Arm(in PurchaseExpectation expected, long nowMs, long gil)
+    public void Arm(in PurchaseExpectation expected, long nowMs, long gil, int deadlineMs)
     {
-        evidence = new PurchaseEvidence(expected, nowMs);
+        evidence = new PurchaseEvidence(expected, nowMs, deadlineMs);
         gilBefore = gil;
         outcome = PurchaseOutcome.None with { Kind = PurchaseOutcomeKind.Pending, AttemptId = expected.AttemptId, Quantity = (int)expected.Listing.Quantity, Payable = expected.Payable, GilBefore = gil };
-        RunLog.Info($"Market: purchase {expected.AttemptId} armed: {expected.Listing}, payable {expected.Payable}, gil {gil}.");
+        RunLog.Info($"Market: purchase {expected.AttemptId} armed: {expected.Listing}, payable {expected.Payable}, gil {gil}, answer due within {evidence.ResultDeadlineMs} ms.");
     }
 
     // Only for an attempt whose packet provably never left.

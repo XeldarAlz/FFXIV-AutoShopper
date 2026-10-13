@@ -58,6 +58,7 @@ internal sealed class ListingRequestMachine
     private const long NeverMs = long.MinValue / 2;
 
     private readonly OfferedListing[] offered = new OfferedListing[MaximumListings];
+    private int intervalMs = MinimumIntervalMs;
     private Phase phase;
     private int offeredCount;
     private int failures;
@@ -111,7 +112,14 @@ internal sealed class ListingRequestMachine
 
     public bool IsSending => phase == Phase.Waiting;
 
-    public long NextSendAtMs => Math.Max(lastSendAtMs + MinimumIntervalMs, notBeforeMs);
+    // A setting may ask for longer pauses between searches, never for shorter ones than the floor.
+    public int IntervalMs
+    {
+        get => intervalMs;
+        set => intervalMs = Math.Max(MinimumIntervalMs, value);
+    }
+
+    public long NextSendAtMs => Math.Max(lastSendAtMs + intervalMs, notBeforeMs);
 
     public ReadOnlySpan<OfferedListing> Offered => offered.AsSpan(0, offeredCount);
 
