@@ -29,7 +29,13 @@ internal sealed partial class AutoShopRun(ShopRunState run, ShopSession session)
         try
         {
             var end = await RunToEnd();
-            if (end is { } finished && !CancelToken.IsCancellationRequested)
+            if (CancelToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            await CloseMarketWindows(Scope);
+            if (end is { } finished)
             {
                 Conclude(finished);
             }
