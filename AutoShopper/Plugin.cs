@@ -8,6 +8,7 @@ using AutoShopper.Core.Localization;
 using AutoShopper.Core.Market;
 using AutoShopper.Core.Preview;
 using AutoShopper.Core.Pricing;
+using AutoShopper.Core.Recipes;
 using AutoShopper.Core.Shopping;
 using AutoShopper.Core.Stats;
 using AutoShopper.Core.Tasks;
@@ -51,6 +52,7 @@ public sealed class Plugin : IDalamudPlugin
     internal RunHistory History { get; }
     internal AutoShopController Controller { get; }
     internal ItemCatalog Items { get; }
+    internal RecipeExpander Recipes { get; }
     internal InventoryReader Inventory { get; }
     internal ShoppingListStore Lists { get; }
     internal PriceService Prices { get; }
@@ -81,6 +83,7 @@ public sealed class Plugin : IDalamudPlugin
         History = new RunHistory();
         Controller = new AutoShopController();
         Items = new ItemCatalog();
+        Recipes = new RecipeExpander();
         Inventory = new InventoryReader();
         Lists = new ShoppingListStore(Configuration, Items, Inventory);
         Prices = new PriceService(typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "0");
