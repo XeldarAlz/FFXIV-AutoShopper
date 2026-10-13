@@ -47,6 +47,15 @@ public sealed class ExternalRunTests
     }
 
     [Fact]
+    public void TheRunRemembersWhoStartedItAndItsWayHome()
+    {
+        var external = ExternalRun.From(Request(), Now);
+
+        Assert.Equal(new RunCaller("AutoGcSupply", "Auto GC Supply", ReturnHome: true), external.ToRunCaller());
+        Assert.False(ExternalRun.From(Request() with { ReturnHome = false }, Now).ToRunCaller().ReturnHome);
+    }
+
+    [Fact]
     public void TheListIsNeverOneOfThePlayersLists()
     {
         var external = ExternalRun.From(Request(), Now);

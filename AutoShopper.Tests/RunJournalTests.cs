@@ -47,6 +47,34 @@ public sealed class RunJournalTests : IDisposable
     }
 
     [Fact]
+    public void ThePluginThatStartedARunIsReadBackWithItsWayHome()
+    {
+        var journal = new RunJournal(directory.Path);
+        var caller = new RunCaller("AutoGcSupply", "Auto GC Supply", ReturnHome: false);
+        RunAuthorization.TryCreate(RunId, Character, HomeWorld, [OreDemand], [HomeWorld], MaxSpend, Reserve, 1, Now, out var authorization, caller: caller);
+        Assert.True(journal.TryAppend(authorization!.ToJournalEvent(journal.NextSequence, Now)));
+
+        var read = new RunJournal(directory.Path).Read();
+        var progress = JournalReplayer.Replay(read.Entries);
+
+        Assert.Equal(caller, Assert.IsType<RunAuthorized>(Assert.Single(read.Entries)).Caller);
+        Assert.Equal(caller, progress.Authorization!.Caller);
+    }
+
+    [Fact]
+    public void ThePlayersOwnRunIsWrittenWithoutACaller()
+    {
+        var journal = new RunJournal(directory.Path);
+        new JournalWriter(journal).Authorize();
+
+        var line = Assert.Single(File.ReadAllLines(journal.FilePath));
+        var progress = JournalReplayer.Replay(new RunJournal(directory.Path).Read().Entries);
+
+        Assert.DoesNotContain("Caller", line, StringComparison.Ordinal);
+        Assert.Null(progress.Authorization!.Caller);
+    }
+
+    [Fact]
     public void MissingJournalReadsAsEmpty()
     {
         var read = new RunJournal(directory.Path).Read();

@@ -148,7 +148,9 @@ internal sealed class ShopRunState : IDisposable
     public static ShopRunState Fresh(MarketServices market, IRunJournal journal, bool dryRun, string listName, ExternalRun? external)
         => new(market, journal, Guid.NewGuid(), dryRun, external) { ListName = listName };
 
-    public bool ReturnsHome(Configuration configuration) => External?.ReturnHome ?? configuration.ReturnHomeAfterRun;
+    public bool FromApi => External is not null || Authorization?.Caller is not null;
+
+    public bool ReturnsHome(Configuration configuration) => External?.ReturnHome ?? Authorization?.Caller?.ReturnHome ?? configuration.ReturnHomeAfterRun;
 
     public long MaxSpend(Configuration configuration) => External?.MaxSpend ?? configuration.MaxSpend;
 
@@ -398,7 +400,7 @@ internal sealed class ShopRunState : IDisposable
         session.DryRun = DryRun;
         session.RunId = RunId;
         session.ListName = ListName;
-        session.Caller = External?.CallerDisplayName ?? string.Empty;
+        session.Caller = External?.CallerDisplayName ?? Authorization?.Caller?.DisplayName ?? string.Empty;
         session.Spent = Spent;
         session.Units = DryRun ? Tally.WouldBuyUnits : Tally.ConfirmedUnits;
         session.Purchases = Tally.Purchases;

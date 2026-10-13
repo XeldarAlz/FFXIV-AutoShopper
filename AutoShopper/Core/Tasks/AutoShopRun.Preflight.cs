@@ -221,7 +221,8 @@ internal sealed partial class AutoShopRun
             out var authorization,
             plan.Request.Settings.MaxStops,
             configuration.WorldRevisits,
-            run.DryRun);
+            run.DryRun,
+            run.External?.ToRunCaller());
         if (problem != AuthorizationProblem.None)
         {
             return problem switch

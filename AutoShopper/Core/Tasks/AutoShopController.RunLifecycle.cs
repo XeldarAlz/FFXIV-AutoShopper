@@ -71,7 +71,7 @@ internal sealed partial class AutoShopController
         ending.AfterActionDispatched = true;
         var configuration = Plugin.Instance.Configuration;
         var returnHome = shopRun?.ReturnsHome(configuration) ?? configuration.ReturnHomeAfterRun;
-        var afterRun = shopRun?.External is null ? configuration.AfterRun : AfterRunAction.StayLoggedIn;
+        var afterRun = shopRun is { FromApi: true } ? AfterRunAction.StayLoggedIn : configuration.AfterRun;
         var homeKnown = Worlds.TryHome(out var home);
         var currentKnown = Worlds.TryCurrent(out var current);
         var away = homeKnown && currentKnown && home.Id != current.Id;

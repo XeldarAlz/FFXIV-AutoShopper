@@ -50,6 +50,9 @@ internal sealed record RunAuthorized : JournalEvent
 
     public bool DryRun { get; init; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public RunCaller? Caller { get; init; }
+
     public override bool IsWellFormed()
     {
         return base.IsWellFormed() && CharacterContentId != 0 && MaxSpend > 0 && !Demands.IsDefault && !AllowedWorldIds.IsDefault;

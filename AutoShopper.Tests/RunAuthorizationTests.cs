@@ -106,6 +106,29 @@ public sealed class RunAuthorizationTests
         Assert.True(restored!.DryRun);
     }
 
+    [Fact]
+    public void TheCallerOfAPluginsRunTravelsWithTheAuthorization()
+    {
+        var caller = new RunCaller("AutoGcSupply", "Auto GC Supply", ReturnHome: true);
+        RunAuthorization.TryCreate(RunId, Character, HomeWorld, [OreDemand], [HomeWorld], MaxSpend, Reserve, 1, Now, out var authorization, caller: caller);
+
+        var recorded = authorization!.ToJournalEvent(1, Now);
+
+        Assert.Equal(caller, recorded.Caller);
+        Assert.Equal(AuthorizationProblem.None, RunAuthorization.TryRestore(recorded, out var restored));
+        Assert.Equal(caller, restored!.Caller);
+    }
+
+    [Fact]
+    public void ThePlayersOwnRunHasNoCaller()
+    {
+        var recorded = Authorization().ToJournalEvent(1, Now);
+
+        Assert.Null(recorded.Caller);
+        Assert.Equal(AuthorizationProblem.None, RunAuthorization.TryRestore(recorded, out var restored));
+        Assert.Null(restored!.Caller);
+    }
+
     private static AuthorizationProblem Create(
         out RunAuthorization? authorization,
         Guid? runId = null,

@@ -50,6 +50,8 @@ internal sealed class ExternalRun
         };
     }
 
+    public RunCaller ToRunCaller() => new(Caller, CallerDisplayName, ReturnHome);
+
     public RunStatusLine[] StatusLines(RunTally tally)
     {
         var lines = List.Lines;
