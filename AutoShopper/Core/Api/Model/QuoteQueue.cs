@@ -10,8 +10,8 @@ internal sealed class QuoteQueue
 
     public Guid First => waiting[0].QuoteId;
 
-    public static bool MayStart(TimeSpan sinceCooldownEnded, bool pricesFetching, bool runFetchingPrices)
-        => !pricesFetching && !runFetchingPrices && sinceCooldownEnded >= ApiContract.QuoteYieldWindow;
+    public static bool MayStart(TimeSpan sinceCooldownEnded, bool pricesFetching, bool pricesRequested, bool runFetchingPrices)
+        => !pricesFetching && !pricesRequested && !runFetchingPrices && sinceCooldownEnded >= ApiContract.QuoteYieldWindow;
 
     public bool HasRoomFor(string caller) => CountOf(caller) < ApiContract.MaximumWaitingQuotesPerCaller;
 

@@ -13,27 +13,33 @@ public sealed class QuoteQueueTests
     [Fact]
     public void AQuoteWaitsOutTheWindowLeftToThePlayerAfterTheCooldown()
     {
-        Assert.False(QuoteQueue.MayStart(TimeSpan.Zero, pricesFetching: false, runFetchingPrices: false));
-        Assert.False(QuoteQueue.MayStart(ApiContract.QuoteYieldWindow - JustOver, pricesFetching: false, runFetchingPrices: false));
-        Assert.True(QuoteQueue.MayStart(ApiContract.QuoteYieldWindow, pricesFetching: false, runFetchingPrices: false));
+        Assert.False(QuoteQueue.MayStart(TimeSpan.Zero, pricesFetching: false, pricesRequested: false, runFetchingPrices: false));
+        Assert.False(QuoteQueue.MayStart(ApiContract.QuoteYieldWindow - JustOver, pricesFetching: false, pricesRequested: false, runFetchingPrices: false));
+        Assert.True(QuoteQueue.MayStart(ApiContract.QuoteYieldWindow, pricesFetching: false, pricesRequested: false, runFetchingPrices: false));
     }
 
     [Fact]
     public void AQuoteStartsAtOnceWhenNothingWasFetchedYet()
     {
-        Assert.True(QuoteQueue.MayStart(TimeSpan.MaxValue, pricesFetching: false, runFetchingPrices: false));
+        Assert.True(QuoteQueue.MayStart(TimeSpan.MaxValue, pricesFetching: false, pricesRequested: false, runFetchingPrices: false));
     }
 
     [Fact]
     public void AQuoteNeverStartsWhileThePlayersPricesAreComing()
     {
-        Assert.False(QuoteQueue.MayStart(TimeSpan.MaxValue, pricesFetching: true, runFetchingPrices: false));
+        Assert.False(QuoteQueue.MayStart(TimeSpan.MaxValue, pricesFetching: true, pricesRequested: false, runFetchingPrices: false));
+    }
+
+    [Fact]
+    public void AQuoteNeverTakesTheFetchThePlayerJustAskedFor()
+    {
+        Assert.False(QuoteQueue.MayStart(TimeSpan.MaxValue, pricesFetching: false, pricesRequested: true, runFetchingPrices: false));
     }
 
     [Fact]
     public void AQuoteNeverStartsWhileARunIsGettingItsPrices()
     {
-        Assert.False(QuoteQueue.MayStart(TimeSpan.MaxValue, pricesFetching: false, runFetchingPrices: true));
+        Assert.False(QuoteQueue.MayStart(TimeSpan.MaxValue, pricesFetching: false, pricesRequested: false, runFetchingPrices: true));
     }
 
     [Fact]

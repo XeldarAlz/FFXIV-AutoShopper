@@ -115,7 +115,7 @@ internal sealed class ApiQuotes : IDisposable
     public void Dispose() => Unhook();
 
     private bool MayStart()
-        => QuoteQueue.MayStart(prices.SinceCooldownEnded, prices.Fetching, controller.ShopRun is { State: RunState.FetchingPrices });
+        => QuoteQueue.MayStart(prices.SinceCooldownEnded, prices.Fetching, preview.PricesRequested, controller.ShopRun is { State: RunState.FetchingPrices });
 
     private bool TryFetch(Quote quote)
     {

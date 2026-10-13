@@ -55,6 +55,8 @@ internal sealed class PlanPreview : IDisposable
 
     public bool Planning => planningRunning || changedAtMs != 0;
 
+    public bool PricesRequested => pricesRequested;
+
     public PriceStartResult LastPriceRequest { get; private set; } = PriceStartResult.Started;
 
     public long PriceRequestCount { get; private set; }
