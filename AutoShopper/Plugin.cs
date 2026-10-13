@@ -1,4 +1,5 @@
 using AutoShopper.Core;
+using AutoShopper.Core.Api;
 using AutoShopper.Core.Debug;
 using AutoShopper.Core.Game.Watchers;
 using AutoShopper.Core.Inventory;
@@ -62,6 +63,7 @@ public sealed class Plugin : IDalamudPlugin
     internal ShopLedger Ledger { get; }
     internal CongestionWatcher Congestion { get; }
     internal RunSummaries Summaries { get; }
+    internal BuyingApi Api { get; }
 
     private readonly DutyWatcher dutyWatcher;
     private readonly GmAlertWatcher gmAlertWatcher;
@@ -114,6 +116,8 @@ public sealed class Plugin : IDalamudPlugin
             completed.Push(dutyWatcher.Dispose);
             gmAlertWatcher = new GmAlertWatcher();
             completed.Push(gmAlertWatcher.Dispose);
+            Api = new BuyingApi(this);
+            completed.Push(Api.Dispose);
 
             InitializeLocalization();
             Fonts.Initialize(PluginInterface.UiBuilder, PluginDirectory);
@@ -159,6 +163,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
+        Api.Dispose();
         Controller.Shutdown();
         TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
 

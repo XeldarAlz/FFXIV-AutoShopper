@@ -841,5 +841,10 @@
   "shop.dryRun.confirmTitle": "Выключить пробный прогон?",
   "shop.dryRun.confirmBody": "Каждая следующая закупка тратит настоящий гил, вплоть до лимита трат на закупку.",
   "shop.dryRun.confirmYes": "Тратить настоящий гил",
-  "shop.dryRun.confirmNo": "Оставить пробный прогон"
+  "shop.dryRun.confirmNo": "Оставить пробный прогон",
+  "api.quoteRefused": "Нельзя оценить эти предметы: {0}.",
+  "api.reason.schema": "запрос использует схему Buying API, которую эта версия Auto Shopper не знает",
+  "api.reason.invalid": "запрос недействителен ({0})",
+  "api.reason.consent": "сначала разрешите {0} на странице «Покупки» в Auto Shopper",
+  "api.reason.denied": "{0} запрещён; разрешите его в Auto Shopper в разделе «Настройки», «Общие»"
 }

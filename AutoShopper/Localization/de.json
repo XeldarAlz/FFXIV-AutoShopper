@@ -841,5 +841,10 @@
   "shop.dryRun.confirmTitle": "Probelauf ausschalten?",
   "shop.dryRun.confirmBody": "Jeder Lauf danach gibt echtes Gil aus, bis zu deinem Ausgabelimit pro Lauf.",
   "shop.dryRun.confirmYes": "Echtes Gil ausgeben",
-  "shop.dryRun.confirmNo": "Probelauf behalten"
+  "shop.dryRun.confirmNo": "Probelauf behalten",
+  "api.quoteRefused": "Diese Gegenstände können nicht bepreist werden: {0}.",
+  "api.reason.schema": "die Anfrage nutzt ein Schema der Buying API, das diese Version von Auto Shopper nicht kennt",
+  "api.reason.invalid": "die Anfrage ist ungültig ({0})",
+  "api.reason.consent": "erlaube {0} zuerst auf der Seite Einkauf von Auto Shopper",
+  "api.reason.denied": "{0} ist abgelehnt; erlaube es in Auto Shopper unter Einstellungen, Allgemein"
 }

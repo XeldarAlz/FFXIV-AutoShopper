@@ -841,5 +841,10 @@
   "shop.dryRun.confirmTitle": "Desligar a simulação?",
   "shop.dryRun.confirmBody": "Cada rodada a partir de agora gasta gil de verdade, até o seu limite de gasto por rodada.",
   "shop.dryRun.confirmYes": "Gastar gil de verdade",
-  "shop.dryRun.confirmNo": "Manter a simulação"
+  "shop.dryRun.confirmNo": "Manter a simulação",
+  "api.quoteRefused": "Não é possível cotar estes itens: {0}.",
+  "api.reason.schema": "o pedido usa um esquema da Buying API que esta versão do Auto Shopper não conhece",
+  "api.reason.invalid": "o pedido não é válido ({0})",
+  "api.reason.consent": "permita {0} primeiro na página Compras do Auto Shopper",
+  "api.reason.denied": "{0} está negado; permita-o em Configurações, Geral do Auto Shopper"
 }

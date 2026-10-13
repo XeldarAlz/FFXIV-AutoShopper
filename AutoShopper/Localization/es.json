@@ -841,5 +841,10 @@
   "shop.dryRun.confirmTitle": "¿Desactivar el simulacro?",
   "shop.dryRun.confirmBody": "Cada ronda a partir de ahora gasta guiles reales, hasta tu límite de gasto por ronda.",
   "shop.dryRun.confirmYes": "Gastar guiles reales",
-  "shop.dryRun.confirmNo": "Mantener el simulacro"
+  "shop.dryRun.confirmNo": "Mantener el simulacro",
+  "api.quoteRefused": "No se pueden tasar estos objetos: {0}.",
+  "api.reason.schema": "la solicitud usa un esquema de la Buying API que esta versión de Auto Shopper no conoce",
+  "api.reason.invalid": "la solicitud no es válida ({0})",
+  "api.reason.consent": "permite primero a {0} en la página Compras de Auto Shopper",
+  "api.reason.denied": "{0} está denegado; permítelo en Ajustes, General de Auto Shopper"
 }

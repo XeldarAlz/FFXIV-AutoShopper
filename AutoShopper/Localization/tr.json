@@ -841,5 +841,10 @@
   "shop.dryRun.confirmTitle": "Deneme turu kapatılsın mı?",
   "shop.dryRun.confirmBody": "Bundan sonraki her tur, tur başına harcama sınırına kadar gerçek gil harcar.",
   "shop.dryRun.confirmYes": "Gerçek gil harca",
-  "shop.dryRun.confirmNo": "Deneme turunu koru"
+  "shop.dryRun.confirmNo": "Deneme turunu koru",
+  "api.quoteRefused": "Bu eşyaların fiyatı çıkarılamıyor: {0}.",
+  "api.reason.schema": "istek, Auto Shopper'ın bu sürümünün bilmediği bir Buying API şeması kullanıyor",
+  "api.reason.invalid": "istek geçerli değil ({0})",
+  "api.reason.consent": "önce Auto Shopper'ın Alışveriş sayfasında {0} eklentisine izin verin",
+  "api.reason.denied": "{0} reddedildi; Auto Shopper'da Ayarlar, Genel bölümünden izin verin"
 }

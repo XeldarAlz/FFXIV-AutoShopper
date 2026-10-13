@@ -841,5 +841,10 @@
   "shop.dryRun.confirmTitle": "ドライランをオフにしますか？",
   "shop.dryRun.confirmBody": "これ以降の実行は、実行ごとの支出上限まで実際のギルを使います。",
   "shop.dryRun.confirmYes": "実際のギルを使う",
-  "shop.dryRun.confirmNo": "ドライランのままにする"
+  "shop.dryRun.confirmNo": "ドライランのままにする",
+  "api.quoteRefused": "これらのアイテムの価格を出せません：{0}。",
+  "api.reason.schema": "このバージョンの Auto Shopper が知らない Buying API のスキーマが使われています",
+  "api.reason.invalid": "リクエストが正しくありません（{0}）",
+  "api.reason.consent": "まず Auto Shopper の買い物ページで {0} を許可してください",
+  "api.reason.denied": "{0} は拒否されています。Auto Shopper の設定の一般で許可してください"
 }

@@ -841,5 +841,10 @@
   "shop.dryRun.confirmTitle": "Désactiver la simulation ?",
   "shop.dryRun.confirmBody": "Chaque tournée suivante dépense de vrais gils, jusqu'à votre limite de dépense par tournée.",
   "shop.dryRun.confirmYes": "Dépenser de vrais gils",
-  "shop.dryRun.confirmNo": "Garder la simulation"
+  "shop.dryRun.confirmNo": "Garder la simulation",
+  "api.quoteRefused": "Impossible d'estimer le prix de ces objets : {0}.",
+  "api.reason.schema": "la demande utilise un schéma de la Buying API que cette version d'Auto Shopper ne connaît pas",
+  "api.reason.invalid": "la demande n'est pas valide ({0})",
+  "api.reason.consent": "autorisez d'abord {0} sur la page Achats d'Auto Shopper",
+  "api.reason.denied": "{0} est refusé ; autorisez-le dans Réglages, Général d'Auto Shopper"
 }

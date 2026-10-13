@@ -841,5 +841,10 @@
   "shop.dryRun.confirmTitle": "关闭试运行？",
   "shop.dryRun.confirmBody": "此后的每次运行都会花费真实的金币，最多到每次运行的花费上限。",
   "shop.dryRun.confirmYes": "花费真实金币",
-  "shop.dryRun.confirmNo": "保持试运行"
+  "shop.dryRun.confirmNo": "保持试运行",
+  "api.quoteRefused": "无法为这些物品报价：{0}。",
+  "api.reason.schema": "请求使用了此版本 Auto Shopper 不认识的 Buying API 架构",
+  "api.reason.invalid": "请求无效（{0}）",
+  "api.reason.consent": "请先在 Auto Shopper 的购物页面允许 {0}",
+  "api.reason.denied": "{0} 已被拒绝；请在 Auto Shopper 的设置、常规中允许它"
 }

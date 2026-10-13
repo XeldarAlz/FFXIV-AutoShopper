@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using AutoShopper.Core.Api.Model;
 using AutoShopper.Core.Execution.Model;
 using AutoShopper.Core.Ledger;
 using AutoShopper.Core.Market;
@@ -38,12 +39,13 @@ internal sealed class ShopRunState : IDisposable
     private bool settleHooked;
     private bool disposed;
 
-    private ShopRunState(MarketServices market, IRunJournal journal, Guid runId, bool dryRun)
+    private ShopRunState(MarketServices market, IRunJournal journal, Guid runId, bool dryRun, ExternalRun? external = null)
     {
         this.market = market;
         Journal = journal;
         RunId = runId;
         DryRun = dryRun;
+        External = external;
         settleTick = _ => SettleIfAnswered();
         Spend = new SpendBook(0);
         Tally = new RunTally(ImmutableArray<PlanDemand>.Empty);
@@ -54,6 +56,12 @@ internal sealed class ShopRunState : IDisposable
     public bool DryRun { get; }
 
     public IRunJournal Journal { get; }
+
+    public ExternalRun? External { get; }
+
+    public ApiRefusal? Refusal { get; private set; }
+
+    public string RefusalReason { get; private set; } = string.Empty;
 
     public string ListName { get; private set; } = string.Empty;
 
@@ -124,6 +132,8 @@ internal sealed class ShopRunState : IDisposable
 
     public bool HasUnknownOutcome => LastSettlement.Kind == SettledKind.Unknown || (LastSettlement.Kind != SettledKind.None && !LastSettlement.Durable);
 
+    public long Spent => DryRun ? Tally.WouldBuySpend : Tally.ConfirmedSpend;
+
     public Action? Settled { get; set; }
 
     public static RunOutcome OutcomeOf(RunState state) => state switch
@@ -135,8 +145,19 @@ internal sealed class ShopRunState : IDisposable
         _ => RunOutcome.Stopped,
     };
 
-    public static ShopRunState Fresh(MarketServices market, IRunJournal journal, bool dryRun, string listName)
-        => new(market, journal, Guid.NewGuid(), dryRun) { ListName = listName };
+    public static ShopRunState Fresh(MarketServices market, IRunJournal journal, bool dryRun, string listName, ExternalRun? external)
+        => new(market, journal, Guid.NewGuid(), dryRun, external) { ListName = listName };
+
+    public bool ReturnsHome(Configuration configuration) => External?.ReturnHome ?? configuration.ReturnHomeAfterRun;
+
+    public long MaxSpend(Configuration configuration) => External?.MaxSpend ?? configuration.MaxSpend;
+
+    public void NoteRefusal(ApiRefusal refusal, string reason)
+    {
+        Refusal = refusal;
+        RefusalReason = reason;
+        Changed();
+    }
 
     // A run the journal says was interrupted: its authorization, its confirmed purchases, its exclusions and the
     // revisits it made come back; its plan is made again from fresh prices.
@@ -377,7 +398,8 @@ internal sealed class ShopRunState : IDisposable
         session.DryRun = DryRun;
         session.RunId = RunId;
         session.ListName = ListName;
-        session.Spent = DryRun ? Tally.WouldBuySpend : Tally.ConfirmedSpend;
+        session.Caller = External?.CallerDisplayName ?? string.Empty;
+        session.Spent = Spent;
         session.Units = DryRun ? Tally.WouldBuyUnits : Tally.ConfirmedUnits;
         session.Purchases = Tally.Purchases;
     }

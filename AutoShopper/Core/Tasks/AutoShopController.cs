@@ -1,3 +1,4 @@
+using AutoShopper.Core.Api.Model;
 using AutoShopper.Core.Execution.Model;
 using AutoShopper.Core.External;
 using AutoShopper.Core.Ipc;
@@ -73,10 +74,7 @@ internal sealed partial class AutoShopController
             return;
         }
 
-        var configuration = plugin.Configuration;
-        var listName = plugin.Lists.Selected?.Name ?? string.Empty;
-        IRunJournal journal = configuration.DryRun ? new MemoryJournal() : plugin.Ledger.Journal;
-        BeginShopRun(ShopRunState.Fresh(plugin.Market, journal, configuration.DryRun, listName), configuration.DryRun ? "dry run" : "run");
+        BeginFresh(plugin.Lists.Selected?.Name ?? string.Empty, null);
     }
 
     // A run the journal says was interrupted by a logout or an unload comes back only on this click.
@@ -382,6 +380,16 @@ internal sealed partial class AutoShopController
 
     private bool CanRestart() => runTaskFactory is not null;
 
+    private ShopRunState BeginFresh(string listName, ExternalRun? external)
+    {
+        var plugin = Plugin.Instance;
+        var dryRun = plugin.Configuration.DryRun;
+        IRunJournal journal = dryRun ? new MemoryJournal() : plugin.Ledger.Journal;
+        var state = ShopRunState.Fresh(plugin.Market, journal, dryRun, listName, external);
+        BeginShopRun(state, dryRun ? "dry run" : "run");
+        return state;
+    }
+
     private void BeginShopRun(ShopRunState state, string plan)
     {
         stopping = false;
@@ -502,6 +510,7 @@ internal sealed partial class AutoShopController
 
     private void ClearRun()
     {
+        RecordExternalResult();
         session = null;
         runTaskFactory = null;
         progress.Reset();

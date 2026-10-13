@@ -71,7 +71,7 @@ internal sealed class RunView
         && TallyRevision == run.Tally.Revision
         && ReferenceEquals(Language, Loc.Current)
         && WithNames == withNames
-        && ReturnHomeWanted == Plugin.Instance.Configuration.ReturnHomeAfterRun;
+        && ReturnHomeWanted == run.ReturnsHome(Plugin.Instance.Configuration);
 
     public static RunView Build(ShopRunState run, bool withNames)
     {
@@ -93,8 +93,8 @@ internal sealed class RunView
             Issues = BuildIssues(run),
             Route = BuildRoute(run),
             SkippedNotes = BuildSkippedNotes(run),
-            ReturnHome = ReturnHomeText(run, Plugin.Instance.Configuration.ReturnHomeAfterRun),
-            ReturnHomeWanted = Plugin.Instance.Configuration.ReturnHomeAfterRun,
+            ReturnHome = ReturnHomeText(run, run.ReturnsHome(Plugin.Instance.Configuration)),
+            ReturnHomeWanted = run.ReturnsHome(Plugin.Instance.Configuration),
         };
     }
 

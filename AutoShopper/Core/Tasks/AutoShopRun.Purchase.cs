@@ -178,7 +178,7 @@ internal sealed partial class AutoShopRun
     {
         var stopsAhead = run.Route?.CountWithStatus(RouteStatus.Ahead) ?? 0;
         var awayFromHome = Svc.PlayerState.CurrentWorld.RowId != Svc.PlayerState.HomeWorld.RowId;
-        return TravelBudget.Commitment(stopsAhead, Owner.Configuration.ReturnHomeAfterRun && (stopsAhead > 0 || awayFromHome));
+        return TravelBudget.Commitment(stopsAhead, run.ReturnsHome(Owner.Configuration) && (stopsAhead > 0 || awayFromHome));
     }
 
     // A dry run counts what it would have spent as gone, as its purchases do.
