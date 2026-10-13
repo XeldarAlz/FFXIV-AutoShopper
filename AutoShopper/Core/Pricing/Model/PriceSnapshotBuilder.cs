@@ -7,7 +7,8 @@ namespace AutoShopper.Core.Pricing.Model;
 internal static class PriceSnapshotBuilder
 {
     // Items the previous snapshot priced over the same worlds stay in, so switching lists does not drop prices that
-    // are still the newest known; each item keeps its own upload times, so carried prices age honestly.
+    // are still the newest known; each item keeps its own upload times, so carried prices age honestly. An item whose
+    // every request failed this time keeps its previous prices as well, marked as a failed request.
     public static PriceSnapshot Build(
         long generation,
         DateTime fetchedAtUtc,
@@ -21,7 +22,8 @@ internal static class PriceSnapshotBuilder
         {
             var chunk = chunks[chunkIndex];
             // A 404 is an answer: the item or scope is unknown to Universalis, which the item's coverage records.
-            if (chunk.Failed && chunk.Failure != PriceFailure.NotFound)
+            var answered = !chunk.Failed || chunk.Failure == PriceFailure.NotFound;
+            if (!answered)
             {
                 failed++;
             }
@@ -36,19 +38,26 @@ internal static class PriceSnapshotBuilder
                     accumulators.Add(prices.ItemId, accumulator);
                 }
 
-                accumulator.Add(prices);
+                accumulator.Add(prices, answered);
             }
         }
 
+        var carriedFrom = previous is not null && previous.HasSameWorlds(worlds) ? previous : null;
         var built = new List<ItemPrices>(accumulators.Count);
         foreach (var accumulator in accumulators.Values)
         {
+            if (carriedFrom is not null && !accumulator.Answered && carriedFrom.TryGetItem(accumulator.ItemId, out var kept))
+            {
+                built.Add(MarkFailed(kept));
+                continue;
+            }
+
             built.Add(accumulator.Finish(worlds));
         }
 
-        if (previous is not null && previous.HasSameWorlds(worlds))
+        if (carriedFrom is not null)
         {
-            var carried = previous.Items;
+            var carried = carriedFrom.Items;
             for (var index = 0; index < carried.Length; index++)
             {
                 if (!accumulators.ContainsKey(carried[index].ItemId))
@@ -78,6 +87,22 @@ internal static class PriceSnapshotBuilder
             Coverage = coverage,
             RequestCount = chunks.Count,
             FailedRequestCount = failed,
+        };
+    }
+
+    private static ItemPrices MarkFailed(ItemPrices kept)
+    {
+        if ((kept.Coverage & PriceCoverage.RequestFailed) != PriceCoverage.None)
+        {
+            return kept;
+        }
+
+        return new ItemPrices
+        {
+            ItemId = kept.ItemId,
+            Coverage = kept.Coverage | PriceCoverage.RequestFailed,
+            Worlds = kept.Worlds,
+            Offers = kept.Offers,
         };
     }
 
@@ -179,8 +204,14 @@ internal static class PriceSnapshotBuilder
             this.itemId = itemId;
         }
 
-        public void Add(ItemPrices prices)
+        public uint ItemId => itemId;
+
+        // True once any request that carried this item was answered.
+        public bool Answered { get; private set; }
+
+        public void Add(ItemPrices prices, bool answered)
         {
+            Answered |= answered;
             coverage |= prices.Coverage;
             var entries = prices.Worlds;
             for (var index = 0; index < entries.Length; index++)

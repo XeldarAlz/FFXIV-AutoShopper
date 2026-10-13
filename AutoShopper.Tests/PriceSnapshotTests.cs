@@ -101,6 +101,53 @@ public sealed class PriceSnapshotTests
     }
 
     [Fact]
+    public void ItemWhoseEveryRequestFailedKeepsItsPreviousPricesMarkedFailed()
+    {
+        var first = Build([Translate("dc-multi-trimmed.json", FireShard, HighQualityItem)]);
+        Assert.True(first.TryGetItem(FireShard, out var before));
+        var chunk = Chunk(PriceQueryKind.DataCenter, "Aether", Allowed, FireShard);
+
+        var second = PriceSnapshotBuilder.Build(2, FetchedAt.AddMinutes(5), Allowed, [ChunkPrices.FailedWith(chunk, PriceFailure.RetriesExhausted)], first);
+
+        Assert.True(second.TryGetItem(FireShard, out var kept));
+        Assert.Equal(before.Offers.Length, kept.Offers.Length);
+        Assert.True(kept.Offers.AsSpan().SequenceEqual(before.Offers.AsSpan()));
+        Assert.True(kept.Worlds.AsSpan().SequenceEqual(before.Worlds.AsSpan()));
+        Assert.Equal(before.Coverage | PriceCoverage.RequestFailed, kept.Coverage);
+        Assert.True(kept.HasAnyUpload);
+        Assert.Equal(1, second.FailedRequestCount);
+        Assert.Equal(CountOffers(second), second.Offers.Length);
+        Assert.True(second.TryGetItem(HighQualityItem, out _));
+    }
+
+    [Fact]
+    public void ItemAnsweredByAnyRequestTakesTheNewPrices()
+    {
+        var first = Build([Translate("dc-multi-trimmed.json", FireShard)]);
+        var failed = Chunk(PriceQueryKind.World, "54", [Faerie], FireShard);
+        var answered = Translate("dc-multi-trimmed.json", FireShard);
+
+        var second = PriceSnapshotBuilder.Build(2, FetchedAt, Allowed, [ChunkPrices.FailedWith(failed, PriceFailure.Timeout), answered], first);
+
+        Assert.True(second.TryGetItem(FireShard, out var item));
+        Assert.NotSame(first.Items[0], item);
+        Assert.True((item.Coverage & PriceCoverage.RequestFailed) != 0);
+    }
+
+    [Fact]
+    public void FailedItemWithoutPreviousPricesStaysWithoutData()
+    {
+        var first = Build([Translate("dc-multi-trimmed.json", HighQualityItem)]);
+        var chunk = Chunk(PriceQueryKind.DataCenter, "Aether", Allowed, FireShard);
+
+        var second = PriceSnapshotBuilder.Build(2, FetchedAt, Allowed, [ChunkPrices.FailedWith(chunk, PriceFailure.HttpError)], first);
+
+        Assert.True(second.TryGetItem(FireShard, out var item));
+        Assert.False(item.HasAnyUpload);
+        Assert.Equal(PriceCoverage.RequestFailed, item.Coverage);
+    }
+
+    [Fact]
     public void WorldSetsCompareRegardlessOfOrder()
     {
         var snapshot = Build([Translate("dc-multi-trimmed.json", FireShard)]);
