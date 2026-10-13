@@ -11,7 +11,7 @@ namespace AutoShopper.Windows.Pages;
 
 internal sealed class SettingsPage
 {
-    private enum Tab { General, Travel, Humanizer, Safety }
+    private enum Tab { General, Shopping, Travel, Humanizer, Safety }
 
     private readonly record struct Entry(Tab Tab, LocString Label, FontAwesomeIcon Icon, LocString Subtitle);
 
@@ -19,6 +19,7 @@ internal sealed class SettingsPage
     private static readonly Entry[] entries =
     [
         new(Tab.General, L.Settings.CatGeneral, FontAwesomeIcon.Cog, L.Settings.CatGeneralSub),
+        new(Tab.Shopping, L.Shopping.Tab, FontAwesomeIcon.Coins, L.Shopping.TabSub),
         new(Tab.Travel, L.Travel.Tab, FontAwesomeIcon.Route, L.Travel.TabSub),
         new(Tab.Humanizer, L.Humanizer.Tab, FontAwesomeIcon.UserClock, L.Humanizer.TabSub),
         new(Tab.Safety, L.Safety.Tab, FontAwesomeIcon.UserSecret, L.Safety.TabSub),
@@ -29,7 +30,6 @@ internal sealed class SettingsPage
 
     public void Draw(Plugin plugin)
     {
-        var configuration = plugin.Configuration;
         var scale = ImGuiHelpers.GlobalScale;
         var navWidth = Layout.SettingsNavWidth * scale;
 
@@ -49,7 +49,7 @@ internal sealed class SettingsPage
             {
                 if (content)
                 {
-                    DrawContent(configuration);
+                    DrawContent(plugin);
                 }
             }
         }
@@ -87,8 +87,9 @@ internal sealed class SettingsPage
         resetScroll = true;
     }
 
-    private void DrawContent(Configuration configuration)
+    private void DrawContent(Plugin plugin)
     {
+        var configuration = plugin.Configuration;
         if (resetScroll)
         {
             ImGui.SetScrollY(0f);
@@ -107,6 +108,9 @@ internal sealed class SettingsPage
         {
             case Tab.General:
                 GeneralSettings.Draw(configuration);
+                break;
+            case Tab.Shopping:
+                ShoppingSettings.Draw(plugin);
                 break;
             case Tab.Travel:
                 AfterRunSettings.Draw(configuration);
