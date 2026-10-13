@@ -35,6 +35,9 @@ internal static class ScopeResolver
     public static bool IsLeftOut(in ScopeWorld world, in ScopeWorld current, bool allowJapanese)
         => !allowJapanese && world.RegionId == JapanRegion && world.DataCenterId != current.DataCenterId;
 
+    // Travel never leaves the region the character stands in, so no run can reach a world of another region.
+    public static bool IsOutsideRegion(in ScopeWorld world, in ScopeWorld current) => world.RegionId != current.RegionId;
+
     public static ImmutableArray<ScopeWorld> Resolve(
         ScopePreset preset,
         in ScopeWorld current,
@@ -48,7 +51,7 @@ internal static class ScopeResolver
         for (var index = 0; index < candidates.Length; index++)
         {
             var world = candidates[index];
-            if (!world.IsKnown || IsLeftOut(world, current, allowJapanese) || !IsIncluded(preset, world, current, home, added, excluded))
+            if (!world.IsKnown || IsOutsideRegion(world, current) || IsLeftOut(world, current, allowJapanese) || !IsIncluded(preset, world, current, home, added, excluded))
             {
                 continue;
             }
@@ -73,7 +76,7 @@ internal static class ScopeResolver
         for (var index = 0; index < candidates.Length; index++)
         {
             var world = candidates[index];
-            if (world.IsKnown && IsLeftOut(world, current, allowJapanese) && IsIncluded(preset, world, current, home, added, excluded))
+            if (world.IsKnown && !IsOutsideRegion(world, current) && IsLeftOut(world, current, allowJapanese) && IsIncluded(preset, world, current, home, added, excluded))
             {
                 count++;
             }
