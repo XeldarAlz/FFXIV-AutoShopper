@@ -88,7 +88,10 @@ jobs:
       - name: Download Dalamud dev build
         shell: pwsh
         run: |
-          $dalamudUrl = "https://goatcorp.github.io/dalamud-distrib/latest.zip"
+          # Pinned to the 15.0.3.6 build (dalamud-distrib commit 3e8e6eb) until ECommons compiles against
+          # 15.0.3.7, whose FFXIVClientStructs declares an ExcelPage that clashes with Lumina's in
+          # ECommons/ExcelServices/Sheets/QuestDialogueText.cs. Restore the latest.zip line once it does.
+          $dalamudUrl = "https://raw.githubusercontent.com/goatcorp/dalamud-distrib/3e8e6eb456c928401febd1d9452c4b8d4cad0eb5/latest.zip"
           $dalamudDir = "$env:AppData\XIVLauncher\addon\Hooks\dev"
           New-Item -ItemType Directory -Force -Path $dalamudDir | Out-Null
           Invoke-WebRequest -Uri $dalamudUrl -OutFile dalamud.zip
