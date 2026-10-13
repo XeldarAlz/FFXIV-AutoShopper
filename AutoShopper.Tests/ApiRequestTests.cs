@@ -170,6 +170,19 @@ public sealed class ApiRequestTests
     }
 
     [Fact]
+    public void ALineTheItemDataRefusesIsNamedByItsField()
+    {
+        var traits = new FakeRecipeBook([], [Cloth]);
+        var unmarketable = ExternalRun.From(Run() with { Lines = [Line(), Line() with { ItemId = Cloth }] }, DateTime.UtcNow);
+        var withoutHighQuality = ExternalRun.From(Run() with { Lines = [Line() with { Quality = ItemQuality.HighQuality }] }, DateTime.UtcNow);
+        var fine = ExternalRun.From(Run(), DateTime.UtcNow);
+
+        Assert.Equal("lines[1].itemId", ApiRequests.LineField(ListNormalizer.Validate(unmarketable.List.Lines, traits)));
+        Assert.Equal("lines[0].quality", ApiRequests.LineField(ListNormalizer.Validate(withoutHighQuality.List.Lines, traits)));
+        Assert.Equal("lines", ApiRequests.LineField(ListNormalizer.Validate(fine.List.Lines, traits)));
+    }
+
+    [Fact]
     public void TheDisplayNameFallsBackToTheCallerAndLosesControlCharacters()
     {
         Assert.Equal(Caller, ApiRequests.DisplayName(Caller, null));

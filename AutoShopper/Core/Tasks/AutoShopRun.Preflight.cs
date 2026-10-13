@@ -81,7 +81,7 @@ internal sealed partial class AutoShopRun
         var readiness = ShopReadiness.Evaluate(plugin, forRun: true, external);
         if (readiness != Readiness.Ready)
         {
-            return Refused(readiness);
+            return new PreflightRefusal(ShopReadiness.Refusal(readiness), ShopReadiness.Reason(readiness, external));
         }
 
         if (plugin.Preview.Scope is not { } scope)
@@ -89,7 +89,7 @@ internal sealed partial class AutoShopRun
             return Refused(ApiRefusal.LoggedOut, L.Shop.ReasonLoggedOut);
         }
 
-        var demands = DemandBuilder.Build(ListAnalysis.Build(external.List, plugin.Items).Normalized.Demands, null);
+        var demands = DemandBuilder.Build(ListNormalizer.Normalize(external.List.Lines).Demands, null);
         var authorized = RunPlanning.AuthorizedDemands(demands.Demands);
         if (authorized.IsEmpty)
         {

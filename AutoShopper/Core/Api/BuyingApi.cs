@@ -158,7 +158,7 @@ internal sealed class BuyingApi : IDisposable
         var readiness = plugin.Controller.StartExternal(external, out var runId);
         if (readiness != Readiness.Ready)
         {
-            return StartRunResponse.Refuse(ShopReadiness.Refusal(readiness), Refused(ShopReadiness.Reason(readiness)));
+            return StartRunResponse.Refuse(ShopReadiness.Refusal(readiness), Refused(ShopReadiness.Reason(readiness, external)));
         }
 
         RunLog.Info($"Buying API: {displayName} started run {runId} for '{external.List.Name}': {external.List.Lines.Count} line(s), cap {external.MaxSpend}, way home {external.ReturnHome}.");

@@ -113,6 +113,18 @@ internal static class ShopReadiness
         _ => string.Empty,
     };
 
+    public static string Reason(Readiness readiness, ExternalRun external)
+    {
+        if (readiness != Readiness.ListHasErrors)
+        {
+            return Reason(readiness);
+        }
+
+        var items = Plugin.Instance.Items;
+        var validation = ListAnalysis.Build(external.List, items.IsReady ? items : null).Validation;
+        return Loc.T(L.Api.ReasonInvalid, ApiRequests.LineField(validation));
+    }
+
     public static ApiRefusal Refusal(Readiness readiness) => readiness switch
     {
         Readiness.SetupNeeded => ApiRefusal.SetupNeeded,

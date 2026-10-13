@@ -123,6 +123,20 @@ internal static class ApiRequests
         return true;
     }
 
+    public static string LineField(ListValidation validation)
+    {
+        for (var index = 0; index < validation.LineCount; index++)
+        {
+            var problems = validation.At(index);
+            if (ListValidation.IsError(problems))
+            {
+                return Field(LinesField, index, (problems & LineProblems.QualityUnavailable) != 0 ? "quality" : "itemId");
+            }
+        }
+
+        return LinesField;
+    }
+
     public static string DisplayName(string caller, string? displayName)
     {
         var cleaned = ShoppingLimits.CleanName(displayName, ApiContract.MaximumNameLength);
