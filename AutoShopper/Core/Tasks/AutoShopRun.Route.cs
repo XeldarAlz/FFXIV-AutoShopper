@@ -78,6 +78,13 @@ internal sealed partial class AutoShopRun
             return StopReach.LeftForResume;
         }
 
+        if (Owner.Controller.StopDeferred)
+        {
+            session.CrossedDataCenter |= crossDataCenter && outcome == JourneyOutcome.Arrived;
+            Owner.Controller.ApplyDeferredStop();
+            return StopReach.Reached;
+        }
+
         // A pause asked for while the transfer was under way waited for it, and takes effect now; a Resume travels on
         // from wherever the transfer left the character.
         if (Owner.Controller.ApplyDeferredPause())

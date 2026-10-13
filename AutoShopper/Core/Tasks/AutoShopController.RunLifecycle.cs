@@ -314,6 +314,12 @@ internal sealed partial class AutoShopController
             return false;
         }
 
+        if (deferredStop)
+        {
+            Diag("Run task faulted while its caller's permission was taken back; the run ends instead of restarting.");
+            return false;
+        }
+
         if (runFaultResumeCount >= MaxFaultResumesPerRun)
         {
             Diag($"Run task faulted after {runFaultResumeCount} restarts in this run; not resuming. The run ends.");

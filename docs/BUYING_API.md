@@ -37,6 +37,7 @@ Lets another Dalamud plugin price items and run a bounded Auto Shopper shopping 
 - Revoke forgets the answer: the caller's next `StartRun` is refused with `ConsentRequired` and the card asks again.
 - A denied caller is refused with `ConsentDenied` until the player allows it from Settings.
 - Revoke and Deny also end what the caller has under way: its active API run is stopped exactly as `StopRun` stops it, and its quotes still waiting for their turn at the price fetch turn `Failed` with `PricesUnavailable`. A quote already fetching finishes. A run the player resumed from the Shop page is the player's and is left alone.
+- A run in the middle of a data center transfer it asked for is not cut short by Revoke or Deny, since that can strand the character halfway: it goes on until the transfer has ended and stops right after, before it buys anything more. `RunStatus` reports it as running until then.
 - A run checks consent once more right before it is authorized, after it has its prices and plan: a caller that is no longer allowed by then ends the run with `refusal` `ConsentRequired` or `ConsentDenied`, and nothing is bought.
 - Quotes need no consent.
 

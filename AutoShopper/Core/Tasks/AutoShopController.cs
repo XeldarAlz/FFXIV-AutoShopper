@@ -285,7 +285,7 @@ internal sealed partial class AutoShopController
 
             stopping = true;
             currentTask = null;
-            deferredPause = PauseReason.None;
+            DropDeferred();
             PauseReason = PauseReason.None;
             Svc.Automation.Stop();
             ReleaseHelpers(taskWasLive);
@@ -300,7 +300,7 @@ internal sealed partial class AutoShopController
         var wayHome = currentTask is AutoWayHome;
         var journey = Svc.Automation.CurrentTask as AutoJourney;
         currentTask = null;
-        deferredPause = PauseReason.None;
+        DropDeferred();
         PauseReason = PauseReason.None;
         Svc.Automation.Stop();
         if (journey is not null)
@@ -349,7 +349,7 @@ internal sealed partial class AutoShopController
     private void BeginRun(ShopSession newSession, Func<ShopSession, AutoCommon> taskFactory, string plan)
     {
         PauseReason = PauseReason.None;
-        deferredPause = PauseReason.None;
+        DropDeferred();
         ResetFaultBudget();
         session = newSession;
         runTaskFactory = taskFactory;
@@ -515,7 +515,7 @@ internal sealed partial class AutoShopController
         runTaskFactory = null;
         progress.Reset();
         stopping = false;
-        deferredPause = PauseReason.None;
+        DropDeferred();
         shopRun?.Dispose();
         shopRun = null;
     }

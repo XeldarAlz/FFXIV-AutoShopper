@@ -193,7 +193,7 @@ internal sealed class BuyingApi : IDisposable
             return;
         }
 
-        RunLog.Info($"Buying API: {caller} may no longer buy; {(stopped ? "its run was stopped" : "it had no run under way")}, {dropped} of its waiting quote(s) dropped.");
+        RunLog.Info($"Buying API: {caller} may no longer buy; {(stopped ? "its run was told to stop" : "it had no run under way")}, {dropped} of its waiting quote(s) dropped.");
     }
 
     private static string ReasonOf(RequestCheck check)

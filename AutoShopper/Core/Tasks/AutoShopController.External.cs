@@ -7,6 +7,10 @@ internal sealed partial class AutoShopController
 {
     private readonly RecentStore<RunStatusResponse> externalResults = new(ApiContract.RunResultCapacity, TimeSpan.Zero);
 
+    private bool deferredStop;
+
+    internal bool StopDeferred => deferredStop;
+
     public Readiness StartExternal(ExternalRun external, out Guid runId)
     {
         runId = Guid.Empty;
@@ -46,9 +50,23 @@ internal sealed partial class AutoShopController
             return false;
         }
 
+        if (currentTask is AutoShopRun && run.TransferArmed)
+        {
+            deferredStop = true;
+            Diag($"Run {run.RunId} of {external.CallerDisplayName} stops once its data center transfer to {run.TravelTarget} has ended: the player took back its permission to buy.");
+            return true;
+        }
+
         Diag($"Run {run.RunId} of {external.CallerDisplayName} is stopped: the player took back its permission to buy.");
         Stop();
         return true;
+    }
+
+    internal void ApplyDeferredStop()
+    {
+        deferredStop = false;
+        Diag("The data center transfer is over; stopping the run whose caller lost its permission to buy during it.");
+        Stop();
     }
 
     public RunStatusResponse ExternalStatus(Guid runId)

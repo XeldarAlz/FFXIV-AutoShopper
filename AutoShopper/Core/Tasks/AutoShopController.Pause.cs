@@ -81,6 +81,12 @@ internal sealed partial class AutoShopController
         return Paused;
     }
 
+    private void DropDeferred()
+    {
+        deferredPause = PauseReason.None;
+        deferredStop = false;
+    }
+
     private void DeferPause(PauseReason reason, string world)
     {
         var first = deferredPause == PauseReason.None;
