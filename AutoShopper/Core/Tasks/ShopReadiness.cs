@@ -1,5 +1,7 @@
+using AutoShopper.Core.Api.Model;
 using AutoShopper.Core.External;
 using AutoShopper.Core.Localization;
+using AutoShopper.Core.Shopping.Model;
 using ECommons.DalamudServices;
 
 namespace AutoShopper.Core.Tasks;
@@ -26,7 +28,7 @@ internal enum Readiness : byte
 internal static class ShopReadiness
 {
     // A run checking itself is the task that runs, so it does not count as another task in the way.
-    public static Readiness Evaluate(Plugin plugin, bool forRun = false)
+    public static Readiness Evaluate(Plugin plugin, bool forRun = false, ExternalRun? external = null)
     {
         if (!ExternalPlugins.AllRequiredInstalled())
         {
@@ -55,14 +57,16 @@ internal static class ShopReadiness
             return Readiness.InterruptedRun;
         }
 
-        var list = plugin.Lists.Selected;
+        var list = external?.List ?? plugin.Lists.Selected;
         if (list is null)
         {
             return Readiness.NoList;
         }
 
-        var validation = plugin.Lists.Analyze(list).Validation;
-        if (!validation.ItemsChecked)
+        var validation = external is null
+            ? plugin.Lists.Analyze(list).Validation
+            : ListAnalysis.Build(list, plugin.Items.IsReady ? plugin.Items : null).Validation;
+        if (!validation.ItemsChecked && (external is null || forRun))
         {
             return Readiness.ListLoading;
         }
@@ -73,7 +77,7 @@ internal static class ShopReadiness
         }
 
         var configuration = plugin.Configuration;
-        if (configuration.MaxSpend <= 0)
+        if ((external?.MaxSpend ?? configuration.MaxSpend) <= 0)
         {
             return Readiness.NoSpendCap;
         }
@@ -107,5 +111,31 @@ internal static class ShopReadiness
         Readiness.BuyingUnavailable => Loc.T(L.Shop.ReasonBuyingOff),
         Readiness.Busy => Loc.T(L.Shop.ReasonBusy),
         _ => string.Empty,
+    };
+
+    public static string Reason(Readiness readiness, ExternalRun external)
+    {
+        if (readiness != Readiness.ListHasErrors)
+        {
+            return Reason(readiness);
+        }
+
+        var items = Plugin.Instance.Items;
+        var validation = ListAnalysis.Build(external.List, items.IsReady ? items : null).Validation;
+        return Loc.T(L.Api.ReasonInvalid, ApiRequests.LineField(validation));
+    }
+
+    public static ApiRefusal Refusal(Readiness readiness) => readiness switch
+    {
+        Readiness.SetupNeeded => ApiRefusal.SetupNeeded,
+        Readiness.LoggedOut => ApiRefusal.LoggedOut,
+        Readiness.JournalDamaged => ApiRefusal.JournalDamaged,
+        Readiness.NeedsReconciliation => ApiRefusal.NeedsReconciliation,
+        Readiness.InterruptedRun => ApiRefusal.InterruptedRun,
+        Readiness.ListLoading => ApiRefusal.ListLoading,
+        Readiness.ReadingUnavailable => ApiRefusal.ReadingUnavailable,
+        Readiness.BuyingUnavailable => ApiRefusal.BuyingUnavailable,
+        Readiness.Busy => ApiRefusal.Busy,
+        _ => ApiRefusal.InvalidRequest,
     };
 }

@@ -1,3 +1,4 @@
+using AutoShopper.Core.Api.Model;
 using AutoShopper.Core.Execution.Model;
 using AutoShopper.Core.External;
 using AutoShopper.Core.Ipc;
@@ -19,7 +20,7 @@ internal sealed partial class AutoShopController
     private ShopRunState? shopRun;
     private bool stopping;
 
-    public bool Running => Svc.Automation.Running || Paused || stopping;
+    public bool Running => Svc.Automation.Running || Paused || stopping || shopRun is not null;
 
     public bool Stopping => stopping;
 
@@ -73,10 +74,7 @@ internal sealed partial class AutoShopController
             return;
         }
 
-        var configuration = plugin.Configuration;
-        var listName = plugin.Lists.Selected?.Name ?? string.Empty;
-        IRunJournal journal = configuration.DryRun ? new MemoryJournal() : plugin.Ledger.Journal;
-        BeginShopRun(ShopRunState.Fresh(plugin.Market, journal, configuration.DryRun, listName), configuration.DryRun ? "dry run" : "run");
+        BeginFresh(plugin.Lists.Selected?.Name ?? string.Empty, null);
     }
 
     // A run the journal says was interrupted by a logout or an unload comes back only on this click.
@@ -287,7 +285,7 @@ internal sealed partial class AutoShopController
 
             stopping = true;
             currentTask = null;
-            deferredPause = PauseReason.None;
+            DropDeferred();
             PauseReason = PauseReason.None;
             Svc.Automation.Stop();
             ReleaseHelpers(taskWasLive);
@@ -302,7 +300,7 @@ internal sealed partial class AutoShopController
         var wayHome = currentTask is AutoWayHome;
         var journey = Svc.Automation.CurrentTask as AutoJourney;
         currentTask = null;
-        deferredPause = PauseReason.None;
+        DropDeferred();
         PauseReason = PauseReason.None;
         Svc.Automation.Stop();
         if (journey is not null)
@@ -351,7 +349,7 @@ internal sealed partial class AutoShopController
     private void BeginRun(ShopSession newSession, Func<ShopSession, AutoCommon> taskFactory, string plan)
     {
         PauseReason = PauseReason.None;
-        deferredPause = PauseReason.None;
+        DropDeferred();
         ResetFaultBudget();
         session = newSession;
         runTaskFactory = taskFactory;
@@ -381,6 +379,16 @@ internal sealed partial class AutoShopController
     }
 
     private bool CanRestart() => runTaskFactory is not null;
+
+    private ShopRunState BeginFresh(string listName, ExternalRun? external)
+    {
+        var plugin = Plugin.Instance;
+        var dryRun = plugin.Configuration.DryRun;
+        IRunJournal journal = dryRun ? new MemoryJournal() : plugin.Ledger.Journal;
+        var state = ShopRunState.Fresh(plugin.Market, journal, dryRun, listName, external);
+        BeginShopRun(state, dryRun ? "dry run" : "run");
+        return state;
+    }
 
     private void BeginShopRun(ShopRunState state, string plan)
     {
@@ -502,11 +510,12 @@ internal sealed partial class AutoShopController
 
     private void ClearRun()
     {
+        RecordExternalResult();
         session = null;
         runTaskFactory = null;
         progress.Reset();
         stopping = false;
-        deferredPause = PauseReason.None;
+        DropDeferred();
         shopRun?.Dispose();
         shopRun = null;
     }

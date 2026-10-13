@@ -187,6 +187,7 @@ internal static partial class L
         public static readonly LocString WouldSpend = new("history.wouldSpend", "{0} would be spent");
         public static readonly LocPlural Units = new("history.units", "{0} unit", "{0} units");
         public static readonly LocString TooltipList = new("history.tooltip.list", "List: {0}");
+        public static readonly LocString TooltipVia = new("history.tooltip.via", "Via {0}");
     }
 
     internal static class Plugins
@@ -253,6 +254,13 @@ internal static partial class L
         public static readonly LocString Latest = new("changelog.latest", "Latest");
         public static readonly LocString New = new("changelog.new", "New");
         public static readonly LocPlural Changes = new("changelog.changes", "{0} change", "{0} changes");
+
+        public static readonly LocString[] Release1100 =
+        [
+            new("changelog.r1100.1", "Other plugins can price items and start runs of their own lists through the new Buying API, once you allow them on the Shop page"),
+            new("changelog.r1100.2", "Their runs keep your dry run, worlds, gil reserve and purchase checks, and History names the plugin that started a run"),
+            new("changelog.r1100.3", "Settings, General lists the plugins you answered, with Revoke and Allow; Revoke also stops a run the plugin has under way"),
+        ];
 
         public static readonly LocString[] Release1001 =
         [

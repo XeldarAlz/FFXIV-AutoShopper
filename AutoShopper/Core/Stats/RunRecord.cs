@@ -17,6 +17,8 @@ public sealed class RunRecord
     public Guid? RunId { get; set; }
 
     public string ListName { get; set; } = "";
+
+    public string? Caller { get; set; }
     public bool DryRun { get; set; }
     public long Spent { get; set; }
     public int Units { get; set; }

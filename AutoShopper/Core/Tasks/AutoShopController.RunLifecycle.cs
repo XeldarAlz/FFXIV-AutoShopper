@@ -70,6 +70,8 @@ internal sealed partial class AutoShopController
 
         ending.AfterActionDispatched = true;
         var configuration = Plugin.Instance.Configuration;
+        var returnHome = shopRun?.ReturnsHome(configuration) ?? configuration.ReturnHomeAfterRun;
+        var afterRun = shopRun is { FromApi: true } ? AfterRunAction.StayLoggedIn : configuration.AfterRun;
         var homeKnown = Worlds.TryHome(out var home);
         var currentKnown = Worlds.TryCurrent(out var current);
         var away = homeKnown && currentKnown && home.Id != current.Id;
@@ -83,30 +85,30 @@ internal sealed partial class AutoShopController
             LoggedIn = ECommons.DalamudServices.Svc.ClientState.IsLoggedIn,
             DidWork = ending.DidWork,
             DryRun = ending.DryRun,
-            ReturnHome = configuration.ReturnHomeAfterRun,
+            ReturnHome = returnHome,
             AwayFromHome = away,
             WayHomeAllowed = wayHomeAllowed,
-            Action = configuration.AfterRun,
+            Action = afterRun,
         });
-        Diag($"After the run: way home {choice.WayHome}, after-run action {(choice.Action?.ToString() ?? "none")}{(choice.ActionSkippedForDryRun ? $" ({configuration.AfterRun} skipped for a dry run)" : string.Empty)}; stop condition {ending.CompletedByStopCondition}, fault {ending.EndedWithFault}, away from home {away}.");
+        Diag($"After the run: way home {choice.WayHome}, after-run action {(choice.Action?.ToString() ?? "none")}{(choice.ActionSkippedForDryRun ? $" ({afterRun} skipped for a dry run)" : string.Empty)}; stop condition {ending.CompletedByStopCondition}, fault {ending.EndedWithFault}, away from home {away}.");
         if (!ending.CompletedByStopCondition || ending.EndedWithFault)
         {
             return choice;
         }
 
-        SetReturnHome(ending, ReturnHomeFor(configuration.ReturnHomeAfterRun, choice.WayHome, homeKnown && currentKnown, away, wayHomeAllowed, sameRegion));
-        if (configuration.ReturnHomeAfterRun && away && !sameRegion)
+        SetReturnHome(ending, ReturnHomeFor(returnHome, choice.WayHome, homeKnown && currentKnown, away, wayHomeAllowed, sameRegion));
+        if (returnHome && away && !sameRegion)
         {
             ECommons.DalamudServices.Svc.Chat.PrintError($"{AshopConstants.LogPrefix} {Loc.T(L.Route.ChatHomeOtherRegion, current.Name)}");
         }
-        else if (configuration.ReturnHomeAfterRun && away && !wayHomeAllowed)
+        else if (returnHome && away && !wayHomeAllowed)
         {
             ECommons.DalamudServices.Svc.Chat.Print($"{AshopConstants.LogPrefix} {Loc.T(L.Route.ChatHomeSkippedJapan, current.Name)}");
         }
 
         if (choice.ActionSkippedForDryRun)
         {
-            ECommons.DalamudServices.Svc.Chat.Print($"{AshopConstants.LogPrefix} {Loc.T(L.Route.ChatAfterRunDry, ActionName(configuration.AfterRun))}");
+            ECommons.DalamudServices.Svc.Chat.Print($"{AshopConstants.LogPrefix} {Loc.T(L.Route.ChatAfterRunDry, ActionName(afterRun))}");
         }
 
         return choice;
@@ -270,6 +272,7 @@ internal sealed partial class AutoShopController
                 CrossedDataCenter = ending.CrossedDataCenter,
                 Outcome = outcome,
                 ListName = ending.ListName,
+                Caller = ending.Caller.Length > 0 ? ending.Caller : null,
                 RunId = ending.RunId == Guid.Empty ? null : ending.RunId,
                 DryRun = ending.DryRun,
                 Spent = ending.Spent,
@@ -308,6 +311,12 @@ internal sealed partial class AutoShopController
         if (!CanRestart())
         {
             Diag("Run task faulted with nothing to resume; the run ends.");
+            return false;
+        }
+
+        if (deferredStop)
+        {
+            Diag("Run task faulted while its caller's permission was taken back; the run ends instead of restarting.");
             return false;
         }
 

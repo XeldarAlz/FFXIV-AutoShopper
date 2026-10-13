@@ -49,9 +49,9 @@ internal sealed partial class AutoShopRun(ShopRunState run, ShopSession session)
             return null;
         }
 
-        if (refusal is not null)
+        if (refusal is { } refused)
         {
-            Refuse(refusal);
+            Refuse(refused);
             return null;
         }
 
@@ -63,10 +63,11 @@ internal sealed partial class AutoShopRun(ShopRunState run, ShopSession session)
         return await ShopStops();
     }
 
-    private void Refuse(string reason)
+    private void Refuse(PreflightRefusal refusal)
     {
-        RunLog.Info($"Run: refused before buying: {reason}.");
-        PrintError(Loc.T(L.Buyer.ChatRefused, reason));
+        RunLog.Info($"Run: refused before buying: {refusal.Reason} ({refusal.Code}).");
+        PrintError(Loc.T(L.Buyer.ChatRefused, refusal.Reason));
+        run.NoteRefusal(refusal.Code, refusal.Reason);
         if (run.IsAuthorized)
         {
             session.Interrupted = true;
@@ -170,7 +171,7 @@ internal sealed partial class AutoShopRun(ShopRunState run, ShopSession session)
     private static string ItemName(uint itemId)
         => Owner.Items.TryGetName(itemId, out var name) ? name : itemId.ToString(CultureInfo.InvariantCulture);
 
-    private static string OutcomeLabel(RunOutcome outcome) => outcome switch
+    internal static string OutcomeLabel(RunOutcome outcome) => outcome switch
     {
         RunOutcome.Completed => Loc.T(L.History.OutcomeCompleted),
         RunOutcome.CompletedPartial => Loc.T(L.History.OutcomeCompletedPartial),

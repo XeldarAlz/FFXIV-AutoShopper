@@ -109,6 +109,7 @@ internal sealed class SettingsPage
         {
             case Tab.General:
                 GeneralSettings.Draw(configuration);
+                OtherPluginsSettings.Draw(plugin.Api);
                 break;
             case Tab.Shopping:
                 ShoppingSettings.Draw(plugin);

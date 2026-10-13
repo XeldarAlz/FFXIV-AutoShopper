@@ -10,14 +10,14 @@ internal static class Badge
     private const float PadY = 2f;
 
     public static float DrawLeft(ImDrawListPtr drawList, string label, Vector4 color, float leftX, float midY)
+        => Draw(drawList, label, color, leftX + Width(label), midY);
+
+    public static float Width(string label)
     {
-        float width;
         using (Fonts.PushCaption())
         {
-            width = TextDraw.Measure(label).X + PadX * 2f * ImGuiHelpers.GlobalScale;
+            return TextDraw.Measure(label).X + PadX * 2f * ImGuiHelpers.GlobalScale;
         }
-
-        return Draw(drawList, label, color, leftX + width, midY);
     }
 
     public static float Draw(ImDrawListPtr drawList, string label, Vector4 color, float rightX, float midY)

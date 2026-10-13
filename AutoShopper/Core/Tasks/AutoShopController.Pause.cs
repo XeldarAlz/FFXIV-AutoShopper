@@ -3,8 +3,6 @@ using clib.Services;
 
 namespace AutoShopper.Core.Tasks;
 
-internal enum PauseReason { None, Manual, InContent }
-
 internal sealed partial class AutoShopController
 {
     public PauseReason PauseReason { get; private set; } = PauseReason.None;
@@ -81,6 +79,12 @@ internal sealed partial class AutoShopController
         Diag($"The data center transfer is over; applying the {reason} pause asked for during it.");
         Pause(reason);
         return Paused;
+    }
+
+    private void DropDeferred()
+    {
+        deferredPause = PauseReason.None;
+        deferredStop = false;
     }
 
     private void DeferPause(PauseReason reason, string world)

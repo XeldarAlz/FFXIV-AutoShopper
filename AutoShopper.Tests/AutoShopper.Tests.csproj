@@ -25,6 +25,11 @@
     <Compile Include="..\AutoShopper\ConfigEnums.cs" Link="ConfigEnums.cs" />
     <Compile Include="..\AutoShopper\Core\Exports\**\*.cs" Link="Exports\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\AutoShopper\Core\Recipes\**\*.cs" Exclude="..\AutoShopper\Core\Recipes\RecipeExpander.cs" Link="Recipes\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\AutoShopper\Core\Api\Model\**\*.cs" Link="Api\Model\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\AutoShopper\Core\Stats\RunOutcome.cs" Link="Stats\RunOutcome.cs" />
+    <Compile Include="..\AutoShopper\Core\Stats\ReturnHomeResult.cs" Link="Stats\ReturnHomeResult.cs" />
+    <Compile Include="..\AutoShopper\Core\Tasks\RunProgress.cs" Link="Tasks\RunProgress.cs" />
+    <Compile Include="..\AutoShopper\Core\Tasks\PauseReason.cs" Link="Tasks\PauseReason.cs" />
   </ItemGroup>
 
   <ItemGroup>

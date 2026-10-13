@@ -7,7 +7,7 @@ namespace AutoShopper.Core.Preview.Model;
 
 internal static class PreviewRunner
 {
-    private const string SourceLabel = "Universalis";
+    public const string SourceLabel = "Universalis";
 
     public static readonly PlanMode[] Modes = [PlanMode.Cheapest, PlanMode.Balanced, PlanMode.FewestStops];
 

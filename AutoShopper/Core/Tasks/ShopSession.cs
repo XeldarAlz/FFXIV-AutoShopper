@@ -36,6 +36,8 @@ public sealed class ShopSession
 
     public string ListName { get; internal set; } = string.Empty;
 
+    public string Caller { get; internal set; } = string.Empty;
+
     public Guid RunId { get; internal set; }
 
     public bool DryRun { get; internal set; }

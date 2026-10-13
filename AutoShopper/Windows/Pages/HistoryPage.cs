@@ -400,6 +400,11 @@ internal sealed class HistoryPage
             lines += "\n" + Loc.T(L.History.TooltipList, record.ListName);
         }
 
+        if (record.Caller is { Length: > 0 } caller)
+        {
+            lines += "\n" + Loc.T(L.History.TooltipVia, caller);
+        }
+
         if (ReturnHomeLabel(record.ReturnHome) is { } wayHome)
         {
             lines += "\n" + Loc.T(L.Route.LabelValue, Loc.T(L.Route.ReturnHome), wayHome);

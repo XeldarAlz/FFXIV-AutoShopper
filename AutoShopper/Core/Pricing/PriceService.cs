@@ -63,6 +63,21 @@ internal sealed class PriceService : IDisposable
         }
     }
 
+    public TimeSpan SinceCooldownEnded
+    {
+        get
+        {
+            var start = Volatile.Read(ref lastStartMs);
+            if (start == long.MinValue)
+            {
+                return TimeSpan.MaxValue;
+            }
+
+            var since = TimeSpan.FromMilliseconds(Environment.TickCount64 - start) - Cooldown;
+            return since > TimeSpan.Zero ? since : TimeSpan.Zero;
+        }
+    }
+
     public PriceStartResult TryStart(ImmutableArray<ScopeWorld> worlds, ImmutableArray<uint> itemIds)
     {
         if (CooldownRemaining > TimeSpan.Zero)
