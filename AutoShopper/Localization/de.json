@@ -167,6 +167,8 @@
   "changelog.new": "Neu",
   "changelog.changes.one": "{0} Änderung",
   "changelog.changes.other": "{0} Änderungen",
+  "changelog.r1001.1": "Behoben: Die Fahrt über das Ätheryten-Netz zum Marktbrett brach bei der Ankunft ab, während die Zone noch lud",
+  "changelog.r1001.2": "Behoben: Der Weg zum Marktbrett endete ein paar Meter außerhalb der Reichweite, etwa in Ul'dah",
   "changelog.r1000.1": "Einkaufslisten: Beliebig, HQ oder NQ, eine Menge kaufen oder auf ein Ziel auffüllen, mit Höchstpreis pro Stück inklusive 5 % Gebühr",
   "changelog.r1000.2": "Importiert Text, CSV, JSON, Artisan- und Teamcraft-Listen mit Rezeptauflösung, dazu eine Kristallhilfe zum Auffüllen und Exporte",
   "changelog.r1000.3": "Universalis-Preise für die erlaubten Welten deiner Region; japanische Datenzentren außer deinem bleiben standardmäßig aus",

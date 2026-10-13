@@ -1,3 +1,4 @@
+using AutoShopper.Core.Execution.Model;
 using AutoShopper.Core.Game.Ops;
 using AutoShopper.Core.Ipc;
 using AutoShopper.Core.Market;
@@ -34,6 +35,14 @@ public abstract partial class AutoCommon
     private const float BoardNodeMatchMeters = 10f;
     // The second walk heads for the board object itself, in case the catalog's position is off.
     private const int MaxBoardWalks = 2;
+    // A walk ends on the floor the mesh offers nearest the board, which in a market hall can lie a few metres short of
+    // a board set into a wall; a board in sight this close is then stepped up to in a straight line.
+    private const float BoardStepUpMaxMeters = 12f;
+    // The step ends this close, inside the reach with room to spare, so opening the board does not hinge on centimetres.
+    private const float BoardStepUpStopMeters = 3f;
+    private const int BoardStepUpWatchdogMs = 10_000;
+    // A step that moves the character less than the stall threshold in this long has run into something.
+    private const int BoardStepUpStallMs = 2_500;
 
     // Leaves the board's window open. The caller picks the city, usually through MarketCityChoice.
     private protected async Task<BoardArrival> GoToMarketBoard(MarketCity city, string scope)
@@ -337,25 +346,21 @@ public abstract partial class AutoCommon
         var lifestream = LifestreamIPC.Instance;
         var startedAt = Environment.TickCount64;
         var deadline = startedAt + BoardAethernetRideMs;
-        var idleSinceMs = startedAt;
-        var sawBusy = false;
+        var watch = new AethernetRideWatch();
         while (!CancelToken.IsCancellationRequested)
         {
             var now = Environment.TickCount64;
             var busy = lifestream.IsBusy();
-            if (busy)
-            {
-                sawBusy = true;
-                idleSinceMs = now;
-            }
-            else if (AtAethernetStop(node, territoryId))
+            var progress = watch.Observe(now, busy, ArrivalSettled(), AtAethernetStop(node, territoryId), HopAbandonedIdleMs);
+            if (progress == RideProgress.Arrived)
             {
                 Diag($"{scope}: reached {node.Name} after {(now - startedAt) / TimeUnits.MillisecondsPerSecond}s");
                 return true;
             }
-            else if (sawBusy && PlayerReady() && now - idleSinceMs >= HopAbandonedIdleMs)
+
+            if (progress == RideProgress.Abandoned)
             {
-                Warn($"{scope}: Lifestream went idle without reaching {node.Name} ({TerritoryNames.Of(Svc.ClientState.TerritoryType)}, {ConditionTag()})");
+                Warn($"{scope}: Lifestream went idle without reaching {node.Name} ({TerritoryNames.Of(Svc.ClientState.TerritoryType)}, {DistanceTo(node.Position):F0}m from its map position, {ConditionTag()})");
                 return false;
             }
 
@@ -404,13 +409,24 @@ public abstract partial class AutoCommon
                 return BoardArrivalFailure.None;
             }
 
+            var inSight = MarketBoards.TryFindNearestBoard(out var live);
+            if (inSight && live.Distance <= BoardStepUpMaxMeters && await StepUpToBoard(live, scope))
+            {
+                return BoardArrivalFailure.None;
+            }
+
+            if (CancelToken.IsCancellationRequested)
+            {
+                return BoardArrivalFailure.Cancelled;
+            }
+
             if (!arrived)
             {
                 Warn($"{scope}: the walk ended {DistanceTo(target):F1}m short of the board at {FormatPosition(target)}");
                 return BoardArrivalFailure.Stalled;
             }
 
-            if (!MarketBoards.TryFindNearestBoard(out var live))
+            if (!inSight)
             {
                 Warn($"{scope}: no market board in sight at {FormatPosition(target)} in {place.Name}");
                 return BoardArrivalFailure.BoardNotFound;
@@ -426,6 +442,43 @@ public abstract partial class AutoCommon
             target = live.Position;
         }
     }
+
+    // The game's own collision governs the step, so it crosses the floor the mesh leaves out in front of the board, and
+    // a wall the mesh knew about stops it; a stall there leaves the walk's own verdict to the caller.
+    private async Task<bool> StepUpToBoard(MarketBoardSighting board, string scope)
+    {
+        if (Svc.Objects.LocalPlayer is not { } player)
+        {
+            return false;
+        }
+
+        var spot = StandSpot.Beside(board.Position, player.Position, BoardStandOffMeters);
+        var label = $"{scope}-step-up";
+        Status = "Stepping up to the market board";
+        Diag($"{scope}: the board in sight stands {board.Distance:F1}m away at {FormatPosition(board.Position)}; stepping straight up to it");
+        var operation = new MoveOp(move => move.StepTo(spot, BoardWithinStepUpStop));
+        await RunCancellable(operation, BoardStepUpWatchdogMs, label, StuckDetector.IdleStallAbort(BoardStepUpStallMs));
+        if (operation.Fault is { } fault)
+        {
+            Diag($"{label}: faulted: {fault.Message}");
+        }
+
+        if (BoardInReach(out var reached))
+        {
+            Diag($"{scope}: the board stands {reached.Distance:F1}m away after the step");
+            return true;
+        }
+
+        if (!CancelToken.IsCancellationRequested)
+        {
+            Warn($"{scope}: the step ended {DistanceTo(board.Position):F1}m from the board, out of reach");
+        }
+
+        return false;
+    }
+
+    private static bool BoardWithinStepUpStop()
+        => MarketBoards.TryFindNearestBoard(out var board) && board.Distance <= BoardStepUpStopMeters;
 
     // Once a board object is in sight its own position beats the catalog's, unless a catalog board is nearer.
     private static Vector3 FirstBoardTarget(in MarketBoardCity place, Vector3 from)
@@ -495,11 +548,13 @@ public abstract partial class AutoCommon
 
     private static bool ArrivalSettled() => PlayerReady() && GenericHelpers.IsScreenReady();
 
+    // The stop's map position comes from the sheet and can sit well off the shard in a district drawn on two maps, so
+    // the shard object itself, found by its row, counts as much as the position.
     private static bool AtAethernetStop(ZoneAetheryte node, uint territoryId)
         => Svc.ClientState.TerritoryType == territoryId
-        && ArrivalSettled()
         && Svc.Objects.LocalPlayer is { } player
-        && GroundDistance.Between(player.Position, node.Position) <= BoardAethernetArrivalMeters;
+        && (GroundDistance.Between(player.Position, node.Position) <= BoardAethernetArrivalMeters
+            || AetheryteObjectWithin(node.Id, player.Position, BoardAethernetArrivalMeters));
 
     private static Vector3 LiveNodePosition(Vector3 mapPosition)
         => FindNearestAetheryteObject(mapPosition) is { } live && GroundDistance.Between(live.Position, mapPosition) <= BoardNodeMatchMeters

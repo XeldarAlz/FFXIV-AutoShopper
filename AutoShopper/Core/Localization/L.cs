@@ -254,6 +254,12 @@ internal static partial class L
         public static readonly LocString New = new("changelog.new", "New");
         public static readonly LocPlural Changes = new("changelog.changes", "{0} change", "{0} changes");
 
+        public static readonly LocString[] Release1001 =
+        [
+            new("changelog.r1001.1", "Fixed the aethernet ride to a market board giving up at the shard while the zone was still loading"),
+            new("changelog.r1001.2", "Fixed the walk to a market board ending a few metres out of reach, as at Ul'dah's Sapphire Avenue Exchange"),
+        ];
+
         public static readonly LocString[] Release1000 =
         [
             new("changelog.r1000.1", "Shopping lists: Any, HQ or NQ, buy an amount or top up to a target, with a max price per unit including the 5% fee"),

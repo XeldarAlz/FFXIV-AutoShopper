@@ -167,6 +167,8 @@
   "changelog.new": "Nuevo",
   "changelog.changes.one": "{0} cambio",
   "changelog.changes.other": "{0} cambios",
+  "changelog.r1001.1": "Corregido: el viaje por aethernet hasta el tablón del mercado se cancelaba al llegar, mientras la zona seguía cargando",
+  "changelog.r1001.2": "Corregido: la caminata hasta el tablón del mercado terminaba a unos metros fuera del alcance, como en Ul'dah",
   "changelog.r1000.1": "Listas de compra: Cualquiera, HQ o NQ, comprar una cantidad o completar hasta un objetivo, con un máximo por unidad que incluye la tasa del 5 %",
   "changelog.r1000.2": "Importa texto, CSV, JSON y listas de Artisan y Teamcraft con desglose de recetas, además de un ayudante para completar cristales y exportaciones",
   "changelog.r1000.3": "Precios de Universalis en los mundos de tu región que permitas; los centros de datos japoneses distintos del tuyo quedan desactivados por defecto",

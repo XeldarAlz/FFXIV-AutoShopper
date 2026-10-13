@@ -167,6 +167,8 @@
   "changelog.new": "新",
   "changelog.changes.one": "{0} 项更改",
   "changelog.changes.other": "{0} 项更改",
+  "changelog.r1001.1": "修复：前往市场布告板的都市传送在区域仍在加载时就在到达处中止",
+  "changelog.r1001.2": "修复：走到市场布告板的路程在距离几米、够不到的地方就结束了，例如在乌尔达哈",
   "changelog.r1000.1": "购物清单：任意、HQ 或 NQ，购买固定数量或补足到目标数量，并设置含 5% 手续费的单价上限",
   "changelog.r1000.2": "可导入纯文本、CSV、JSON、Artisan 和 Teamcraft 清单并展开配方，还有补足水晶的助手和导出功能",
   "changelog.r1000.3": "按你允许的本区域服务器获取 Universalis 价格；除你所在的数据中心外，日本数据中心默认关闭",

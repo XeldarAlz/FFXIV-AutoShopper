@@ -648,6 +648,23 @@ public abstract partial class AutoCommon
         return nearest;
     }
 
+    // An aetheryte or shard object carries its sheet row as its base id.
+    private static bool AetheryteObjectWithin(uint aetheryteId, Vector3 origin, float meters)
+    {
+        var objects = Svc.Objects;
+        for (var index = 0; index < objects.Length; index++)
+        {
+            if (objects[index] is { ObjectKind: ObjectKind.Aetheryte } candidate
+                && candidate.BaseId == aetheryteId
+                && Vector3.Distance(origin, candidate.Position) <= meters)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static bool OnWorld(IPlayerCharacter? player, uint worldId)
         => player is not null && player.CurrentWorld.RowId == worldId;
 
