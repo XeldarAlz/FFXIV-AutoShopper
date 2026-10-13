@@ -826,5 +826,13 @@
   "export.checklistCopied": "Kontrol listesi panoya kopyalandı",
   "lists.import.problem.ambiguous": "Ondalık sayı olabilir: yalnızca rakam kullanın",
   "plan.reason.capped": "Sınırda: Bir dünya yalnızca en ucuz 100 ilanını gönderdi, pazar panosunda daha fazlası olabilir",
-  "lists.problem.mergedOverLimit": "Bu eşyanın satırları toplamda 999.999'u aşıyor"
+  "lists.problem.mergedOverLimit": "Bu eşyanın satırları toplamda 999.999'u aşıyor",
+  "shop.dryRun.on": "Açık",
+  "shop.dryRun.off": "Kapalı: gerçek gil harcar",
+  "shop.dryRun.onHelp": "Deneme turu açık: bir tur satın almak dışında her şeyi yapar. Kapatmak için tıklayın; önce size sorulur.",
+  "shop.dryRun.offHelp": "Deneme turu kapalı: BAŞLAT, tur başına harcama sınırına kadar gerçek gil harcar. Deneme turunu yeniden açmak için tıklayın.",
+  "shop.dryRun.confirmTitle": "Deneme turu kapatılsın mı?",
+  "shop.dryRun.confirmBody": "Bundan sonraki her tur, tur başına harcama sınırına kadar gerçek gil harcar.",
+  "shop.dryRun.confirmYes": "Gerçek gil harca",
+  "shop.dryRun.confirmNo": "Deneme turunu koru"
 }

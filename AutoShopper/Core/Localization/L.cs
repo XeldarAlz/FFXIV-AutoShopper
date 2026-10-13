@@ -96,6 +96,15 @@ internal static partial class L
         public static readonly LocString StatePaused = new("shop.state.paused", "paused");
         public static readonly LocString StateStopping = new("shop.state.stopping", "stopping");
         public static readonly LocString StopSub = new("shop.stopSub", "{0} · {1}");
+
+        public static readonly LocString DryRunOn = new("shop.dryRun.on", "On");
+        public static readonly LocString DryRunOff = new("shop.dryRun.off", "Off: spends real gil");
+        public static readonly LocString DryRunOnHelp = new("shop.dryRun.onHelp", "Dry run is on: a run does everything except buy. Click to turn it off; you are asked first.");
+        public static readonly LocString DryRunOffHelp = new("shop.dryRun.offHelp", "Dry run is off: Start spends real gil, up to your run spend cap. Click to turn dry run back on.");
+        public static readonly LocString DryRunConfirmTitle = new("shop.dryRun.confirmTitle", "Turn dry run off?");
+        public static readonly LocString DryRunConfirmBody = new("shop.dryRun.confirmBody", "Every run after this spends real gil, up to your run spend cap.");
+        public static readonly LocString DryRunConfirmYes = new("shop.dryRun.confirmYes", "Spend real gil");
+        public static readonly LocString DryRunConfirmNo = new("shop.dryRun.confirmNo", "Keep dry run");
     }
 
     internal static class Travel

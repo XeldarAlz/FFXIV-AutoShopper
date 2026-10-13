@@ -2,6 +2,8 @@ using AutoShopper.Core.Localization;
 using AutoShopper.Core.Market.Model;
 using AutoShopper.Core.Travel;
 using AutoShopper.Windows.Components;
+using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility;
 
 namespace AutoShopper.Windows.Sections.Config;
 
@@ -10,6 +12,7 @@ internal static class MarketSettings
     private const float StepperWidth = 130f;
     private const float TenthStep = 0.5f;
     private const int SecondStep = 1;
+    private const float ConfirmationGap = 6f;
 
     // City names follow the game client, like every other place name; they are read once from the game data.
     private static string[]? cityLabels;
@@ -27,12 +30,27 @@ internal static class MarketSettings
         SettingsRow.Draw(Loc.T(L.Market.DryRun),
             Loc.T(L.Market.DryRunHelp),
             SettingsControls.ToggleWidth,
-            () => SettingsControls.DrawToggle(configuration, () => configuration.DryRun, value => configuration.DryRun = value, "##ashop_market_dry_run"),
+            () => DryRunControl.DrawToggle(configuration),
             SettingsRow.ToggleHeight);
+        if (DryRunControl.Confirming)
+        {
+            DrawDryRunConfirmation(configuration);
+            return;
+        }
+
         if (!configuration.DryRun)
         {
             SettingsRow.Note(Loc.T(L.Market.DryRunOff), Styling.AccentAmberSoft);
         }
+    }
+
+    private static void DrawDryRunConfirmation(Configuration configuration)
+    {
+        var scale = ImGuiHelpers.GlobalScale;
+        Styling.VSpace(ConfirmationGap);
+        var width = SettingsGroup.ContentRightEdge - ImGui.GetCursorScreenPos().X;
+        DryRunControl.DrawConfirmation(configuration, width, Layout.HeroButtonHeight * scale);
+        Styling.VSpace(ConfirmationGap);
     }
 
     private static void DrawBoardGroup(Configuration configuration)

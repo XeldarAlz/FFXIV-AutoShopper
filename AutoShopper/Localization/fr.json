@@ -826,5 +826,13 @@
   "export.checklistCopied": "Liste de contrôle copiée dans le presse-papiers",
   "lists.import.problem.ambiguous": "Peut-être un nombre décimal : n'utilisez que des chiffres",
   "plan.reason.capped": "Plafonné : un monde n'a envoyé que ses 100 annonces les moins chères, il peut y en avoir d'autres au tableau des ventes",
-  "lists.problem.mergedOverLimit": "Les lignes de cet objet dépassent 999 999 au total"
+  "lists.problem.mergedOverLimit": "Les lignes de cet objet dépassent 999 999 au total",
+  "shop.dryRun.on": "Activée",
+  "shop.dryRun.off": "Désactivée : dépense de vrais gils",
+  "shop.dryRun.onHelp": "La simulation est activée : une tournée fait tout sauf acheter. Cliquez pour la désactiver ; une confirmation vous sera demandée.",
+  "shop.dryRun.offHelp": "La simulation est désactivée : DÉMARRER dépense de vrais gils, jusqu'à votre limite de dépense par tournée. Cliquez pour réactiver la simulation.",
+  "shop.dryRun.confirmTitle": "Désactiver la simulation ?",
+  "shop.dryRun.confirmBody": "Chaque tournée suivante dépense de vrais gils, jusqu'à votre limite de dépense par tournée.",
+  "shop.dryRun.confirmYes": "Dépenser de vrais gils",
+  "shop.dryRun.confirmNo": "Garder la simulation"
 }

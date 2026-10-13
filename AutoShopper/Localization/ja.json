@@ -826,5 +826,13 @@
   "export.checklistCopied": "チェックリストをクリップボードにコピーしました",
   "lists.import.problem.ambiguous": "小数の可能性があります。数字だけで入力してください",
   "plan.reason.capped": "上限: あるワールドは安い順に100件の出品しか送っていないため、マーケットボードにはさらに出品があるかもしれません",
-  "lists.problem.mergedOverLimit": "このアイテムの行を合計すると 999,999 を超えます"
+  "lists.problem.mergedOverLimit": "このアイテムの行を合計すると 999,999 を超えます",
+  "shop.dryRun.on": "オン",
+  "shop.dryRun.off": "オフ：実際のギルを使います",
+  "shop.dryRun.onHelp": "ドライランはオンです。実行は購入以外のすべてを行います。クリックでオフにします。その前に確認があります。",
+  "shop.dryRun.offHelp": "ドライランはオフです。開始すると実際のギルを、実行ごとの支出上限まで使います。クリックでドライランをオンに戻します。",
+  "shop.dryRun.confirmTitle": "ドライランをオフにしますか？",
+  "shop.dryRun.confirmBody": "これ以降の実行は、実行ごとの支出上限まで実際のギルを使います。",
+  "shop.dryRun.confirmYes": "実際のギルを使う",
+  "shop.dryRun.confirmNo": "ドライランのままにする"
 }

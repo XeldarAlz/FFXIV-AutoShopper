@@ -10,12 +10,16 @@ internal static class ToggleSwitch
     private const float TrackHeight = 22f;
     private const float KnobInset = 3f;
 
-    public static bool Draw(string id, ref bool value)
+    public static Vector2 Size()
     {
         var scale = ImGuiHelpers.GlobalScale;
-        var size = new Vector2(TrackWidth * scale, TrackHeight * scale);
+        return new Vector2(TrackWidth * scale, TrackHeight * scale);
+    }
+
+    public static bool Draw(string id, ref bool value)
+    {
         var origin = ImGui.GetCursorScreenPos();
-        var hit = Hit.Area(id, size);
+        var hit = Hit.Area(id, Size());
 
         var changed = false;
         if (hit.Clicked)
@@ -24,8 +28,17 @@ internal static class ToggleSwitch
             changed = true;
         }
 
+        DrawTrack(id, origin, value, hit.Hovered);
+        return changed;
+    }
+
+    // The switch without a hit area of its own, for a control whose whole surface is the click target.
+    public static void DrawTrack(string id, Vector2 origin, bool value, bool hovered)
+    {
+        var scale = ImGuiHelpers.GlobalScale;
+        var size = Size();
         var on = Motion.Approach(Motion.Key(id), value ? 1f : 0f, 16f);
-        var hover = Motion.Hover(Motion.Key(id, 1), hit.Hovered);
+        var hover = Motion.Hover(Motion.Key(id, 1), hovered);
         var dl = ImGui.GetWindowDrawList();
         var end = origin + size;
         var rounding = size.Y * 0.5f;
@@ -50,7 +63,5 @@ internal static class ToggleSwitch
         var knobCenter = new Vector2(origin.X + inset + knobRadius + travel * on, origin.Y + size.Y * 0.5f);
         dl.AddCircleFilled(knobCenter + new Vector2(0f, 1f * scale), knobRadius, Paint.Col(new Vector4(0f, 0f, 0f, 0.30f)));
         dl.AddCircleFilled(knobCenter, knobRadius, Paint.Col(Vector4.Lerp(Styling.TextSecondary, Styling.ForegroundOn(onColor), on)));
-
-        return changed;
     }
 }

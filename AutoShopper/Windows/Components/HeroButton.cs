@@ -9,6 +9,7 @@ internal static class HeroButton
 {
     private const float Rounding = 14f;
     private const float PadX = 20f;
+    private const float SublabelGap = 16f;
 
     public static bool Draw(FontAwesomeIcon icon, string title, string? sublabel, Vector4 accent, bool enabled, string? disabledReason = null, float width = 0f)
     {
@@ -54,15 +55,19 @@ internal static class HeroButton
 
         var iconSize = TextDraw.IconSize(glyph);
         TextDraw.Icon(glyph, new Vector2(min.X + padX, midY - iconSize.Y * 0.5f), textColor);
+        var titleX = min.X + padX + iconSize.X + 12f * scale;
+        float titleWidth;
         using (Fonts.PushHeadline())
         {
             var titleSize = TextDraw.Measure(title);
-            TextDraw.At(title, new Vector2(min.X + padX + iconSize.X + 12f * scale, midY - titleSize.Y * 0.5f), textColor);
+            titleWidth = titleSize.X;
+            TextDraw.At(title, new Vector2(titleX, midY - titleSize.Y * 0.5f), textColor);
         }
 
         var sub = enabled ? sublabel : disabledReason ?? sublabel;
         if (!string.IsNullOrEmpty(sub))
         {
+            sub = TextDraw.Truncate(sub, max.X - padX - (titleX + titleWidth + SublabelGap * scale));
             var subSize = TextDraw.Measure(sub);
             TextDraw.At(sub, new Vector2(max.X - padX - subSize.X, midY - subSize.Y * 0.5f),
                 enabled ? Styling.WithAlpha(textColor, 0.8f) : Styling.TextDim);

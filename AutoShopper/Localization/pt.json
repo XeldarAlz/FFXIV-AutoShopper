@@ -826,5 +826,13 @@
   "export.checklistCopied": "Checklist copiado para a área de transferência",
   "lists.import.problem.ambiguous": "Pode ser um decimal: use apenas dígitos",
   "plan.reason.capped": "Limitado: um mundo enviou só os seus 100 anúncios mais baratos, pode haver mais no quadro do mercado",
-  "lists.problem.mergedOverLimit": "As linhas deste item somam mais de 999.999"
+  "lists.problem.mergedOverLimit": "As linhas deste item somam mais de 999.999",
+  "shop.dryRun.on": "Ligada",
+  "shop.dryRun.off": "Desligada: gasta gil de verdade",
+  "shop.dryRun.onHelp": "A simulação está ligada: uma rodada faz tudo, menos comprar. Clique para desligá-la; você será consultado antes.",
+  "shop.dryRun.offHelp": "A simulação está desligada: INICIAR gasta gil de verdade, até o seu limite de gasto por rodada. Clique para ligar a simulação de novo.",
+  "shop.dryRun.confirmTitle": "Desligar a simulação?",
+  "shop.dryRun.confirmBody": "Cada rodada a partir de agora gasta gil de verdade, até o seu limite de gasto por rodada.",
+  "shop.dryRun.confirmYes": "Gastar gil de verdade",
+  "shop.dryRun.confirmNo": "Manter a simulação"
 }

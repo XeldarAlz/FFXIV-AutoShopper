@@ -826,5 +826,13 @@
   "export.checklistCopied": "Checkliste in die Zwischenablage kopiert",
   "lists.import.problem.ambiguous": "Könnte eine Dezimalzahl sein: nur Ziffern verwenden",
   "plan.reason.capped": "Begrenzt: Eine Welt hat nur ihre 100 günstigsten Angebote geliefert, am Marktbrett kann es mehr geben",
-  "lists.problem.mergedOverLimit": "Die Zeilen dieses Gegenstands ergeben zusammen mehr als 999.999"
+  "lists.problem.mergedOverLimit": "Die Zeilen dieses Gegenstands ergeben zusammen mehr als 999.999",
+  "shop.dryRun.on": "An",
+  "shop.dryRun.off": "Aus: gibt echtes Gil aus",
+  "shop.dryRun.onHelp": "Probelauf ist an: Ein Lauf macht alles außer kaufen. Klicke, um ihn auszuschalten; du wirst vorher gefragt.",
+  "shop.dryRun.offHelp": "Probelauf ist aus: START gibt echtes Gil aus, bis zu deinem Ausgabelimit pro Lauf. Klicke, um den Probelauf wieder einzuschalten.",
+  "shop.dryRun.confirmTitle": "Probelauf ausschalten?",
+  "shop.dryRun.confirmBody": "Jeder Lauf danach gibt echtes Gil aus, bis zu deinem Ausgabelimit pro Lauf.",
+  "shop.dryRun.confirmYes": "Echtes Gil ausgeben",
+  "shop.dryRun.confirmNo": "Probelauf behalten"
 }

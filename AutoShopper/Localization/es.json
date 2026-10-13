@@ -826,5 +826,13 @@
   "export.checklistCopied": "Lista de control copiada al portapapeles",
   "lists.import.problem.ambiguous": "Podría ser un decimal: usa solo dígitos",
   "plan.reason.capped": "Limitado: un mundo solo envió sus 100 anuncios más baratos, puede haber más en el tablón del mercado",
-  "lists.problem.mergedOverLimit": "Las líneas de este objeto suman más de 999.999"
+  "lists.problem.mergedOverLimit": "Las líneas de este objeto suman más de 999.999",
+  "shop.dryRun.on": "Activado",
+  "shop.dryRun.off": "Desactivado: gasta guiles reales",
+  "shop.dryRun.onHelp": "El simulacro está activado: una ronda hace todo menos comprar. Haz clic para desactivarlo; antes se te preguntará.",
+  "shop.dryRun.offHelp": "El simulacro está desactivado: INICIAR gasta guiles reales, hasta tu límite de gasto por ronda. Haz clic para volver a activar el simulacro.",
+  "shop.dryRun.confirmTitle": "¿Desactivar el simulacro?",
+  "shop.dryRun.confirmBody": "Cada ronda a partir de ahora gasta guiles reales, hasta tu límite de gasto por ronda.",
+  "shop.dryRun.confirmYes": "Gastar guiles reales",
+  "shop.dryRun.confirmNo": "Mantener el simulacro"
 }

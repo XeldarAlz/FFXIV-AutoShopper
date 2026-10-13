@@ -826,5 +826,13 @@
   "export.checklistCopied": "核对表已复制到剪贴板",
   "lists.import.problem.ambiguous": "可能是小数：请只使用数字",
   "plan.reason.capped": "已达上限：某个服务器只提供了最便宜的 100 个挂单，市场布告板上可能还有更多",
-  "lists.problem.mergedOverLimit": "该物品的各行合计超过 999,999"
+  "lists.problem.mergedOverLimit": "该物品的各行合计超过 999,999",
+  "shop.dryRun.on": "开启",
+  "shop.dryRun.off": "关闭：会花费真实金币",
+  "shop.dryRun.onHelp": "试运行已开启：运行会完成除购买以外的一切。点击可关闭；关闭前会先询问你。",
+  "shop.dryRun.offHelp": "试运行已关闭：开始后会花费真实的金币，最多到每次运行的花费上限。点击可重新开启试运行。",
+  "shop.dryRun.confirmTitle": "关闭试运行？",
+  "shop.dryRun.confirmBody": "此后的每次运行都会花费真实的金币，最多到每次运行的花费上限。",
+  "shop.dryRun.confirmYes": "花费真实金币",
+  "shop.dryRun.confirmNo": "保持试运行"
 }

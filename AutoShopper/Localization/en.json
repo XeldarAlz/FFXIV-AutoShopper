@@ -826,5 +826,13 @@
   "export.checklistCopied": "Checklist copied to the clipboard",
   "lists.import.problem.ambiguous": "Could be a decimal: use plain digits",
   "plan.reason.capped": "Capped: a world sent only its 100 cheapest listings, so more may be on the board",
-  "lists.problem.mergedOverLimit": "This item's lines add up to more than 999,999"
+  "lists.problem.mergedOverLimit": "This item's lines add up to more than 999,999",
+  "shop.dryRun.on": "On",
+  "shop.dryRun.off": "Off: spends real gil",
+  "shop.dryRun.onHelp": "Dry run is on: a run does everything except buy. Click to turn it off; you are asked first.",
+  "shop.dryRun.offHelp": "Dry run is off: Start spends real gil, up to your run spend cap. Click to turn dry run back on.",
+  "shop.dryRun.confirmTitle": "Turn dry run off?",
+  "shop.dryRun.confirmBody": "Every run after this spends real gil, up to your run spend cap.",
+  "shop.dryRun.confirmYes": "Spend real gil",
+  "shop.dryRun.confirmNo": "Keep dry run"
 }
