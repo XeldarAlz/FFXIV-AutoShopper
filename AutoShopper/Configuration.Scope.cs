@@ -34,21 +34,9 @@ public sealed partial class Configuration
 
     public void SetWorldIncluded(uint worldId, bool inPreset, bool included)
     {
-        var list = inPreset ? ExcludedWorlds : AllowedWorlds;
-        var listed = list.Contains(worldId);
-        var wantListed = inPreset ? !included : included;
-        if (listed == wantListed)
+        if (!ScopeResolver.SetIncluded(AllowedWorlds, ExcludedWorlds, worldId, inPreset, included))
         {
             return;
-        }
-
-        if (wantListed)
-        {
-            list.Add(worldId);
-        }
-        else
-        {
-            list.Remove(worldId);
         }
 
         ScopeChanged();

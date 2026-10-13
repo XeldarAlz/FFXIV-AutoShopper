@@ -82,6 +82,44 @@ internal static class ScopeResolver
         return count;
     }
 
+    // A world sits on at most one of the two lists, so the last click decides it whatever preset is chosen later.
+    // True when either list changed.
+    public static bool SetIncluded(List<uint> added, List<uint> excluded, uint worldId, bool inPreset, bool included)
+    {
+        var list = inPreset ? excluded : added;
+        var wantListed = inPreset ? !included : included;
+        if (!wantListed)
+        {
+            return RemoveEvery(list, worldId);
+        }
+
+        var changed = RemoveEvery(inPreset ? added : excluded, worldId);
+        if (Contains(list, worldId))
+        {
+            return changed;
+        }
+
+        list.Add(worldId);
+        return true;
+    }
+
+    private static bool RemoveEvery(List<uint> worldIds, uint worldId)
+    {
+        var removed = false;
+        for (var index = worldIds.Count - 1; index >= 0; index--)
+        {
+            if (worldIds[index] != worldId)
+            {
+                continue;
+            }
+
+            worldIds.RemoveAt(index);
+            removed = true;
+        }
+
+        return removed;
+    }
+
     public static bool Contains(IReadOnlyList<uint> worldIds, uint worldId)
     {
         for (var index = 0; index < worldIds.Count; index++)
