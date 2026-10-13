@@ -101,6 +101,19 @@ internal sealed record RunStatusResponse
 
     public static RunStatusResponse Unknown(string? runId) => new() { RunId = runId };
 
+    public RunStatusResponse AsTerminal(RunState state, string status, RunOutcome outcome, bool needsPlayer) => this with
+    {
+        Phase = RunPhase.Idle,
+        State = state,
+        Status = status,
+        Revision = checked(Revision + 1),
+        Paused = false,
+        PauseReason = null,
+        Terminal = true,
+        Outcome = outcome,
+        NeedsPlayer = needsPlayer,
+    };
+
     public static ApiReturnHome ReturnHomeOf(ReturnHomeResult result) => result switch
     {
         ReturnHomeResult.AlreadyHome => ApiReturnHome.AlreadyHome,

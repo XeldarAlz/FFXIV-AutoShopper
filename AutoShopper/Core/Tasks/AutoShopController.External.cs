@@ -79,17 +79,11 @@ internal sealed partial class AutoShopController
 
         var outcome = ending.Interrupted ? RunOutcome.Stopped : ending.Outcome ?? (ending.EndedWithFault ? RunOutcome.Failed : RunOutcome.Stopped);
         var resumable = ending.Interrupted && run.IsAuthorized && !run.DryRun;
-        var result = StatusOf(run, external) with
-        {
-            Phase = RunPhase.Idle,
-            State = run.FinalState ?? run.State,
-            Status = run.Refusal is null ? AutoShopRun.OutcomeLabel(outcome) : run.RefusalReason,
-            Paused = false,
-            PauseReason = null,
-            Terminal = true,
-            Outcome = outcome,
-            NeedsPlayer = outcome == RunOutcome.NeedsReconciliation || run.HasUnknownOutcome || resumable,
-        };
+        var result = StatusOf(run, external).AsTerminal(
+            run.FinalState ?? run.State,
+            run.Refusal is null ? AutoShopRun.OutcomeLabel(outcome) : run.RefusalReason,
+            outcome,
+            outcome == RunOutcome.NeedsReconciliation || run.HasUnknownOutcome || resumable);
         externalResults.Add(run.RunId, result, DateTime.UtcNow);
         Diag($"Run {run.RunId} for {external.CallerDisplayName} ended {outcome}{(result.NeedsPlayer ? "; it waits for the player" : string.Empty)}.");
     }
