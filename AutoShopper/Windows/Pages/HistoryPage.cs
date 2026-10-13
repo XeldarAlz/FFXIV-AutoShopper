@@ -1,6 +1,7 @@
 using AutoShopper.Core.Localization;
 using AutoShopper.Core.Stats;
 using AutoShopper.Windows.Components;
+using AutoShopper.Windows.Sections;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility;
@@ -17,6 +18,8 @@ internal sealed class HistoryPage
     private const float ConfirmSlide = 12f;
     private const string NoValue = "-";
     private const float BadgeGap = 6f;
+    private const float SummaryButtonGap = 6f;
+    private const string SummaryMenuId = "##ashop_hist_summary_menu";
 
     private static readonly Dictionary<RunRecord, string> details = new(ReferenceEqualityComparer.Instance);
     private static LanguageInfo? detailLanguage;
@@ -26,6 +29,8 @@ internal sealed class HistoryPage
     private CachedText timeText;
     private CachedText perRunText;
     private CachedText topWorldText;
+    private TransientNotice summaryNotice;
+    private RunRecord? menuRecord;
 
     public void Draw(Plugin plugin)
     {
@@ -49,13 +54,20 @@ internal sealed class HistoryPage
         DrawChart(history);
         Styling.VSpace(12f);
 
-        Label(Loc.T(L.History.RecentRuns));
+        DrawRecentRunsLabel();
         var records = history.Records;
         for (var index = 0; index < records.Count; index++)
         {
-            DrawRow(records[index], index);
+            if (DrawRow(plugin.Summaries, records[index], index))
+            {
+                menuRecord = records[index];
+                ImGui.OpenPopup(SummaryMenuId);
+            }
+
             Styling.VSpace(2f);
         }
+
+        DrawSummaryMenu(plugin.Summaries);
 
         Styling.VSpace(8f);
         DrawClearControl(history);
@@ -68,6 +80,27 @@ internal sealed class HistoryPage
         var size = TextDraw.SectionTitleSize(text);
         TextDraw.SectionTitle(text, origin, Styling.TextStrong);
         ImGui.Dummy(new Vector2(ImGui.GetContentRegionAvail().X, size.Y + 8f * scale));
+    }
+
+    // The section label shares its line with what the last summary copy did.
+    private void DrawRecentRunsLabel()
+    {
+        var label = Loc.T(L.History.RecentRuns);
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ImGui.GetContentRegionAvail().X;
+        var titleSize = TextDraw.SectionTitleSize(label);
+        Label(label);
+        summaryNotice.DrawRight(origin.X + width, origin.Y + titleSize.Y * 0.5f, width - titleSize.X - PadX * ImGuiHelpers.GlobalScale);
+    }
+
+    private void DrawSummaryMenu(RunSummaries summaries)
+    {
+        if (!SummaryMenu.Draw(SummaryMenuId, out var format) || menuRecord is null)
+        {
+            return;
+        }
+
+        SummaryMenu.Deliver(summaries.Export(menuRecord, format), ref summaryNotice);
     }
 
     // The captions are rebuilt only when the history changes; the revision is their cache key.
@@ -180,23 +213,27 @@ internal sealed class HistoryPage
     private static string ChartTooltip(RunRecord record)
         => Loc.T(L.History.ChartTooltip, Formatting.RelativeTime(record.EndedAtUtc), Formatting.Elapsed(record.Duration));
 
-    private static void DrawRow(RunRecord record, int index)
+    // True when the row's summary button was clicked.
+    private static bool DrawRow(RunSummaries summaries, RunRecord record, int index)
     {
         var scale = ImGuiHelpers.GlobalScale;
         var size = new Vector2(ImGui.GetContentRegionAvail().X, Layout.HistoryRowHeight * scale);
         if (!ImGui.IsRectVisible(size))
         {
             ImGui.Dummy(size);
-            return;
+            return false;
         }
 
         var origin = ImGui.GetCursorScreenPos();
         var end = origin + size;
         var drawList = ImGui.GetWindowDrawList();
+        var buttonSize = ImGui.GetFrameHeight();
+        var buttonX = end.X - PadX * scale - buttonSize;
 
         ImGui.PushID((nint)(index + 1));
-        var hit = Hit.Area("##run", size, handCursor: false);
-        var hover = Motion.Hover(Motion.Key("##run"), hit.Hovered);
+        var hit = Hit.Area("##run", new Vector2(buttonX - SummaryButtonGap * scale - origin.X, size.Y), handCursor: false);
+        var hover = Motion.Hover(Motion.Key("##run"), Hit.HoveringRect(origin, end));
+        var copy = DrawSummaryButton(summaries, record, new Vector2(buttonX, origin.Y + (size.Y - buttonSize) * 0.5f), buttonSize);
         ImGui.PopID();
 
         Paint.Glass(drawList, origin, end, Styling.CardRounding * scale, Styling.AccentGlow, 0.02f, hover);
@@ -224,13 +261,32 @@ internal sealed class HistoryPage
         }
         using (Fonts.PushCaption())
         {
-            TextDraw.At(detail, new Vector2(textX, top + whenSize.Y + 3f * scale), Styling.TextDim);
+            TextDraw.At(TextDraw.Truncate(detail, buttonX - SummaryButtonGap * scale - textX), new Vector2(textX, top + whenSize.Y + 3f * scale), Styling.TextDim);
         }
 
         if (hit.Hovered)
         {
             Tooltip.Show(RunTooltip(record));
         }
+
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(size);
+        return copy;
+    }
+
+    // Enabled when a summary can be tried; otherwise its tooltip says why there is none.
+    private static bool DrawSummaryButton(RunSummaries summaries, RunRecord record, Vector2 position, float size)
+    {
+        var availability = summaries.Availability(record);
+        var enabled = availability == SummaryStatus.Ready;
+        ImGui.SetCursorScreenPos(position);
+        var clicked = IconButton.Draw(FontAwesomeIcon.FileExport, "##summary", size, Styling.TextSecondary, Loc.T(L.Exports.CopySummary), enabled);
+        if (!enabled && Hit.HoveringRect(position, position + new Vector2(size, size)))
+        {
+            Tooltip.Show(SummaryMenu.Reason(availability));
+        }
+
+        return clicked;
     }
 
     private static float DrawOutcomeBadge(ImDrawListPtr drawList, RunRecord record, float x, float midY)
@@ -268,7 +324,7 @@ internal sealed class HistoryPage
         return detail;
     }
 
-    private static string OutcomeLabel(RunOutcome outcome) => outcome switch
+    internal static string OutcomeLabel(RunOutcome outcome) => outcome switch
     {
         RunOutcome.Completed => Loc.T(L.History.OutcomeCompleted),
         RunOutcome.CompletedPartial => Loc.T(L.History.OutcomeCompletedPartial),
@@ -277,7 +333,7 @@ internal sealed class HistoryPage
         _ => Loc.T(L.History.OutcomeFailed),
     };
 
-    private static Vector4 OutcomeColor(RunOutcome outcome) => outcome switch
+    internal static Vector4 OutcomeColor(RunOutcome outcome) => outcome switch
     {
         RunOutcome.Completed => Styling.AccentMint,
         RunOutcome.CompletedPartial => Styling.AccentAmber,

@@ -193,6 +193,7 @@ internal sealed partial class AutoShopController
                 CrossedDataCenter = ending.CrossedDataCenter,
                 Outcome = outcome,
                 ListName = ending.ListName,
+                RunId = ending.RunId == Guid.Empty ? null : ending.RunId,
                 DryRun = ending.DryRun,
                 Spent = ending.Spent,
                 Units = ending.Units,

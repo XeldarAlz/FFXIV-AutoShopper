@@ -63,6 +63,7 @@ internal sealed class ShopPage
         MarketStatusLine.Draw(plugin.Market.Compatibility, plugin.Configuration.DryRun);
         Styling.VSpace(20f);
         LedgerCards.Draw(plugin);
+        FinishedRunCard.Draw(plugin);
         SectionTitle(Loc.T(L.Shop.Lists));
         DrawListCard(plugin.Lists, window);
         DrawPlanCard(plugin, window);

@@ -59,6 +59,7 @@ public sealed class Plugin : IDalamudPlugin
     internal PlanPreview Preview { get; }
     internal MarketServices Market { get; }
     internal ShopLedger Ledger { get; }
+    internal RunSummaries Summaries { get; }
 
     private readonly DutyWatcher dutyWatcher;
     private readonly GmAlertWatcher gmAlertWatcher;
@@ -90,6 +91,7 @@ public sealed class Plugin : IDalamudPlugin
         Preview = new PlanPreview(Configuration, Lists, Inventory, Prices);
         Market = new MarketServices(Configuration);
         Ledger = new ShopLedger(PluginInterface.ConfigDirectory.FullName);
+        Summaries = new RunSummaries(PluginInterface.ConfigDirectory.FullName, Items);
         RotateLedger();
         dutyWatcher = new DutyWatcher();
         gmAlertWatcher = new GmAlertWatcher();

@@ -28,6 +28,8 @@ internal static class Worlds
 
     private static WorldInfo[] All => all ??= Build();
 
+    public static ReadOnlySpan<WorldInfo> Public => All;
+
     // The data centers of a region in sheet order, each once.
     public static DataCenterInfo[] DataCentersIn(WorldRegion region)
     {
