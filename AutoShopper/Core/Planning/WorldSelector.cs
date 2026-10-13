@@ -37,7 +37,7 @@ internal sealed class WorldSelector
     public WorldSelection Select()
     {
         cheapestSeen = Evaluate(UInt128.Zero);
-        if (candidateCount <= settings.EffectiveExactWorldLimit)
+        if (candidateCount <= settings.EffectiveExactWorldLimit && IncrementalSubsetSearch.Fits(problem, stopLimit))
         {
             return SelectExactly();
         }

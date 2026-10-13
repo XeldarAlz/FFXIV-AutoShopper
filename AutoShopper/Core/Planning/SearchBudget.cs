@@ -37,13 +37,30 @@ internal sealed class SearchBudget
             return false;
         }
 
+        if (!HasTimeLeft())
+        {
+            return false;
+        }
+
+        Evaluations++;
+        return true;
+    }
+
+    // Reads the clock without spending an evaluation, for long work between two evaluations.
+    public bool HasTimeLeft()
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (Reached != PlanSearchLimits.None)
+        {
+            return false;
+        }
+
         if (timeProvider.GetElapsedTime(startTimestamp) > timeLimit)
         {
             Reached = PlanSearchLimits.TimeBudgetReached;
             return false;
         }
 
-        Evaluations++;
         return true;
     }
 }
