@@ -27,6 +27,7 @@ namespace AutoShopper;
 public sealed class Plugin : IDalamudPlugin
 {
     private const string GotoSubcommand = "goto";
+    private const string BoardSubcommand = "board";
     private const string AddSubcommand = "add";
     private const string NavmeshIpcProviderMarker = "Navmesh.IPCProvider";
     // Lifestream's own budget for a data center transfer is up to an hour; a plan older than this is a leftover, not a journey in flight.
@@ -186,6 +187,10 @@ public sealed class Plugin : IDalamudPlugin
         else if (HasSubcommand(trimmed, GotoSubcommand))
         {
             AutoGoto.HandleCommand(trimmed[GotoSubcommand.Length..].Trim(), Controller.Running);
+        }
+        else if (HasSubcommand(trimmed, BoardSubcommand))
+        {
+            AutoBoard.HandleCommand(trimmed[BoardSubcommand.Length..].Trim(), Controller.Running);
         }
         else if (HasSubcommand(trimmed, AddSubcommand))
         {
