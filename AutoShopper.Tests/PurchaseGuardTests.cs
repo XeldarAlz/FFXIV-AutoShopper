@@ -144,4 +144,30 @@ public sealed class PurchaseGuardTests
             GuardRejection.BudgetExceeded,
             PurchaseGuard.Evaluate(exact with { Spend = new SpendState(MaxSpend, MaxSpend - 5_049, 0, Guid.Empty) }).Rejection);
     }
+
+    [Fact]
+    public void CrystalThatFitsItsPouchStackNeedsNoBagSlot()
+    {
+        var input = ValidInput() with { IsCrystal = true, ItemStackSize = 9_999, OwnedQuantity = 9_000, FreeInventorySlots = 0 };
+
+        Assert.True(PurchaseGuard.Evaluate(input).IsAllowed);
+    }
+
+    [Fact]
+    public void CrystalThatWouldOverflowItsPouchStackIsRefused()
+    {
+        var input = ValidInput() with { IsCrystal = true, ItemStackSize = 9_999, OwnedQuantity = 9_996, FreeInventorySlots = 50 };
+
+        Assert.Equal(GuardRejection.InventoryFull, PurchaseGuard.Evaluate(input).Rejection);
+    }
+
+    [Fact]
+    public void StackNeedsOneFreeSlotPerStackSizeItSpans()
+    {
+        var oversized = Listing(quantity: 5);
+        var input = ValidInput() with { ItemStackSize = 2, FreeInventorySlots = 2 };
+
+        Assert.Equal(GuardRejection.InventoryFull, PurchaseGuard.Evaluate(input with { Selected = oversized, Current = oversized }).Rejection);
+        Assert.True(PurchaseGuard.Evaluate(input with { FreeInventorySlots = 3 }).IsAllowed);
+    }
 }

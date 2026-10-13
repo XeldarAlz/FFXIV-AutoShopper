@@ -79,6 +79,11 @@ internal sealed record IntentRecorded : AttemptEvent
 
     public int PlanVersion { get; init; }
 
+    // What the purse and the bags held right before the purchase, -1 when unknown; evidence for a reconciliation.
+    public long GilBefore { get; init; } = -1;
+
+    public int OwnedBefore { get; init; } = -1;
+
     [JsonIgnore]
     public DemandKey Demand => new(ItemId, Quality);
 

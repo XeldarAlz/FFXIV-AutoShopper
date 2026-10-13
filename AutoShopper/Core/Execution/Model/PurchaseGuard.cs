@@ -234,6 +234,11 @@ internal static class PurchaseGuard
         }
 
         long stackSize = Math.Max(1, input.ItemStackSize);
+        if (input.IsCrystal)
+        {
+            return Math.Max(0L, input.OwnedQuantity) + input.Current.Quantity <= stackSize ? GuardRejection.None : GuardRejection.InventoryFull;
+        }
+
         var slotsNeeded = (input.Current.Quantity + stackSize - 1) / stackSize;
         if (input.FreeInventorySlots < slotsNeeded)
         {

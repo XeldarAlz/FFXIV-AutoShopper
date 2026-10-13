@@ -10,11 +10,12 @@ namespace AutoShopper.Core.Ledger;
 // Append-only JSON lines, one JournalEvent per line in the core's "Kind" shape. An append is on the disk before it
 // returns true, so a caller that sends a purchase only after a true append never sends one the journal does not know.
 // One owner appends, reads and rotates; the class is not thread safe.
-internal sealed class RunJournal
+internal sealed class RunJournal : IRunJournal
 {
     public const string FileName = "AutoShopper.Journal.jsonl";
 
     private const string ArchivePrefix = "AutoShopper.Journal.";
+    private const string SetAsideMarker = ".set-aside";
     private const string ArchiveExtension = ".jsonl";
     private const string ArchiveStampFormat = "yyyyMMdd-HHmmss";
     private const string BackupSuffix = ".bak";
@@ -186,6 +187,37 @@ internal sealed class RunJournal
         }
 
         return new JournalRotation(true, finished.Count, runIds.Count - finished.Count, archivedLines, keptLines, tornTail, archivePath, null);
+    }
+
+    // Moves the whole journal to a dated file next to it, for a journal whose damage no answer can repair. The next
+    // append starts a fresh journal; the moved file is kept for the player to look at.
+    public bool TrySetAside(DateTime nowUtc, out string? setAsidePath)
+    {
+        setAsidePath = null;
+        try
+        {
+            if (!File.Exists(FilePath))
+            {
+                return true;
+            }
+
+            var stem = ArchivePrefix + nowUtc.ToString(ArchiveStampFormat, CultureInfo.InvariantCulture) + SetAsideMarker;
+            var path = Path.Combine(DirectoryPath, stem + ArchiveExtension);
+            for (var suffix = 2; File.Exists(path); suffix++)
+            {
+                path = Path.Combine(DirectoryPath, $"{stem}-{suffix}{ArchiveExtension}");
+            }
+
+            File.Move(FilePath, path);
+            setAsidePath = path;
+            LastError = null;
+            return true;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            LastError = exception.Message;
+            return false;
+        }
     }
 
     private bool TrySerializeLine(JournalEvent journalEvent, out ArrayBufferWriter<byte> line)

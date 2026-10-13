@@ -6,33 +6,6 @@ using FFXIVClientStructs.FFXIV.Client.UI.Info;
 
 namespace AutoShopper.Core.Market;
 
-internal enum PurchaseSendStatus : byte
-{
-    Sent = 0,
-    NotSent = 1,
-    DryRunWouldBuy = 2,
-}
-
-internal enum PurchaseRefusal : byte
-{
-    None = 0,
-    InvalidAttempt = 1,
-    ExecutionUnavailable = 2,
-    AttemptPending = 3,
-    TooSoon = 4,
-    SearchInProgress = 5,
-    StaleGeneration = 6,
-    WrongWorld = 7,
-    ProxyUnavailable = 8,
-    SearchItemChanged = 9,
-    ListingGone = 10,
-    ListingChanged = 11,
-    ListingKindRefused = 12,
-    SetLastPurchasedFailed = 13,
-    LastPurchasedMismatch = 14,
-    SendReturnedFalse = 15,
-}
-
 // The guarded listing and the payable the guard approved, under the attempt id the journal holds its intent by.
 internal readonly record struct PurchaseAttempt(Guid AttemptId, ObservedListing Listing, long Payable);
 
@@ -80,7 +53,7 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
             return PurchaseSendResult.NotSent(PurchaseRefusal.InvalidAttempt);
         }
 
-        var precondition = CheckPreconditions(listing);
+        var precondition = CheckPreconditions(listing, dryRun);
         if (precondition != PurchaseRefusal.None)
         {
             return PurchaseSendResult.NotSent(precondition);
@@ -115,6 +88,14 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
             return PurchaseSendResult.NotSent(PurchaseRefusal.ListingKindRefused);
         }
 
+        // A dry run on a game version whose purchase addresses did not resolve stops short of staging the purchase.
+        if (dryRun && !compatibility.ExecutionAvailable)
+        {
+            NextAllowedAtMs = PacedFrom(Environment.TickCount64);
+            RunLog.Info($"Market: dry run, would buy {guarded} for {payable} gil (purchase {attempt.AttemptId}); buying is off, so the purchase was not staged.");
+            return PurchaseSendResult.DryRunWouldBuy(payable);
+        }
+
         if (!proxy->SetLastPurchasedItem(live))
         {
             return PurchaseSendResult.NotSent(PurchaseRefusal.SetLastPurchasedFailed);
@@ -127,7 +108,7 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
         }
 
         var now = Environment.TickCount64;
-        NextAllowedAtMs = now + Math.Max(MinimumIntervalMs, configuration.PurchaseIntervalMs);
+        NextAllowedAtMs = PacedFrom(now);
         if (dryRun)
         {
             RunLog.Info($"Market: dry run, would buy {guarded} for {payable} gil (purchase {attempt.AttemptId}).");
@@ -148,9 +129,10 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
         return PurchaseSendResult.Sent(payable);
     }
 
-    private PurchaseRefusal CheckPreconditions(in ObservedListing listing)
+    // A dry run needs only the listings to be readable; a real purchase needs every market address and hook.
+    private PurchaseRefusal CheckPreconditions(in ObservedListing listing, bool dryRun)
     {
-        if (!compatibility.ExecutionAvailable)
+        if (!compatibility.ReadingAvailable || (!dryRun && !compatibility.ExecutionAvailable))
         {
             return PurchaseRefusal.ExecutionUnavailable;
         }
@@ -177,6 +159,8 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
 
         return Svc.PlayerState.CurrentWorld.RowId == listing.WorldId ? PurchaseRefusal.None : PurchaseRefusal.WrongWorld;
     }
+
+    private long PacedFrom(long nowMs) => nowMs + Math.Max(MinimumIntervalMs, configuration.PurchaseIntervalMs);
 
     private static ListingFields FieldsOf(in MarketBoardListing listing)
         => new(listing.ListingId, listing.RetainerId, listing.ItemId, listing.Quantity, listing.UnitPrice, listing.TotalTax, listing.IsHqItem);

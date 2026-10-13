@@ -32,11 +32,11 @@ internal sealed class TemporaryDirectory : IDisposable
     }
 }
 
-internal sealed class JournalWriter(RunJournal journal, Guid? runId = null)
+internal sealed class JournalWriter(IRunJournal journal, Guid? runId = null)
 {
     private readonly Guid runId = runId ?? RunId;
 
-    public RunJournal Journal { get; } = journal;
+    public IRunJournal Journal { get; } = journal;
 
     public JournalWriter Authorize()
     {
@@ -64,6 +64,8 @@ internal sealed class JournalWriter(RunJournal journal, Guid? runId = null)
             Payable = 5_050,
             SearchGeneration = SearchGeneration,
             PlanVersion = 1,
+            GilBefore = 60_000,
+            OwnedBefore = 2,
         });
         return this;
     }
@@ -77,6 +79,12 @@ internal sealed class JournalWriter(RunJournal journal, Guid? runId = null)
     public JournalWriter Confirmed(Guid attemptId)
     {
         Append(Confirmation(attemptId, Journal.NextSequence));
+        return this;
+    }
+
+    public JournalWriter Unknown(Guid attemptId)
+    {
+        Append(new PurchaseUnknown { Sequence = Journal.NextSequence, RunId = runId, AtUtc = Now, AttemptId = attemptId, Reason = "test" });
         return this;
     }
 

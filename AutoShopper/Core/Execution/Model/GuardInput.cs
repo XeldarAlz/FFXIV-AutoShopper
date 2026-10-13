@@ -35,6 +35,11 @@ internal readonly record struct GuardInput
 
     public required int ItemStackSize { get; init; }
 
+    // Crystals go to their own pouch, not the bags, and fit while the owned count plus the listing stays in one stack.
+    public bool IsCrystal { get; init; }
+
+    public int OwnedQuantity { get; init; }
+
     public bool UniqueItemAlreadyOwned { get; init; }
 
     public ImmutableArray<ulong> OwnRetainerIds { get; init; }
