@@ -259,7 +259,7 @@ internal static partial class L
         [
             new("changelog.r1100.1", "Other plugins can price items and start runs of their own lists through the new Buying API, once you allow them on the Shop page"),
             new("changelog.r1100.2", "Their runs keep your dry run, worlds, gil reserve and purchase checks, and History names the plugin that started a run"),
-            new("changelog.r1100.3", "Settings, General lists the plugins you answered, with Revoke and Allow"),
+            new("changelog.r1100.3", "Settings, General lists the plugins you answered, with Revoke and Allow; Revoke also stops a run the plugin has under way"),
         ];
 
         public static readonly LocString[] Release1000 =

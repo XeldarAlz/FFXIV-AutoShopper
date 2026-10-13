@@ -169,7 +169,7 @@
   "changelog.changes.other": "{0} 项更改",
   "changelog.r1100.1": "其他插件可以通过新的 Buying API 为物品报价并用自己的清单开始运行，前提是你在购物页面允许它们",
   "changelog.r1100.2": "它们的运行同样遵守你的试运行、服务器、保留金币和购买检查，历史中会显示开始运行的插件",
-  "changelog.r1100.3": "设置、常规中会列出你回答过的插件，并提供撤销和允许",
+  "changelog.r1100.3": "设置、常规中会列出你回答过的插件，并提供撤销和允许；撤销也会停止该插件正在进行的运行",
   "changelog.r1000.1": "购物清单：任意、HQ 或 NQ，购买固定数量或补足到目标数量，并设置含 5% 手续费的单价上限",
   "changelog.r1000.2": "可导入纯文本、CSV、JSON、Artisan 和 Teamcraft 清单并展开配方，还有补足水晶的助手和导出功能",
   "changelog.r1000.3": "按你允许的本区域服务器获取 Universalis 价格；除你所在的数据中心外，日本数据中心默认关闭",
@@ -862,6 +862,6 @@
   "api.denied": "已拒绝",
   "api.group": "其他插件",
   "api.groupNone": "还没有插件请求通过 Auto Shopper 购买。",
-  "api.allowedHelp": "它可以通过 Auto Shopper 为物品报价并开始运行。撤销后它会再次请求。",
+  "api.allowedHelp": "它可以通过 Auto Shopper 为物品报价并开始运行。撤销会停止它正在进行的运行，之后它会再次请求。",
   "api.deniedHelp": "在你允许之前，它的运行都会被拒绝。"
 }

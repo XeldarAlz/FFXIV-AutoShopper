@@ -16,11 +16,14 @@ namespace AutoShopper.Core.Api;
 
 internal sealed class ApiQuotes : IDisposable
 {
+    private static readonly Task<QuotePricing?> NotPriced = Task.FromResult<QuotePricing?>(null);
+
     private readonly PriceService prices;
     private readonly PlanPreview preview;
     private readonly AutoShopController controller;
     private readonly RecentStore<Quote> quotes = new(ApiContract.QuoteCapacity, ApiContract.QuoteLifetime);
     private readonly QuoteQueue waiting = new();
+    private readonly List<Guid> dropped = [];
     private readonly IFramework.OnUpdateDelegate tick;
     private bool hooked;
 
@@ -86,6 +89,22 @@ internal sealed class ApiQuotes : IDisposable
         };
     }
 
+    public int Drop(string caller)
+    {
+        dropped.Clear();
+        waiting.RemoveCaller(caller, dropped);
+        var now = DateTime.UtcNow;
+        for (var index = 0; index < dropped.Count; index++)
+        {
+            if (quotes.TryGet(dropped[index], now, out var quote))
+            {
+                quote.Pricing = NotPriced;
+            }
+        }
+
+        return dropped.Count;
+    }
+
     public PriceSnapshot? NewestSnapshot(Func<PriceSnapshot, bool> usable)
         => quotes.NewestWhere(quote => quote.Snapshot is { } snapshot && usable(snapshot), DateTime.UtcNow)?.Snapshot;
 
@@ -107,7 +126,7 @@ internal sealed class ApiQuotes : IDisposable
             RunLog.Info($"Buying API: the prices of quote {quote.Id} could not be fetched ({started}).");
         }
 
-        quote.Pricing = started == PriceStartResult.Started ? Price(quote.Id, fetch, quote.Items) : Task.FromResult<QuotePricing?>(null);
+        quote.Pricing = started == PriceStartResult.Started ? Price(quote.Id, fetch, quote.Items) : NotPriced;
         return true;
     }
 

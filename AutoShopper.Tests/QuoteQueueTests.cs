@@ -63,6 +63,42 @@ public sealed class QuoteQueueTests
     }
 
     [Fact]
+    public void ACallerThatMayNoLongerBuyLosesOnlyItsOwnWaitingQuotes()
+    {
+        var queue = new QuoteQueue();
+        var mine = Guid.NewGuid();
+        var other = Guid.NewGuid();
+        var alsoMine = Guid.NewGuid();
+        queue.Add(mine, Caller);
+        queue.Add(other, OtherCaller);
+        queue.Add(alsoMine, Caller);
+        var removed = new List<Guid>();
+
+        queue.RemoveCaller(Caller, removed);
+
+        Assert.Equal(2, removed.Count);
+        Assert.Contains(mine, removed);
+        Assert.Contains(alsoMine, removed);
+        Assert.Equal(1, queue.Count);
+        Assert.Equal(other, queue.First);
+        Assert.True(queue.HasRoomFor(Caller));
+    }
+
+    [Fact]
+    public void ACallerWithNothingWaitingLeavesTheQueueAsItWas()
+    {
+        var queue = new QuoteQueue();
+        var other = Guid.NewGuid();
+        queue.Add(other, OtherCaller);
+        var removed = new List<Guid>();
+
+        queue.RemoveCaller(Caller, removed);
+
+        Assert.Empty(removed);
+        Assert.Equal(other, queue.First);
+    }
+
+    [Fact]
     public void WaitingQuotesStartInTheOrderTheyWereAskedFor()
     {
         var queue = new QuoteQueue();

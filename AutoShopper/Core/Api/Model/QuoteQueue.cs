@@ -19,6 +19,20 @@ internal sealed class QuoteQueue
 
     public void RemoveFirst() => waiting.RemoveAt(0);
 
+    public void RemoveCaller(string caller, List<Guid> removed)
+    {
+        for (var index = waiting.Count - 1; index >= 0; index--)
+        {
+            if (!string.Equals(waiting[index].Caller, caller, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            removed.Add(waiting[index].QuoteId);
+            waiting.RemoveAt(index);
+        }
+    }
+
     private int CountOf(string caller)
     {
         var count = 0;

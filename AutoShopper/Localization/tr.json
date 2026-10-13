@@ -169,7 +169,7 @@
   "changelog.changes.other": "{0} değişiklik",
   "changelog.r1100.1": "Diğer eklentiler, Alışveriş sayfasında izin verdiğinizde yeni Buying API ile eşya fiyatı çıkarabilir ve kendi listeleriyle tur başlatabilir",
   "changelog.r1100.2": "Bu turlar deneme turunuza, dünyalarınıza, elde tutulacak gile ve satın alma denetimlerine uyar; Geçmiş, turu başlatan eklentiyi gösterir",
-  "changelog.r1100.3": "Ayarlar, Genel bölümü yanıt verdiğiniz eklentileri Geri al ve İzin ver düğmeleriyle listeler",
+  "changelog.r1100.3": "Ayarlar, Genel bölümü yanıt verdiğiniz eklentileri Geri al ve İzin ver düğmeleriyle listeler; Geri al, eklentinin süren turunu da durdurur",
   "changelog.r1000.1": "Alışveriş listeleri: Herhangi, HQ ya da NQ, bir miktar alın ya da bir hedefe tamamlayın, %5 ücret dahil birim fiyat üst sınırıyla",
   "changelog.r1000.2": "Düz metin, CSV, JSON, Artisan ve Teamcraft listelerini tarif açılımıyla içe aktarır; kristal tamamlama yardımcısı ve dışa aktarma da var",
   "changelog.r1000.3": "Bölgenizde izin verdiğiniz dünyalar için Universalis fiyatları; sizinki dışındaki Japon veri merkezleri varsayılan olarak kapalı",
@@ -862,6 +862,6 @@
   "api.denied": "Reddedildi",
   "api.group": "Diğer eklentiler",
   "api.groupNone": "Henüz hiçbir eklenti Auto Shopper üzerinden satın almak istemedi.",
-  "api.allowedHelp": "Eşyaların fiyatını çıkarabilir ve Auto Shopper üzerinden tur başlatabilir. Geri alırsanız yeniden sorar.",
+  "api.allowedHelp": "Eşyaların fiyatını çıkarabilir ve Auto Shopper üzerinden tur başlatabilir. Geri alırsanız süren turu durur ve yeniden sorar.",
   "api.deniedHelp": "Siz izin verene kadar turları reddedilir."
 }

@@ -169,7 +169,7 @@
   "changelog.changes.other": "{0} changes",
   "changelog.r1100.1": "Other plugins can price items and start runs of their own lists through the new Buying API, once you allow them on the Shop page",
   "changelog.r1100.2": "Their runs keep your dry run, worlds, gil reserve and purchase checks, and History names the plugin that started a run",
-  "changelog.r1100.3": "Settings, General lists the plugins you answered, with Revoke and Allow",
+  "changelog.r1100.3": "Settings, General lists the plugins you answered, with Revoke and Allow; Revoke also stops a run the plugin has under way",
   "changelog.r1000.1": "Shopping lists: Any, HQ or NQ, buy an amount or top up to a target, with a max price per unit including the 5% fee",
   "changelog.r1000.2": "Imports text, CSV, JSON, Artisan and Teamcraft lists with recipe expansion, plus a crystal top-up helper and exports",
   "changelog.r1000.3": "Universalis prices across the worlds you allow in your region; Japanese data centers other than yours stay off by default",
@@ -862,6 +862,6 @@
   "api.denied": "Denied",
   "api.group": "Other plugins",
   "api.groupNone": "No plugin has asked to buy through Auto Shopper yet.",
-  "api.allowedHelp": "It can price items and start runs through Auto Shopper. Revoke makes it ask again.",
+  "api.allowedHelp": "It can price items and start runs through Auto Shopper. Revoke stops a run it has under way and makes it ask again.",
   "api.deniedHelp": "Its runs are refused until you allow it."
 }

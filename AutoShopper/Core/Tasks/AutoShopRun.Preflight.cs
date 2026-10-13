@@ -120,6 +120,11 @@ internal sealed partial class AutoShopRun
             return Refused(ApiRefusal.PlanFailed, L.Buyer.RefusePlan);
         }
 
+        if (plugin.Api.CheckConsent(external.Caller, external.CallerDisplayName, external.MaxSpend, out var consentReason) is { } consentRefusal)
+        {
+            return new PreflightRefusal(consentRefusal, consentReason);
+        }
+
         return Authorize(authorized, plan, scope, prices);
     }
 

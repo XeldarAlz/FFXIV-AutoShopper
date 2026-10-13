@@ -39,6 +39,18 @@ internal sealed partial class AutoShopController
         return true;
     }
 
+    public bool StopExternalFrom(string caller)
+    {
+        if (shopRun is not { External: { } external } run || !string.Equals(external.Caller, caller, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        Diag($"Run {run.RunId} of {external.CallerDisplayName} is stopped: the player took back its permission to buy.");
+        Stop();
+        return true;
+    }
+
     public RunStatusResponse ExternalStatus(Guid runId)
     {
         if (shopRun is { External: { } external } run && run.RunId == runId)

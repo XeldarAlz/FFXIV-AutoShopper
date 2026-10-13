@@ -14,7 +14,7 @@ internal static partial class L
         public static readonly LocString Denied = new("api.denied", "Denied");
         public static readonly LocString Group = new("api.group", "Other plugins");
         public static readonly LocString GroupNone = new("api.groupNone", "No plugin has asked to buy through Auto Shopper yet.");
-        public static readonly LocString AllowedHelp = new("api.allowedHelp", "It can price items and start runs through Auto Shopper. Revoke makes it ask again.");
+        public static readonly LocString AllowedHelp = new("api.allowedHelp", "It can price items and start runs through Auto Shopper. Revoke stops a run it has under way and makes it ask again.");
         public static readonly LocString DeniedHelp = new("api.deniedHelp", "Its runs are refused until you allow it.");
         public static readonly LocString QuoteRefused = new("api.quoteRefused", "Cannot price these items: {0}.");
         public static readonly LocString ReasonSchema = new("api.reason.schema", "the request uses a Buying API schema this version of Auto Shopper does not know");

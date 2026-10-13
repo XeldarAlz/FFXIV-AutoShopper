@@ -65,6 +65,7 @@ internal sealed class BuyingApi : IDisposable
         Consents.Deny(caller, displayName);
         plugin.Configuration.Save();
         RunLog.Info($"Buying API: {displayName} ({caller}) is denied.");
+        EndWorkOf(caller);
     }
 
     public void Revoke(string caller)
@@ -76,6 +77,24 @@ internal sealed class BuyingApi : IDisposable
 
         plugin.Configuration.Save();
         RunLog.Info($"Buying API: the answer for {caller} was revoked; it asks again on its next run.");
+        EndWorkOf(caller);
+    }
+
+    public ApiRefusal? CheckConsent(string caller, string displayName, long maxSpend, out string reason)
+    {
+        switch (Consents.StateOf(caller))
+        {
+            case ConsentState.Denied:
+                reason = Loc.T(L.Api.ReasonDenied, displayName);
+                return ApiRefusal.ConsentDenied;
+            case ConsentState.Unknown:
+                Consents.Ask(caller, displayName, maxSpend);
+                reason = Loc.T(L.Api.ReasonConsent, displayName);
+                return ApiRefusal.ConsentRequired;
+            default:
+                reason = string.Empty;
+                return null;
+        }
     }
 
     public void Dispose()
@@ -143,15 +162,10 @@ internal sealed class BuyingApi : IDisposable
 
         var caller = request!.Caller!;
         var displayName = ApiRequests.DisplayName(caller, request.CallerDisplayName);
-        switch (Consents.StateOf(caller))
+        if (CheckConsent(caller, displayName, request.MaxSpend, out var consentReason) is { } consentRefusal)
         {
-            case ConsentState.Denied:
-                RunLog.Info($"Buying API: a run from {displayName} was refused: it is denied.");
-                return StartRunResponse.Refuse(ApiRefusal.ConsentDenied, Refused(Loc.T(L.Api.ReasonDenied, displayName)));
-            case ConsentState.Unknown:
-                Consents.Ask(caller, displayName, request.MaxSpend);
-                RunLog.Info($"Buying API: {displayName} ({caller}) asks to buy through Auto Shopper; the Shop page asks the player.");
-                return StartRunResponse.Refuse(ApiRefusal.ConsentRequired, Refused(Loc.T(L.Api.ReasonConsent, displayName)));
+            RunLog.Info($"Buying API: a run from {displayName} ({caller}) was refused ({consentRefusal}){(consentRefusal == ApiRefusal.ConsentRequired ? "; the Shop page asks the player" : string.Empty)}.");
+            return StartRunResponse.Refuse(consentRefusal, Refused(consentReason));
         }
 
         var external = ExternalRun.From(request, DateTime.UtcNow);
@@ -163,6 +177,18 @@ internal sealed class BuyingApi : IDisposable
 
         RunLog.Info($"Buying API: {displayName} started run {runId} for '{external.List.Name}': {external.List.Lines.Count} line(s), cap {external.MaxSpend}, way home {external.ReturnHome}.");
         return StartRunResponse.Accept(runId);
+    }
+
+    private void EndWorkOf(string caller)
+    {
+        var dropped = Quotes.Drop(caller);
+        var stopped = plugin.Controller.StopExternalFrom(caller);
+        if (dropped == 0 && !stopped)
+        {
+            return;
+        }
+
+        RunLog.Info($"Buying API: {caller} may no longer buy; {(stopped ? "its run was stopped" : "it had no run under way")}, {dropped} of its waiting quote(s) dropped.");
     }
 
     private static string ReasonOf(RequestCheck check)

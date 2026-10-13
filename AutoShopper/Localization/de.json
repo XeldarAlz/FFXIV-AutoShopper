@@ -169,7 +169,7 @@
   "changelog.changes.other": "{0} Änderungen",
   "changelog.r1100.1": "Andere Plugins können über die neue Buying API Gegenstände bepreisen und Läufe ihrer eigenen Listen starten, sobald du sie auf der Seite Einkauf erlaubst",
   "changelog.r1100.2": "Ihre Läufe halten sich an deinen Probelauf, deine Welten, deine Gil-Reserve und die Kaufprüfungen, und der Verlauf nennt das Plugin, das einen Lauf gestartet hat",
-  "changelog.r1100.3": "Einstellungen, Allgemein listet die Plugins, denen du geantwortet hast, mit Widerrufen und Erlauben",
+  "changelog.r1100.3": "Einstellungen, Allgemein listet die Plugins, denen du geantwortet hast, mit Widerrufen und Erlauben; Widerrufen stoppt auch einen laufenden Lauf des Plugins",
   "changelog.r1000.1": "Einkaufslisten: Beliebig, HQ oder NQ, eine Menge kaufen oder auf ein Ziel auffüllen, mit Höchstpreis pro Stück inklusive 5 % Gebühr",
   "changelog.r1000.2": "Importiert Text, CSV, JSON, Artisan- und Teamcraft-Listen mit Rezeptauflösung, dazu eine Kristallhilfe zum Auffüllen und Exporte",
   "changelog.r1000.3": "Universalis-Preise für die erlaubten Welten deiner Region; japanische Datenzentren außer deinem bleiben standardmäßig aus",
@@ -862,6 +862,6 @@
   "api.denied": "Abgelehnt",
   "api.group": "Andere Plugins",
   "api.groupNone": "Noch kein Plugin hat gefragt, ob es über Auto Shopper einkaufen darf.",
-  "api.allowedHelp": "Es kann Gegenstände bepreisen und Läufe über Auto Shopper starten. Nach dem Widerrufen fragt es erneut.",
+  "api.allowedHelp": "Es kann Gegenstände bepreisen und Läufe über Auto Shopper starten. Widerrufen stoppt einen laufenden Lauf des Plugins, und danach fragt es erneut.",
   "api.deniedHelp": "Seine Läufe werden abgelehnt, bis du es erlaubst."
 }
