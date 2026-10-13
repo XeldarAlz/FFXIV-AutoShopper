@@ -19,6 +19,8 @@
     <Compile Include="..\AutoShopper\Core\Pricing\RequestThrottle.cs" Link="Pricing\RequestThrottle.cs" />
     <Compile Include="..\AutoShopper\Core\Pricing\UniversalisClient.cs" Link="Pricing\UniversalisClient.cs" />
     <Compile Include="..\AutoShopper\Core\Preview\Model\**\*.cs" Link="Preview\Model\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\AutoShopper\Core\Ledger\**\*.cs" Link="Ledger\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\AutoShopper\Core\Market\Model\**\*.cs" Link="Market\Model\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

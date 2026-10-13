@@ -20,6 +20,8 @@ internal sealed class LifestreamIPC
     private const string ChangeInstanceFailed = AshopConstants.LogPrefix + " Lifestream ChangeInstance failed";
     private const string CurrentInstanceFailed = AshopConstants.LogPrefix + " Lifestream GetCurrentInstance failed";
     private const string RealTerritoryTypeFailed = AshopConstants.LogPrefix + " Lifestream GetRealTerritoryType failed";
+    private const string AethernetTeleportByIdFailed = AshopConstants.LogPrefix + " Lifestream AethernetTeleportById failed";
+    private const string ActiveAetheryteFailed = AshopConstants.LogPrefix + " Lifestream GetActiveAetheryte failed";
 
     private static LifestreamIPC? instance;
 
@@ -35,6 +37,8 @@ internal sealed class LifestreamIPC
     private readonly ICallGateSubscriber<int, object> changeInstance;
     private readonly ICallGateSubscriber<int> currentInstance;
     private readonly ICallGateSubscriber<uint> realTerritoryType;
+    private readonly ICallGateSubscriber<uint, bool> aethernetTeleportById;
+    private readonly ICallGateSubscriber<uint> activeAetheryte;
 
     // Cached once so the polling loops of a journey do not allocate a delegate on every call.
     private readonly Func<bool> isBusyCall;
@@ -42,6 +46,7 @@ internal sealed class LifestreamIPC
     private readonly Func<int> numberOfInstancesCall;
     private readonly Func<int> currentInstanceCall;
     private readonly Func<uint> realTerritoryTypeCall;
+    private readonly Func<uint> activeAetheryteCall;
     private readonly Action abortCall;
 
     private LifestreamIPC()
@@ -59,12 +64,15 @@ internal sealed class LifestreamIPC
         changeInstance = pluginInterface.GetIpcSubscriber<int, object>(GatePrefix + "ChangeInstance");
         currentInstance = pluginInterface.GetIpcSubscriber<int>(GatePrefix + "GetCurrentInstance");
         realTerritoryType = pluginInterface.GetIpcSubscriber<uint>(GatePrefix + "GetRealTerritoryType");
+        aethernetTeleportById = pluginInterface.GetIpcSubscriber<uint, bool>(GatePrefix + "AethernetTeleportById");
+        activeAetheryte = pluginInterface.GetIpcSubscriber<uint>(GatePrefix + "GetActiveAetheryte");
 
         isBusyCall = isBusy.InvokeFunc;
         canChangeInstanceCall = canChangeInstance.InvokeFunc;
         numberOfInstancesCall = numberOfInstances.InvokeFunc;
         currentInstanceCall = currentInstance.InvokeFunc;
         realTerritoryTypeCall = realTerritoryType.InvokeFunc;
+        activeAetheryteCall = activeAetheryte.InvokeFunc;
         abortCall = abort.InvokeAction;
     }
 
@@ -114,4 +122,12 @@ internal sealed class LifestreamIPC
 
     public uint RealTerritoryType()
         => IpcGate.Invoke(realTerritoryType.HasFunction, realTerritoryTypeCall, 0u, RealTerritoryTypeFailed);
+
+    // False when Lifestream is busy, the character stands at no aetheryte or shard, or the stop is on another network.
+    public bool AethernetTeleportById(uint aetheryteId)
+        => IpcGate.Invoke(aethernetTeleportById.HasFunction, () => aethernetTeleportById.InvokeFunc(aetheryteId), false, AethernetTeleportByIdFailed);
+
+    // The aetheryte or shard Lifestream sees the character standing at, 0 when none.
+    public uint ActiveAetheryte()
+        => IpcGate.Invoke(activeAetheryte.HasFunction, activeAetheryteCall, 0u, ActiveAetheryteFailed);
 }

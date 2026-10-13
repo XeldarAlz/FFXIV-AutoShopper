@@ -4,6 +4,7 @@ using AutoShopper.Core.Game.Watchers;
 using AutoShopper.Core.Inventory;
 using AutoShopper.Core.Items;
 using AutoShopper.Core.Localization;
+using AutoShopper.Core.Market;
 using AutoShopper.Core.Preview;
 using AutoShopper.Core.Pricing;
 using AutoShopper.Core.Shopping;
@@ -28,6 +29,7 @@ namespace AutoShopper;
 public sealed class Plugin : IDalamudPlugin
 {
     private const string GotoSubcommand = "goto";
+    private const string BoardSubcommand = "board";
     private const string AddSubcommand = "add";
     private const string NavmeshIpcProviderMarker = "Navmesh.IPCProvider";
     // Lifestream's own budget for a data center transfer is up to an hour; a plan older than this is a leftover, not a journey in flight.
@@ -50,6 +52,7 @@ public sealed class Plugin : IDalamudPlugin
     internal ShoppingListStore Lists { get; }
     internal PriceService Prices { get; }
     internal PlanPreview Preview { get; }
+    internal MarketServices Market { get; }
 
     private readonly DutyWatcher dutyWatcher;
     private readonly GmAlertWatcher gmAlertWatcher;
@@ -78,6 +81,7 @@ public sealed class Plugin : IDalamudPlugin
         Lists = new ShoppingListStore(Configuration, Items, Inventory);
         Prices = new PriceService(typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "0");
         Preview = new PlanPreview(Configuration, Lists, Inventory, Prices);
+        Market = new MarketServices();
         dutyWatcher = new DutyWatcher();
         gmAlertWatcher = new GmAlertWatcher();
 
@@ -127,6 +131,7 @@ public sealed class Plugin : IDalamudPlugin
         Preview.Dispose();
         Prices.Dispose();
         Inventory.Dispose();
+        Market.Dispose();
 
         CLibMain.Dispose();
         ECommonsMain.Dispose();
@@ -191,9 +196,21 @@ public sealed class Plugin : IDalamudPlugin
         {
             AutoGoto.HandleCommand(trimmed[GotoSubcommand.Length..].Trim(), Controller.Running);
         }
+        else if (HasSubcommand(trimmed, BoardSubcommand))
+        {
+            AutoBoard.HandleCommand(trimmed[BoardSubcommand.Length..].Trim(), Controller.Running);
+        }
         else if (HasSubcommand(trimmed, AddSubcommand))
         {
             AddItemCommand.Handle(trimmed[AddSubcommand.Length..].Trim(), Items, Lists);
+        }
+        else if (trimmed.Equals(MarketDebugCommands.StatusSubcommand, StringComparison.OrdinalIgnoreCase))
+        {
+            MarketDebugCommands.PrintStatus(Market);
+        }
+        else if (HasSubcommand(trimmed, MarketDebugCommands.LookSubcommand))
+        {
+            MarketDebugCommands.Look(trimmed[MarketDebugCommands.LookSubcommand.Length..].Trim(), Market, Items, Controller.Running);
         }
         else
         {

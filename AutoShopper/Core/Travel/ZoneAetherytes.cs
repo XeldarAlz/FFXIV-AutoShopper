@@ -19,7 +19,7 @@ internal static class ZoneAetherytes
     // TerritoryIntendedUse 1 marks a standard overworld field zone.
     private const byte StandardFieldUse = 1;
     // Interacting with a shard, picking the stop and the short load take about as long as running this far.
-    private const float AethernetOverheadMeters = 80f;
+    internal const float AethernetOverheadMeters = 80f;
 
     private static readonly Dictionary<uint, ZoneAetheryte[]> byTerritory = new();
     private static readonly Dictionary<uint, uint[]> attunableIdsByTerritory = new();
@@ -151,6 +151,32 @@ internal static class ZoneAetherytes
         }
 
         entry = index < 0 ? default : nodes[index].Stop;
+        return index >= 0;
+    }
+
+    // Any aetheryte or shard of the territory by its row, invisible stops included.
+    public static bool TryFindNode(uint territoryId, uint nodeId, out ZoneAetheryte node)
+    {
+        var nodes = AethernetIn(territoryId);
+        for (var index = 0; index < nodes.Length; index++)
+        {
+            if (nodes[index].Stop.Id == nodeId)
+            {
+                node = nodes[index].Stop;
+                return true;
+            }
+        }
+
+        node = default;
+        return false;
+    }
+
+    // Only a visible stop the character has attuned can be boarded at or ridden to.
+    public static bool TryFindNearestUsableNode(uint territoryId, Vector3 position, out ZoneAetheryte node)
+    {
+        var nodes = AethernetIn(territoryId);
+        var index = ClosestNode(nodes, position, usableOnly: true);
+        node = index < 0 ? default : nodes[index].Stop;
         return index >= 0;
     }
 
