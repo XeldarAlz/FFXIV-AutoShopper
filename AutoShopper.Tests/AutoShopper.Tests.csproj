@@ -13,6 +13,7 @@
     <Compile Include="..\AutoShopper\Core\Planning\**\*.cs" Link="Planning\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\AutoShopper\Core\Execution\Model\**\*.cs" Link="Execution\Model\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\AutoShopper\Core\Ledger\**\*.cs" Link="Ledger\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\AutoShopper\Core\Market\Model\**\*.cs" Link="Market\Model\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
