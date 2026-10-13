@@ -24,7 +24,8 @@ internal static class ScopeWorlds
             From(home),
             Candidates(home.Region, current.Region),
             configuration.AllowedWorlds,
-            configuration.ExcludedWorlds);
+            configuration.ExcludedWorlds,
+            configuration.AllowJapaneseDataCenters);
     }
 
     // A character visiting another region (Japan and Oceania share travel) may also shop where it stands. The sheet

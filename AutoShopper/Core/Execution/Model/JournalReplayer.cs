@@ -127,6 +127,7 @@ internal static class JournalReplayer
         private readonly Dictionary<Guid, AttemptBuilder> attemptsById = new();
         private readonly HashSet<string> excludedListingKeys = new(StringComparer.Ordinal);
         private readonly HashSet<uint> completedWorldIds = new();
+        private readonly HashSet<uint> excludedWorldIds = new();
         private RunAuthorization? authorization;
         private bool authorizationSeen;
         private Checkpoint? lastCheckpoint;
@@ -201,6 +202,11 @@ internal static class JournalReplayer
             for (var index = 0; index < checkpoint.CompletedWorldIds.Length; index++)
             {
                 completedWorldIds.Add(checkpoint.CompletedWorldIds[index]);
+            }
+
+            for (var index = 0; index < checkpoint.ExcludedWorldIds.Length; index++)
+            {
+                excludedWorldIds.Add(checkpoint.ExcludedWorldIds[index]);
             }
         }
 
@@ -315,7 +321,8 @@ internal static class JournalReplayer
                 ReservedSpend = reservedSpend,
                 AttemptCount = Math.Max(intentCount, checkpointAttemptCount),
                 FailedAttemptCount = Math.Max(failedCount, checkpointFailedCount),
-                CompletedWorldIds = SortedWorlds(),
+                CompletedWorldIds = Sorted(completedWorldIds),
+                ExcludedWorldIds = Sorted(excludedWorldIds),
                 ExcludedListingKeys = SortedKeys(),
                 LastCheckpointState = lastCheckpoint?.State,
                 FinalState = ended?.FinalState,
@@ -452,10 +459,10 @@ internal static class JournalReplayer
             return progress.MoveToImmutable();
         }
 
-        private ImmutableArray<uint> SortedWorlds()
+        private static ImmutableArray<uint> Sorted(HashSet<uint> worldIds)
         {
-            var worlds = new uint[completedWorldIds.Count];
-            completedWorldIds.CopyTo(worlds);
+            var worlds = new uint[worldIds.Count];
+            worldIds.CopyTo(worlds);
             Array.Sort(worlds);
             return [.. worlds];
         }

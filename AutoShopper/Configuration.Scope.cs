@@ -13,6 +13,10 @@ public sealed partial class Configuration
     // Worlds the preset holds that the picker removed.
     public List<uint> ExcludedWorlds { get; set; } = [];
 
+    // Off keeps Japanese worlds outside the character's data center out of every scope, since World Visit between
+    // Japanese data centers changed on 13 October 2026 and that route is untested.
+    public bool AllowJapaneseDataCenters { get; set; }
+
     // Rises with every scope edit, so the resolved world list is rebuilt only then.
     [JsonIgnore]
     public int ScopeRevision { get; private set; }
@@ -47,6 +51,17 @@ public sealed partial class Configuration
             list.Remove(worldId);
         }
 
+        ScopeChanged();
+    }
+
+    public void SetAllowJapaneseDataCenters(bool allow)
+    {
+        if (AllowJapaneseDataCenters == allow)
+        {
+            return;
+        }
+
+        AllowJapaneseDataCenters = allow;
         ScopeChanged();
     }
 

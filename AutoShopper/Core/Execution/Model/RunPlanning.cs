@@ -59,6 +59,18 @@ internal static class RunPlanning
             }
         }
 
+        return new PlanRequest
+        {
+            Demands = outstanding.ToImmutable(),
+            Offers = offers.IsDefault ? [] : offers,
+            Worlds = AuthorizedWorlds(authorization, worlds),
+            Settings = settings,
+            ExcludedListingKeys = excludedListingKeys.IsDefault ? [] : excludedListingKeys,
+        };
+    }
+
+    public static ImmutableArray<PlanWorld> AuthorizedWorlds(RunAuthorization authorization, ImmutableArray<PlanWorld> worlds)
+    {
         var allowed = ImmutableArray.CreateBuilder<PlanWorld>(worlds.IsDefault ? 0 : worlds.Length);
         if (!worlds.IsDefault)
         {
@@ -71,14 +83,7 @@ internal static class RunPlanning
             }
         }
 
-        return new PlanRequest
-        {
-            Demands = outstanding.ToImmutable(),
-            Offers = offers.IsDefault ? [] : offers,
-            Worlds = allowed.ToImmutable(),
-            Settings = settings,
-            ExcludedListingKeys = excludedListingKeys.IsDefault ? [] : excludedListingKeys,
-        };
+        return allowed.ToImmutable();
     }
 
     public static ImmutableArray<uint> ItemsOf(PlanStop stop)

@@ -118,6 +118,17 @@ public sealed class MarketCityTests
         Assert.False(MarketCityNames.TryParse(text, out _));
     }
 
+    [Theory]
+    [InlineData(MarketCity.Uldah, 9)]
+    [InlineData(MarketCity.LimsaLominsa, 8)]
+    [InlineData(MarketCity.Gridania, 2)]
+    [InlineData(MarketCity.Kugane, MarketGateway.None)]
+    [InlineData(MarketCity.Tuliyollal, MarketGateway.None)]
+    public void OnlyTheThreeStartingCitiesAreWorldChangeGateways(MarketCity city, int gateway)
+    {
+        Assert.Equal(gateway, MarketGateway.For(city));
+    }
+
     private static bool EverythingAttuned(uint aetheryteId) => true;
 
     private static bool NothingAttuned(uint aetheryteId) => false;

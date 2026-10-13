@@ -169,13 +169,16 @@ internal sealed record Checkpoint : JournalEvent
 
     public ImmutableArray<string> ExcludedListingKeys { get; init; } = ImmutableArray<string>.Empty;
 
+    // Worlds travel gave up on; a checkpoint written before route travel existed has none.
+    public ImmutableArray<uint> ExcludedWorldIds { get; init; } = ImmutableArray<uint>.Empty;
+
     public int AttemptCount { get; init; }
 
     public int FailedAttemptCount { get; init; }
 
     public override bool IsWellFormed()
     {
-        return base.IsWellFormed() && !CompletedWorldIds.IsDefault && !ExcludedListingKeys.IsDefault && AttemptCount >= 0 && FailedAttemptCount >= 0;
+        return base.IsWellFormed() && !CompletedWorldIds.IsDefault && !ExcludedListingKeys.IsDefault && !ExcludedWorldIds.IsDefault && AttemptCount >= 0 && FailedAttemptCount >= 0;
     }
 }
 

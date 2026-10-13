@@ -275,6 +275,18 @@ public sealed class JournalReplayerTests
     }
 
     [Fact]
+    public void WorldsTravelGaveUpOnComeBackFromTheCheckpoints()
+    {
+        var journal = new JournalBuilder().Authorize();
+        journal.Checkpoint(excludedWorlds: [OtherAllowedWorld]);
+        journal.Checkpoint();
+
+        var progress = JournalReplayer.Replay(journal.Entries);
+
+        Assert.Equal([OtherAllowedWorld], progress.ExcludedWorldIds.AsSpan().ToArray());
+    }
+
+    [Fact]
     public void OutcomeWithoutAnIntentBlocksBuying()
     {
         var journal = new JournalBuilder().Authorize();
@@ -502,7 +514,7 @@ public sealed class JournalReplayerTests
             return this;
         }
 
-        public JournalBuilder Checkpoint(int attemptCount = 0, int failedAttemptCount = 0, ImmutableArray<string>? excluded = null, ImmutableArray<uint>? completed = null)
+        public JournalBuilder Checkpoint(int attemptCount = 0, int failedAttemptCount = 0, ImmutableArray<string>? excluded = null, ImmutableArray<uint>? completed = null, ImmutableArray<uint>? excludedWorlds = null)
         {
             entries.Add(new Checkpoint
             {
@@ -515,6 +527,7 @@ public sealed class JournalReplayerTests
                 FailedAttemptCount = failedAttemptCount,
                 ExcludedListingKeys = excluded ?? [],
                 CompletedWorldIds = completed ?? [],
+                ExcludedWorldIds = excludedWorlds ?? [],
             });
             return this;
         }

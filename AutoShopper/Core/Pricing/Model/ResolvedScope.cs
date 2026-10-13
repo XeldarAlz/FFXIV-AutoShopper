@@ -17,15 +17,21 @@ internal sealed class ResolvedScope
 
     public required ImmutableArray<PlanWorld> PlanWorlds { get; init; }
 
+    // Worlds the picker includes that the Japanese data center setting keeps out.
+    public required int JapaneseLeftOut { get; init; }
+
+    public required bool AllowJapanese { get; init; }
+
     public static ResolvedScope Create(
         ScopePreset preset,
         in ScopeWorld current,
         in ScopeWorld home,
         ImmutableArray<ScopeWorld> candidates,
         IReadOnlyList<uint> added,
-        IReadOnlyList<uint> excluded)
+        IReadOnlyList<uint> excluded,
+        bool allowJapanese)
     {
-        var allowed = ScopeResolver.Resolve(preset, current, home, candidates.AsSpan(), added, excluded);
+        var allowed = ScopeResolver.Resolve(preset, current, home, candidates.AsSpan(), added, excluded, allowJapanese);
         var planWorlds = ImmutableArray.CreateBuilder<PlanWorld>(allowed.Length);
         for (var index = 0; index < allowed.Length; index++)
         {
@@ -39,6 +45,8 @@ internal sealed class ResolvedScope
             Candidates = candidates,
             Allowed = allowed,
             PlanWorlds = planWorlds.MoveToImmutable(),
+            JapaneseLeftOut = ScopeResolver.CountLeftOut(preset, current, home, candidates.AsSpan(), added, excluded, allowJapanese),
+            AllowJapanese = allowJapanese,
         };
     }
 }

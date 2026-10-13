@@ -68,6 +68,8 @@ internal sealed class JournalProgress
 
     public required ImmutableArray<uint> CompletedWorldIds { get; init; }
 
+    public required ImmutableArray<uint> ExcludedWorldIds { get; init; }
+
     public required ImmutableArray<string> ExcludedListingKeys { get; init; }
 
     public required RunState? LastCheckpointState { get; init; }
