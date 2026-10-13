@@ -124,6 +124,12 @@ internal static partial class ShoppingSettings
             () => DrawStepper("##ashop_plan_max_stops", configuration, configuration.MaxStops, 0, Configuration.MaximumStopsLimit,
                 Loc.T(L.Shopping.StopsFormat), static (settings, value) => settings.MaxStops = value));
 
+        SettingsRow.Draw(Loc.T(L.Route.Revisits),
+            Loc.T(L.Route.RevisitsHelp),
+            SmallStepperWidth,
+            () => DrawStepper("##ashop_plan_revisits", configuration, configuration.WorldRevisits, 0, Configuration.MaximumWorldRevisits,
+                Loc.T(L.Shopping.StopsFormat), static (settings, value) => settings.WorldRevisits = value));
+
         SettingsRow.Draw(Loc.T(L.Shopping.StaleAfter),
             Loc.T(L.Shopping.StaleAfterHelp),
             SmallStepperWidth,

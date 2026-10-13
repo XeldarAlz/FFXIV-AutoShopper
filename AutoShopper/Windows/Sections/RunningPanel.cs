@@ -1,3 +1,4 @@
+using AutoShopper.Core;
 using AutoShopper.Core.Localization;
 using AutoShopper.Core.Tasks;
 using AutoShopper.Core.Travel;
@@ -33,11 +34,21 @@ internal static class RunningPanel
     private const float SpentColumnWidth = 120f;
     private const float RowBarHeight = 3f;
     private const float IssueRowHeight = 42f;
+    private const float RouteChipHeight = 26f;
+    private const float RouteChipPadX = 10f;
+    private const float RouteChipIconGap = 6f;
+    private const float RouteChipGap = 6f;
+    private const float RouteNoteGap = 6f;
+    // Packs the run's revision, the elapsed seconds, the phase and the login state into one cache key.
+    private const int RevisionKeyShift = 28;
+    private const int ElapsedKeyShift = 4;
+    private const int PhaseKeyShift = 1;
     private const string NoValue = "-";
 
     private static uint cachedTerritoryId = uint.MaxValue;
     private static string cachedZoneName = string.Empty;
     private static RunView? view;
+    private static CachedText travelText;
 
     public static void Draw(AutoShopController controller)
     {
@@ -58,9 +69,146 @@ internal static class RunningPanel
 
         var current = EnsureView(run);
         DrawShopTiles(controller, current);
+        DrawRoute(current, run);
         DrawLines(current);
         DrawIssues(current);
     }
+
+    // The stops behind and ahead, the trip under way with its time, why stops were skipped, and the way home.
+    private static void DrawRoute(RunView current, ShopRunState run)
+    {
+        if (current.Route.Length == 0 && run.TravelPhase == TravelPhase.None && current.ReturnHome is null)
+        {
+            return;
+        }
+
+        GroupLabel.Draw(Loc.T(L.Route.Title), SectionGap, 6f);
+        DrawRouteChips(current.Route);
+        using (Fonts.PushCaption())
+        {
+            if (run.TravelPhase != TravelPhase.None)
+            {
+                DrawRouteNote(TravelLine(run), Styling.AccentBlueSoft);
+            }
+
+            for (var index = 0; index < current.SkippedNotes.Length; index++)
+            {
+                DrawRouteNote(current.SkippedNotes[index], Styling.TextDim);
+            }
+
+            if (current.ReturnHome is { } home)
+            {
+                DrawRouteNote(home, Styling.TextSecondary);
+            }
+        }
+    }
+
+    private static void DrawRouteChips(RouteChipView[] chips)
+    {
+        if (chips.Length == 0)
+        {
+            return;
+        }
+
+        var scale = ImGuiHelpers.GlobalScale;
+        var drawList = ImGui.GetWindowDrawList();
+        var origin = ImGui.GetCursorScreenPos();
+        var right = origin.X + ImGui.GetContentRegionAvail().X;
+        var height = RouteChipHeight * scale;
+        var gap = RouteChipGap * scale;
+        var padX = RouteChipPadX * scale;
+        var x = origin.X;
+        var y = origin.Y;
+        for (var index = 0; index < chips.Length; index++)
+        {
+            var chip = chips[index];
+            var icon = ChipIcon(chip.State);
+            var iconSize = TextDraw.IconSize(icon);
+            var textSize = TextDraw.Measure(chip.Label);
+            var width = padX * 2f + iconSize.X + RouteChipIconGap * scale + textSize.X;
+            if (x + width > right && x > origin.X)
+            {
+                x = origin.X;
+                y += height + gap;
+            }
+
+            var min = new Vector2(x, y);
+            var max = min + new Vector2(width, height);
+            var accent = ChipAccent(chip.State);
+            var current = chip.State == RouteChipState.Current;
+            var border = current ? Styling.PulseColor(Styling.WithAlpha(accent, 0.45f), accent, Styling.PulseMedium) : Styling.WithAlpha(accent, 0.45f);
+            Paint.Pill(drawList, min, max, Styling.WithAlpha(accent, current ? 0.22f : 0.10f), border);
+            var midY = y + height * 0.5f;
+            TextDraw.Icon(icon, new Vector2(x + padX, midY - iconSize.Y * 0.5f), accent);
+            TextDraw.At(chip.Label, new Vector2(x + padX + iconSize.X + RouteChipIconGap * scale, midY - textSize.Y * 0.5f), chip.State == RouteChipState.Skipped ? Styling.TextMuted : Styling.TextStrong);
+            if (Hit.HoveringRect(min, max))
+            {
+                Tooltip.Show(chip.Tooltip);
+            }
+
+            x += width + gap;
+        }
+
+        ImGui.Dummy(new Vector2(right - origin.X, y + height - origin.Y));
+    }
+
+    private static void DrawRouteNote(string text, Vector4 color)
+    {
+        Styling.VSpace(RouteNoteGap);
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ImGui.GetContentRegionAvail().X;
+        TextDraw.At(TextDraw.Truncate(text, width), origin, color);
+        ImGui.Dummy(new Vector2(width, ImGui.GetTextLineHeight()));
+    }
+
+    // Rebuilt once a second while the trip goes, and whenever its phase or target changes.
+    private static string TravelLine(ShopRunState run)
+    {
+        var elapsedSeconds = Math.Max(0L, (Environment.TickCount64 - run.TravelStartedAtMs) / TimeUnits.MillisecondsPerSecond);
+        var loggedIn = Svc.ClientState.IsLoggedIn ? 1L : 0L;
+        var key = ((long)run.Revision << RevisionKeyShift) | (elapsedSeconds << ElapsedKeyShift) | ((long)run.TravelPhase << PhaseKeyShift) | loggedIn;
+        return travelText.Get(key, static _ => BuildTravelLine());
+    }
+
+    private static string BuildTravelLine()
+    {
+        if (Plugin.Instance.Controller.ShopRun is not { } run)
+        {
+            return string.Empty;
+        }
+
+        var target = run.TravelTarget;
+        var phase = run.TravelPhase switch
+        {
+            TravelPhase.ChangingWorld => Loc.T(L.Route.PhaseChangingWorld, target),
+            TravelPhase.TransferringDataCenter when !Svc.ClientState.IsLoggedIn => Loc.T(L.Route.PhaseLoggedOut, target),
+            TravelPhase.TransferringDataCenter => Loc.T(L.Route.PhaseTransfer, target),
+            TravelPhase.Settling => Loc.T(L.Route.PhaseSettling, target),
+            TravelPhase.GoingToBoard => Loc.T(L.Route.PhaseBoard, target),
+            TravelPhase.WaitingToRetry => Loc.T(L.Route.PhaseRetry, target),
+            _ => Loc.T(L.Route.PhaseHome, target),
+        };
+        var elapsed = TimeSpan.FromMilliseconds(Math.Max(0L, Environment.TickCount64 - run.TravelStartedAtMs));
+        return Loc.T(L.Route.PhaseElapsed, phase, Formatting.Elapsed(elapsed));
+    }
+
+    private static FontAwesomeIcon ChipIcon(RouteChipState state) => state switch
+    {
+        RouteChipState.Done => FontAwesomeIcon.Check,
+        RouteChipState.Current => FontAwesomeIcon.MapMarkerAlt,
+        RouteChipState.Next => FontAwesomeIcon.ArrowRight,
+        RouteChipState.Skipped => FontAwesomeIcon.Ban,
+        _ => FontAwesomeIcon.EllipsisH,
+    };
+
+    private static Vector4 ChipAccent(RouteChipState state) => state switch
+    {
+        RouteChipState.Done => Styling.AccentMint,
+        RouteChipState.Current => Styling.AccentBlue,
+        RouteChipState.Next => Styling.AccentGlow,
+        RouteChipState.Skipped => Styling.AccentRose,
+        _ => Styling.TextDim,
+    };
 
     private static RunView EnsureView(ShopRunState run)
     {

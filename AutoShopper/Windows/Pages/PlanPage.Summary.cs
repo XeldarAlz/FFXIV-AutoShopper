@@ -32,6 +32,7 @@ internal sealed partial class PlanPage
     private CachedText budgetPercentText;
     private CachedText budgetOverText;
     private CachedText gilText;
+    private CachedText japanText;
 
     private void DrawWarnings(Plugin plugin, PlanView current)
     {
@@ -100,6 +101,16 @@ internal sealed partial class PlanPage
         AddWarning(ref count, flags, PreviewWarnings.PartialCoverage, Loc.T(L.Plan.WarnPartial));
         AddWarning(ref count, flags, PreviewWarnings.SearchLimit, Loc.T(L.Plan.WarnSearchLimit));
         AddWarning(ref count, flags, PreviewWarnings.UnknownOwned, Loc.T(L.Plan.WarnUnknownOwned));
+        if (current.Result.Selected.Totals.DataCenterChanges > 0)
+        {
+            AddWarning(ref count, Loc.T(L.Route.WarnDataCenterHop), false);
+        }
+
+        if (plugin.Preview.Scope is { JapaneseLeftOut: > 0 } scope)
+        {
+            AddWarning(ref count, japanText.Get(scope.JapaneseLeftOut, static leftOut => Loc.Plural(L.Route.WarnJapanLeftOut, (int)leftOut)), false);
+        }
+
         return count;
     }
 

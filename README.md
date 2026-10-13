@@ -16,7 +16,7 @@
   <em>Your market board shopping list, bought for you. Built on Dalamud.</em>
 </p>
 
-> **In development, not released yet.** Shopping lists, price planning and a guarded buyer for the market board on your current world are in place, with dry run on by default. Travel between worlds arrives in the next updates.
+> **In development, not released yet.** Shopping lists, price planning, a guarded buyer and runs across worlds and data centers are in place, with dry run on by default. Runs across worlds are new and still need testing in game.
 
 ---
 

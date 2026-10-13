@@ -25,6 +25,7 @@ internal sealed class ShopPage
     private const long RevisionStride = 2;
     private const float PlanCardGap = 10f;
     private const float MarketStatusGap = 12f;
+    private const float DataCenterNoteGap = 6f;
     // The plan card's text is rebuilt at most once a minute for the price age.
     private const long PlanTextRefreshMs = 60_000;
 
@@ -128,6 +129,29 @@ internal sealed class ShopPage
 
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(size);
+        if (priced && result!.Selected.Totals.DataCenterChanges > 0)
+        {
+            DrawDataCenterNote();
+        }
+    }
+
+    // Start would carry the character across data centers, which works only with Lifestream's data center travel on.
+    private static void DrawDataCenterNote()
+    {
+        var scale = ImGuiHelpers.GlobalScale;
+        Styling.VSpace(DataCenterNoteGap);
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ImGui.GetContentRegionAvail().X;
+        var padX = ListCardPadX * scale;
+        using (Fonts.PushCaption())
+        {
+            var lineHeight = ImGui.GetTextLineHeight();
+            var iconSize = TextDraw.IconSize(FontAwesomeIcon.ExclamationTriangle);
+            TextDraw.Icon(FontAwesomeIcon.ExclamationTriangle, new Vector2(origin.X + padX, origin.Y + (lineHeight - iconSize.Y) * 0.5f), Styling.AccentAmber);
+            var textX = origin.X + padX + iconSize.X + 8f * scale;
+            TextDraw.At(TextDraw.Truncate(Loc.T(L.Route.ShopDataCenterHop), origin.X + width - textX), new Vector2(textX, origin.Y), Styling.AccentAmberSoft);
+            ImGui.Dummy(new Vector2(width, lineHeight));
+        }
     }
 
     private static long PlanTextKey(PreviewResult result, long cap)
