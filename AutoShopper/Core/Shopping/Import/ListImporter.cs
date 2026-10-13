@@ -1,3 +1,4 @@
+using AutoShopper.Core.Recipes;
 using AutoShopper.Core.Shopping.Model;
 using System.Globalization;
 using System.Text;
@@ -66,6 +67,49 @@ public static class ListImporter
         };
     }
 
+    // Turns the recipes of a crafting list into items to buy. The item rows resolve by id like any other import; entries
+    // that are skipped, broken or unknown to the game come back as invalid rows so the preview can say why.
+    public static ImportResult Expand(ImportResult crafting, ExpansionMode mode, IRecipeBook book, IItemTraits traits)
+    {
+        if (crafting.Error != ImportError.None || !crafting.IsCraftingList)
+        {
+            return crafting;
+        }
+
+        var result = new ImportResult(crafting.Format)
+        {
+            ListName = crafting.ListName,
+            IgnoredFields = crafting.IgnoredFields,
+        };
+
+        var crafts = crafting.Crafts;
+        var orders = new RecipeOrder[crafts.Count];
+        var orderCount = 0;
+        for (var index = 0; index < crafts.Count; index++)
+        {
+            var craft = crafts[index];
+            if (craft.IsValid && !craft.IsSkipped)
+            {
+                orders[orderCount++] = new RecipeOrder(craft.RecipeId, craft.Crafts);
+            }
+        }
+
+        var expansion = RecipeExpansion.Expand(orders.AsSpan(0, orderCount), mode, book, traits);
+        AddDemandRows(expansion.Demands, result.Rows);
+        AddEntryRows(crafts, expansion.UnknownRecipes, result.Rows);
+
+        if (result.Rows.Count > ShoppingLimits.MaximumImportRows)
+        {
+            result.Fail(ImportError.TooManyRows);
+        }
+        else if (result.Rows.Count == 0)
+        {
+            result.Fail(ImportError.Empty);
+        }
+
+        return result;
+    }
+
     public static void Resolve(ImportResult result, IItemNameResolver resolver)
     {
         var rows = result.Rows;
@@ -95,6 +139,52 @@ public static class ListImporter
             }
 
             row.Apply(resolution);
+        }
+    }
+
+    private static void AddDemandRows(ItemDemand[] demands, List<ImportRow> rows)
+    {
+        for (var index = 0; index < demands.Length; index++)
+        {
+            var demand = demands[index];
+            var row = new ImportRow(index + 1, demand.ItemId.ToString(CultureInfo.InvariantCulture))
+            {
+                RequestedItemId = demand.ItemId,
+            };
+
+            if (!demand.IsMarketable)
+            {
+                row.Reject(ImportRowProblem.NotMarketable);
+            }
+
+            ImportFields.SetQuantity(row, NumberStatus.Valid, demand.Quantity);
+            rows.Add(row);
+        }
+    }
+
+    private static void AddEntryRows(List<CraftingImport> crafts, uint[] unknownRecipes, List<ImportRow> rows)
+    {
+        for (var index = 0; index < crafts.Count; index++)
+        {
+            var craft = crafts[index];
+            var problem = craft.Problem;
+            if (problem == ImportRowProblem.None && craft.IsSkipped)
+            {
+                problem = ImportRowProblem.SkippedCraft;
+            }
+            else if (problem == ImportRowProblem.None && Array.BinarySearch(unknownRecipes, craft.RecipeId) >= 0)
+            {
+                problem = ImportRowProblem.UnknownRecipe;
+            }
+
+            if (problem == ImportRowProblem.None)
+            {
+                continue;
+            }
+
+            var row = new ImportRow(craft.SourceLine, craft.SourceText);
+            row.Reject(problem);
+            rows.Add(row);
         }
     }
 }
