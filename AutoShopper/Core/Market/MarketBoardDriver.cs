@@ -1,4 +1,5 @@
 using AutoShopper.Core.Game.Ops;
+using AutoShopper.Core.Market.Model;
 using ECommons;
 using ECommons.Automation;
 using ECommons.DalamudServices;
@@ -126,7 +127,7 @@ internal sealed unsafe class MarketBoardDriver
         }
 
         var board = Svc.Objects.SearchById(state.Board.GameObjectId);
-        if (board is null || !board.IsTargetable || !MarketBoards.IsBoardBaseId(board.BaseId))
+        if (board is null || !board.IsTargetable || !MarketBoardCatalog.IsBoardBaseId(board.BaseId))
         {
             return Fail(BoardOpenFailure.BoardLost, state.Board);
         }
