@@ -815,5 +815,6 @@
   "export.checklistHelp": "この計画を買い物チェックリストとしてコピーします。立ち寄り先、アイテム、数量、見積もりのみで、キャラクターの情報は含みません。",
   "export.checklistAsText": "テキストでコピー",
   "export.checklistAsMarkdown": "Markdown でコピー",
-  "export.checklistCopied": "チェックリストをクリップボードにコピーしました"
+  "export.checklistCopied": "チェックリストをクリップボードにコピーしました",
+  "lists.import.problem.ambiguous": "小数の可能性があります。数字だけで入力してください"
 }

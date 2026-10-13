@@ -116,7 +116,7 @@ public sealed class ImportTests
     [Fact]
     public void CsvColumnsComeInAnyOrderAndTheItemIdWins()
     {
-        var result = Parse("Quantity;Name;ItemId;Mode;MaxUnitPrice;Quality;ExcessAllowance;Notes\n\"1,000\";Wrong Name;2;ReachInventory;30;hq;10;note\n");
+        var result = Parse("Quantity;Name;ItemId;Mode;MaxUnitPrice;Quality;ExcessAllowance;Notes\n\"1000\";Wrong Name;2;ReachInventory;30;hq;10;note\n");
 
         Assert.Equal(ImportFormat.Csv, result.Format);
         Assert.Equal(1, result.IgnoredFields);
@@ -143,7 +143,8 @@ public sealed class ImportTests
     [Theory]
     [InlineData("Name,Quality\nFire Shard,shiny\n", ImportRowProblem.UnknownQuality)]
     [InlineData("Name,Mode\nFire Shard,sometimes\n", ImportRowProblem.UnknownMode)]
-    [InlineData("Name,Quantity\nFire Shard,1.5\n", ImportRowProblem.MalformedNumber)]
+    [InlineData("Name,Quantity\nFire Shard,1.5\n", ImportRowProblem.AmbiguousNumber)]
+    [InlineData("Name,Quantity\nFire Shard,five\n", ImportRowProblem.MalformedNumber)]
     [InlineData("ItemId,Quantity\n,5\n", ImportRowProblem.MissingItem)]
     [InlineData("Name,MaxUnitPrice\nFire Shard,1000000000\n", ImportRowProblem.UnitCapOutOfRange)]
     public void CsvRowProblemsAreNamed(string text, ImportRowProblem problem)

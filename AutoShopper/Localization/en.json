@@ -815,5 +815,6 @@
   "export.checklistHelp": "Copies this plan as a shopping checklist: stops, items, quantities and estimates. Nothing about your character.",
   "export.checklistAsText": "Copy as text",
   "export.checklistAsMarkdown": "Copy as Markdown",
-  "export.checklistCopied": "Checklist copied to the clipboard"
+  "export.checklistCopied": "Checklist copied to the clipboard",
+  "lists.import.problem.ambiguous": "Could be a decimal: use plain digits"
 }

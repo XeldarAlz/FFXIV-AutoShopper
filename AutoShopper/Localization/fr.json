@@ -815,5 +815,6 @@
   "export.checklistHelp": "Copie ce plan comme liste de courses à cocher : étapes, objets, quantités et estimations. Rien sur votre personnage.",
   "export.checklistAsText": "Copier en texte",
   "export.checklistAsMarkdown": "Copier en Markdown",
-  "export.checklistCopied": "Liste de contrôle copiée dans le presse-papiers"
+  "export.checklistCopied": "Liste de contrôle copiée dans le presse-papiers",
+  "lists.import.problem.ambiguous": "Peut-être un nombre décimal : n'utilisez que des chiffres"
 }

@@ -815,5 +815,6 @@
   "export.checklistHelp": "Kopiert diesen Plan als Einkaufscheckliste: Stationen, Gegenstände, Mengen und Schätzungen. Nichts über deinen Charakter.",
   "export.checklistAsText": "Als Text kopieren",
   "export.checklistAsMarkdown": "Als Markdown kopieren",
-  "export.checklistCopied": "Checkliste in die Zwischenablage kopiert"
+  "export.checklistCopied": "Checkliste in die Zwischenablage kopiert",
+  "lists.import.problem.ambiguous": "Könnte eine Dezimalzahl sein: nur Ziffern verwenden"
 }

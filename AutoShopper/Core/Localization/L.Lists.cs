@@ -91,6 +91,7 @@ internal static partial class L
         public static readonly LocString ImportProblemCap = new("lists.import.problem.cap", "Max per unit out of range");
         public static readonly LocString ImportProblemExcess = new("lists.import.problem.excess", "Extra out of range");
         public static readonly LocString ImportProblemNumber = new("lists.import.problem.number", "Not a whole number");
+        public static readonly LocString ImportProblemAmbiguous = new("lists.import.problem.ambiguous", "Could be a decimal: use plain digits");
         public static readonly LocString ImportProblemQuality = new("lists.import.problem.quality", "Unknown quality");
         public static readonly LocString ImportProblemMode = new("lists.import.problem.mode", "Unknown mode");
         public static readonly LocString ImportProblemName = new("lists.import.problem.name", "Name too long");

@@ -815,5 +815,6 @@
   "export.checklistHelp": "Copia este plano como checklist de compras: paradas, itens, quantidades e estimativas. Nada sobre o seu personagem.",
   "export.checklistAsText": "Copiar como texto",
   "export.checklistAsMarkdown": "Copiar como Markdown",
-  "export.checklistCopied": "Checklist copiado para a área de transferência"
+  "export.checklistCopied": "Checklist copiado para a área de transferência",
+  "lists.import.problem.ambiguous": "Pode ser um decimal: use apenas dígitos"
 }

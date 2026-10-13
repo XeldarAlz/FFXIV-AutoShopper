@@ -815,5 +815,6 @@
   "export.checklistHelp": "将此计划复制为购物核对表：停靠、物品、数量和估算。不含任何角色信息。",
   "export.checklistAsText": "复制为文本",
   "export.checklistAsMarkdown": "复制为 Markdown",
-  "export.checklistCopied": "核对表已复制到剪贴板"
+  "export.checklistCopied": "核对表已复制到剪贴板",
+  "lists.import.problem.ambiguous": "可能是小数：请只使用数字"
 }

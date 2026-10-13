@@ -8,6 +8,9 @@ internal enum NumberStatus : byte
     Valid,
     Malformed,
     Overflow,
+    // Digits whose separator may be a decimal mark, such as "10,5", "2500,00" or "1.500": refused, never read as a
+    // larger whole number.
+    Ambiguous,
 }
 
 internal static class ImportFields
@@ -18,6 +21,8 @@ internal static class ImportFields
 
     // Every limit is far below this many digits, so a longer number is out of range without risking overflow.
     private const int MaximumDigits = 12;
+    private const int DigitGroupLength = 3;
+    private const char DecimalPoint = '.';
 
     public static bool TryParseQuality(ReadOnlySpan<char> token, out ItemQuality quality)
     {
@@ -63,9 +68,10 @@ internal static class ImportFields
         return false;
     }
 
-    // Group separators (spaces, commas, underscores, apostrophes) are skipped. A period is refused: it is the decimal
-    // point in some locales and the group separator in others, so "1.500" has no single reading.
-    public static NumberStatus TryParseWhole(ReadOnlySpan<char> text, out long value)
+    // Digit groups may be split by spaces, commas, underscores or apostrophes when every group after the first has
+    // exactly three digits, so "1,000" and "12 500" read as written. A period, a shorter or longer group ("10,5",
+    // "2500,00") or, where the comma is the decimal mark, any comma could be a decimal part and is Ambiguous.
+    public static NumberStatus TryParseWhole(ReadOnlySpan<char> text, out long value, bool decimalComma = false)
     {
         value = 0;
         text = text.Trim();
@@ -74,12 +80,32 @@ internal static class ImportFields
             return NumberStatus.Empty;
         }
 
+        if (!IsNumberShaped(text))
+        {
+            return NumberStatus.Malformed;
+        }
+
+        var status = ReadDigits(text, decimalComma, out var parsed);
+        if (status == NumberStatus.Valid)
+        {
+            value = parsed;
+        }
+
+        return status;
+    }
+
+    private static NumberStatus ReadDigits(ReadOnlySpan<char> text, bool decimalComma, out long value)
+    {
+        value = 0;
         var digits = 0;
+        var groupLength = 0;
+        var grouped = false;
         for (var index = 0; index < text.Length; index++)
         {
             var character = text[index];
             if (char.IsAsciiDigit(character))
             {
+                groupLength++;
                 if (digits == 0 && character == '0')
                 {
                     continue;
@@ -95,13 +121,58 @@ internal static class ImportFields
                 continue;
             }
 
-            if (index == 0 || !IsGroupSeparator(character))
+            if (character == DecimalPoint || (decimalComma && character == ','))
+            {
+                return NumberStatus.Ambiguous;
+            }
+
+            if (groupLength == 0)
             {
                 return NumberStatus.Malformed;
             }
+
+            if (grouped ? groupLength != DigitGroupLength : groupLength > DigitGroupLength)
+            {
+                return NumberStatus.Ambiguous;
+            }
+
+            grouped = true;
+            groupLength = 0;
         }
 
-        return NumberStatus.Valid;
+        if (!grouped)
+        {
+            return NumberStatus.Valid;
+        }
+
+        if (groupLength == 0)
+        {
+            return NumberStatus.Malformed;
+        }
+
+        return groupLength == DigitGroupLength ? NumberStatus.Valid : NumberStatus.Ambiguous;
+    }
+
+    // Only digits, group separators and periods, with at least one digit; anything else is not a number at all.
+    private static bool IsNumberShaped(ReadOnlySpan<char> text)
+    {
+        var hasDigit = false;
+        for (var index = 0; index < text.Length; index++)
+        {
+            var character = text[index];
+            if (char.IsAsciiDigit(character))
+            {
+                hasDigit = true;
+                continue;
+            }
+
+            if (character != DecimalPoint && !IsGroupSeparator(character))
+            {
+                return false;
+            }
+        }
+
+        return hasDigit;
     }
 
     public static void SetQuantity(ImportRow row, NumberStatus status, long value)
@@ -140,24 +211,32 @@ internal static class ImportFields
         }
     }
 
-    // An empty field keeps the default; a field that is not a whole number, or too long to be one in range, rejects
-    // the row.
+    // An empty field keeps the default; a field that is not a whole number, may be a decimal, or is too long to be one
+    // in range rejects the row.
     private static bool Accepts(ImportRow row, NumberStatus status, ImportRowProblem outOfRange)
     {
-        switch (status)
+        if (status == NumberStatus.Valid)
         {
-            case NumberStatus.Valid:
-                return true;
-            case NumberStatus.Malformed:
-                row.Reject(ImportRowProblem.MalformedNumber);
-                return false;
-            case NumberStatus.Overflow:
-                row.Reject(outOfRange);
-                return false;
-            default:
-                return false;
+            return true;
         }
+
+        var problem = ProblemOf(status, outOfRange);
+        if (problem != ImportRowProblem.None)
+        {
+            row.Reject(problem);
+        }
+
+        return false;
     }
+
+    // The problem a number field gives its row; None for a usable or empty field.
+    public static ImportRowProblem ProblemOf(NumberStatus status, ImportRowProblem outOfRange) => status switch
+    {
+        NumberStatus.Malformed => ImportRowProblem.MalformedNumber,
+        NumberStatus.Ambiguous => ImportRowProblem.AmbiguousNumber,
+        NumberStatus.Overflow => outOfRange,
+        _ => ImportRowProblem.None,
+    };
 
     public static bool IsGroupSeparator(char character)
         => character is ',' or '_' or '\'' or ' ' or NoBreakSpace or NarrowNoBreakSpace;
