@@ -18,6 +18,10 @@ internal static class RunSummaryBuilder
     private const int ListingHashBytes = 4;
     private const int RandomSaltBytes = 16;
 
+    // For a journal read back later: the run's progress is replayed from the same entries the details come from.
+    public static RunSummary Build(Guid runId, IReadOnlyList<JournalEvent?> entries, bool dryRun, IExportNames names, RunSummaryOptions options = default)
+        => Build(JournalReplayer.Replay(entries, runId), entries, dryRun, names, options);
+
     public static RunSummary Build(
         JournalProgress progress,
         IReadOnlyList<JournalEvent?> entries,

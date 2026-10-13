@@ -22,6 +22,10 @@ internal sealed class RunJournal : IRunJournal
     private const byte LineFeed = (byte)'\n';
     private const int TailScanChunk = 4_096;
 
+    // An archive is stamped to the second when it is written, after the run in it ended; a minute of slack keeps a run
+    // whose recorded start and first event are a moment apart from missing its archive.
+    private static readonly TimeSpan ArchiveStampSlack = TimeSpan.FromMinutes(1);
+
     private static ReadOnlySpan<byte> LinePadding => " \t\r"u8;
 
     public RunJournal(string directoryPath)
@@ -75,7 +79,15 @@ internal sealed class RunJournal : IRunJournal
 
     public JournalReadResult Read()
     {
-        if (!DurableFile.TryReadAll(FilePath, out var content, out var exists, out var error))
+        var read = ReadFile(FilePath);
+        LastSequence = Math.Max(LastSequence, read.LastSequence);
+        return read;
+    }
+
+    // Reads any journal file, the live one or an archive, without touching the state of an instance.
+    public static JournalReadResult ReadFile(string path)
+    {
+        if (!DurableFile.TryReadAll(path, out var content, out var exists, out var error))
         {
             return JournalReadResult.Failure(error ?? "the journal could not be read");
         }
@@ -107,7 +119,6 @@ internal sealed class RunJournal : IRunJournal
             entries.Add(line.Event);
         }
 
-        LastSequence = Math.Max(LastSequence, lastSequence);
         return new JournalReadResult
         {
             Entries = entries.ToImmutable(),
@@ -187,6 +198,50 @@ internal sealed class RunJournal : IRunJournal
         }
 
         return new JournalRotation(true, finished.Count, runIds.Count - finished.Count, archivedLines, keptLines, tornTail, archivePath, null);
+    }
+
+    // A finished run moves whole into the first archive written after it ended, so the live journal is read first, then
+    // the archives dated after the run started, oldest first, until the run's authorization and its end are both in hand;
+    // a journal set aside mid-run splits a run across two files. The replayer orders what is gathered by sequence, so the
+    // order of the files does not matter.
+    public static JournalLookup FindRun(string directoryPath, Guid runId, DateTime startedAtUtc)
+    {
+        var found = ImmutableArray.CreateBuilder<JournalEvent?>();
+        var gathered = new RunEnds();
+        string? error = null;
+        var live = ReadFile(Path.Combine(directoryPath, FileName));
+        if (live.Failed)
+        {
+            error = live.Error;
+        }
+        else if (CollectRun(live.Entries, runId, found, ref gathered))
+        {
+            return new JournalLookup(JournalLookupStatus.Found, found.ToImmutable(), null);
+        }
+
+        var notBeforeUtc = startedAtUtc.Ticks > ArchiveStampSlack.Ticks ? startedAtUtc - ArchiveStampSlack : DateTime.MinValue;
+        var archives = ArchivesSince(directoryPath, notBeforeUtc, ref error);
+        for (var index = 0; index < archives.Count; index++)
+        {
+            var archive = ReadFile(archives[index].Path);
+            if (archive.Failed)
+            {
+                error ??= archive.Error;
+                continue;
+            }
+
+            if (CollectRun(archive.Entries, runId, found, ref gathered))
+            {
+                break;
+            }
+        }
+
+        if (found.Count > 0)
+        {
+            return new JournalLookup(JournalLookupStatus.Found, found.ToImmutable(), null);
+        }
+
+        return error is null ? JournalLookup.Gone : JournalLookup.Failure(error);
     }
 
     // Moves the whole journal to a dated file next to it, for a journal whose damage no answer can repair. The next
@@ -361,6 +416,82 @@ internal sealed class RunJournal : IRunJournal
 
         return path;
     }
+
+    // True once the run's authorization and its end are both among what was gathered, so no other file can add to it.
+    private static bool CollectRun(ImmutableArray<JournalEvent?> entries, Guid runId, ImmutableArray<JournalEvent?>.Builder found, ref RunEnds gathered)
+    {
+        for (var index = 0; index < entries.Length; index++)
+        {
+            var entry = entries[index];
+            if (entry is null || entry.RunId != runId)
+            {
+                continue;
+            }
+
+            found.Add(entry);
+            gathered.Started |= entry is RunAuthorized;
+            gathered.Ended |= entry is RunEnded;
+        }
+
+        return gathered.Started && gathered.Ended;
+    }
+
+    private struct RunEnds
+    {
+        public bool Started;
+        public bool Ended;
+    }
+
+    private static List<ArchiveFile> ArchivesSince(string directoryPath, DateTime notBeforeUtc, ref string? error)
+    {
+        var archives = new List<ArchiveFile>();
+        try
+        {
+            if (!Directory.Exists(directoryPath))
+            {
+                return archives;
+            }
+
+            var paths = Directory.GetFiles(directoryPath, ArchivePrefix + "*");
+            for (var index = 0; index < paths.Length; index++)
+            {
+                if (TryArchiveStamp(Path.GetFileName(paths[index]), out var stampUtc) && stampUtc >= notBeforeUtc)
+                {
+                    archives.Add(new ArchiveFile(paths[index], stampUtc));
+                }
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            error ??= exception.Message;
+        }
+
+        archives.Sort(static (left, right) =>
+        {
+            var order = left.StampUtc.CompareTo(right.StampUtc);
+            return order != 0 ? order : string.CompareOrdinal(left.Path, right.Path);
+        });
+        return archives;
+    }
+
+    // Archive names are the prefix, the UTC stamp, an optional "-2" style suffix and an optional set-aside marker, then
+    // the extension; the live journal, its backup and temporary files have no stamp and are skipped.
+    private static bool TryArchiveStamp(string fileName, out DateTime stampUtc)
+    {
+        stampUtc = default;
+        if (!fileName.StartsWith(ArchivePrefix, StringComparison.OrdinalIgnoreCase)
+            || !fileName.EndsWith(ArchiveExtension, StringComparison.OrdinalIgnoreCase)
+            || fileName.Length < ArchivePrefix.Length + ArchiveStampFormat.Length + ArchiveExtension.Length)
+        {
+            return false;
+        }
+
+        var stamp = fileName.AsSpan(ArchivePrefix.Length, ArchiveStampFormat.Length);
+        return DateTime.TryParseExact(stamp, ArchiveStampFormat, CultureInfo.InvariantCulture,
+            DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out stampUtc);
+    }
+
+    private readonly record struct ArchiveFile(string Path, DateTime StampUtc);
 
     private readonly record struct JournalLine(int Start, int Length, bool Terminated, JournalEvent? Event);
 }
