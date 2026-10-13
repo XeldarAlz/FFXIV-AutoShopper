@@ -167,6 +167,8 @@
   "changelog.new": "Yeni",
   "changelog.changes.one": "{0} değişiklik",
   "changelog.changes.other": "{0} değişiklik",
+  "changelog.r1001.1": "Düzeltildi: pazar panosuna aethernet yolculuğu, bölge daha yüklenirken varış noktasında vazgeçiyordu",
+  "changelog.r1001.2": "Düzeltildi: pazar panosuna yürüyüş, Ul'dah'ta olduğu gibi birkaç metre erişim dışında bitiyordu",
   "changelog.r1000.1": "Alışveriş listeleri: Herhangi, HQ ya da NQ, bir miktar alın ya da bir hedefe tamamlayın, %5 ücret dahil birim fiyat üst sınırıyla",
   "changelog.r1000.2": "Düz metin, CSV, JSON, Artisan ve Teamcraft listelerini tarif açılımıyla içe aktarır; kristal tamamlama yardımcısı ve dışa aktarma da var",
   "changelog.r1000.3": "Bölgenizde izin verdiğiniz dünyalar için Universalis fiyatları; sizinki dışındaki Japon veri merkezleri varsayılan olarak kapalı",

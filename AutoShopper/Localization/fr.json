@@ -167,6 +167,8 @@
   "changelog.new": "Nouveau",
   "changelog.changes.one": "{0} changement",
   "changelog.changes.other": "{0} changements",
+  "changelog.r1001.1": "Correction : le trajet par le réseau d'éthérites vers le tableau des ventes s'interrompait à l'arrivée, pendant que la zone se chargeait encore",
+  "changelog.r1001.2": "Correction : la marche jusqu'au tableau des ventes s'arrêtait à quelques mètres hors de portée, comme à Ul'dah",
   "changelog.r1000.1": "Listes de courses : Toutes, HQ ou NQ, acheter une quantité ou compléter jusqu'à un objectif, avec un prix maximal par unité taxe de 5 % comprise",
   "changelog.r1000.2": "Importe texte, CSV, JSON, listes Artisan et Teamcraft avec décomposition des recettes, plus une aide pour compléter les cristaux et des exports",
   "changelog.r1000.3": "Prix Universalis sur les mondes autorisés de votre région ; les centres de données japonais autres que le vôtre restent désactivés par défaut",
