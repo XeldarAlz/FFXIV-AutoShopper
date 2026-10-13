@@ -816,5 +816,6 @@
   "export.checklistAsText": "Copy as text",
   "export.checklistAsMarkdown": "Copy as Markdown",
   "export.checklistCopied": "Checklist copied to the clipboard",
-  "lists.import.problem.ambiguous": "Could be a decimal: use plain digits"
+  "lists.import.problem.ambiguous": "Could be a decimal: use plain digits",
+  "plan.reason.capped": "Capped: a world sent only its 100 cheapest listings, so more may be on the board"
 }

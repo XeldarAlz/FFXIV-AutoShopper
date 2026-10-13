@@ -84,6 +84,7 @@ internal static partial class L
         public static readonly LocString ReasonNotMarketable = new("plan.reason.notMarketable", "Universalis does not list this item");
         public static readonly LocString ReasonRequestFailed = new("plan.reason.requestFailed", "Its price request failed");
         public static readonly LocString ReasonNoMarketData = new("plan.reason.noMarketData", "No market data uploaded for the chosen worlds");
+        public static readonly LocString ReasonCapped = new("plan.reason.capped", "Capped: a world sent only its 100 cheapest listings, so more may be on the board");
 
         public static readonly LocString Freshness = new("plan.freshness", "Price freshness");
         public static readonly LocString FreshnessNote = new("plan.freshnessNote", "When each world's listings were last uploaded to Universalis, counting its oldest item.");

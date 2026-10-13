@@ -816,5 +816,6 @@
   "export.checklistAsText": "Copiar como texto",
   "export.checklistAsMarkdown": "Copiar como Markdown",
   "export.checklistCopied": "Lista de control copiada al portapapeles",
-  "lists.import.problem.ambiguous": "Podría ser un decimal: usa solo dígitos"
+  "lists.import.problem.ambiguous": "Podría ser un decimal: usa solo dígitos",
+  "plan.reason.capped": "Limitado: un mundo solo envió sus 100 anuncios más baratos, puede haber más en el tablón del mercado"
 }

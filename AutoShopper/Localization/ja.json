@@ -816,5 +816,6 @@
   "export.checklistAsText": "テキストでコピー",
   "export.checklistAsMarkdown": "Markdown でコピー",
   "export.checklistCopied": "チェックリストをクリップボードにコピーしました",
-  "lists.import.problem.ambiguous": "小数の可能性があります。数字だけで入力してください"
+  "lists.import.problem.ambiguous": "小数の可能性があります。数字だけで入力してください",
+  "plan.reason.capped": "上限: あるワールドは安い順に100件の出品しか送っていないため、マーケットボードにはさらに出品があるかもしれません"
 }

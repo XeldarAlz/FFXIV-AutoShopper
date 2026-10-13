@@ -18,6 +18,7 @@ internal enum PreviewReason : byte
     NotMarketable,
     RequestFailed,
     NoMarketData,
+    Capped,
 }
 
 [Flags]
@@ -92,9 +93,16 @@ internal static class PreviewReview
     }
 
     // The planner only sees offers, so an item with none reads as "no listings"; the snapshot tells whether that is
-    // an empty market, an item Universalis does not track, a failed request or an item never fetched.
+    // an empty market, an item Universalis does not track, a failed request or an item never fetched. A world cut at
+    // the listing cap keeps only its cheapest listings, which can hide the dearer stock of one quality, so missing or
+    // short stock there is reported as capped.
     public static PreviewReason ReasonFor(in UnresolvedDemand unresolved, PriceSnapshot? prices)
     {
+        if (unresolved.Reason == UnresolvedReason.InsufficientStock)
+        {
+            return IsCapped(unresolved.Demand.ItemId, prices) ? PreviewReason.Capped : PreviewReason.InsufficientStock;
+        }
+
         if (unresolved.Reason != UnresolvedReason.NoListings)
         {
             return FromPlanner(unresolved.Reason);
@@ -110,6 +118,11 @@ internal static class PreviewReview
             return PreviewReason.NotMarketable;
         }
 
+        if ((item.Coverage & PriceCoverage.Truncated) != PriceCoverage.None)
+        {
+            return PreviewReason.Capped;
+        }
+
         if (item.HasAnyUpload)
         {
             return PreviewReason.NoListings;
@@ -117,6 +130,9 @@ internal static class PreviewReview
 
         return (item.Coverage & PriceCoverageGroups.Failed) != PriceCoverage.None ? PreviewReason.RequestFailed : PreviewReason.NoMarketData;
     }
+
+    private static bool IsCapped(uint itemId, PriceSnapshot? prices)
+        => prices is not null && prices.TryGetItem(itemId, out var item) && (item.Coverage & PriceCoverage.Truncated) != PriceCoverage.None;
 
     public static bool IsOlderThan(DateTime atUtc, DateTime nowUtc, TimeSpan age) => atUtc != default && nowUtc - atUtc > age;
 

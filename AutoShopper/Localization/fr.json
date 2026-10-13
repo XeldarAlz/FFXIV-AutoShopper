@@ -816,5 +816,6 @@
   "export.checklistAsText": "Copier en texte",
   "export.checklistAsMarkdown": "Copier en Markdown",
   "export.checklistCopied": "Liste de contrôle copiée dans le presse-papiers",
-  "lists.import.problem.ambiguous": "Peut-être un nombre décimal : n'utilisez que des chiffres"
+  "lists.import.problem.ambiguous": "Peut-être un nombre décimal : n'utilisez que des chiffres",
+  "plan.reason.capped": "Plafonné : un monde n'a envoyé que ses 100 annonces les moins chères, il peut y en avoir d'autres au tableau des ventes"
 }
