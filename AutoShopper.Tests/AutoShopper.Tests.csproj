@@ -16,6 +16,7 @@
     <Compile Include="..\AutoShopper\Core\Market\Model\**\*.cs" Link="Market\Model\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\AutoShopper\Core\Shopping\Model\**\*.cs" Link="Shopping\Model\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\AutoShopper\Core\Shopping\Import\**\*.cs" Link="Shopping\Import\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\AutoShopper\Core\Exports\**\*.cs" Link="Exports\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\AutoShopper\Core\Recipes\**\*.cs" Exclude="..\AutoShopper\Core\Recipes\RecipeExpander.cs" Link="Recipes\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
