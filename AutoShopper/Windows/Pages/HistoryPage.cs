@@ -175,7 +175,7 @@ internal sealed class HistoryPage
     }
 
     private static string ChartTooltip(RunRecord record)
-        => Loc.T(L.History.ChartTooltip, RelativeTime(record.EndedAtUtc), Formatting.Elapsed(record.Duration));
+        => Loc.T(L.History.ChartTooltip, Formatting.RelativeTime(record.EndedAtUtc), Formatting.Elapsed(record.Duration));
 
     private static void DrawRow(RunRecord record, int index)
     {
@@ -201,7 +201,7 @@ internal sealed class HistoryPage
         var padX = PadX * scale;
         var midY = origin.Y + size.Y * 0.5f;
         var textX = DrawRunIcon(origin.X + padX, midY);
-        var when = RelativeTime(record.EndedAtUtc);
+        var when = Formatting.RelativeTime(record.EndedAtUtc);
         var detail = Loc.T(L.History.RowDetail, WhereText(record.WorldName, record.DataCenterName), Formatting.Elapsed(record.Duration));
 
         var whenSize = TextDraw.Measure(when);
@@ -275,27 +275,6 @@ internal sealed class HistoryPage
         }
 
         return lines;
-    }
-
-    private static string RelativeTime(DateTime utc)
-    {
-        var span = DateTime.UtcNow - utc;
-        if (span.TotalSeconds < 60)
-        {
-            return Loc.T(L.History.JustNow);
-        }
-
-        if (span.TotalMinutes < 60)
-        {
-            return Loc.T(L.History.MinutesAgo, (int)span.TotalMinutes);
-        }
-
-        if (span.TotalHours < 24)
-        {
-            return Loc.T(L.History.HoursAgo, (int)span.TotalHours);
-        }
-
-        return span.TotalDays < 7 ? Loc.T(L.History.DaysAgo, (int)span.TotalDays) : utc.ToLocalTime().ToString("M", Loc.Culture);
     }
 
     private void DrawClearControl(RunHistory history)

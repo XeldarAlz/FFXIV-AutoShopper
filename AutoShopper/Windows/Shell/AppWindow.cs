@@ -9,7 +9,7 @@ namespace AutoShopper.Windows.Shell;
 
 public sealed class AppWindow : Window, IDisposable
 {
-    public enum Page { Shop, Lists, Settings, History, Plugins, Log, Changelog, About }
+    public enum Page { Shop, Lists, Plan, Settings, History, Plugins, Log, Changelog, About }
 
     private const float PageRevealMs = 260f;
     private const float PageSlide = 12f;
@@ -36,6 +36,7 @@ public sealed class AppWindow : Window, IDisposable
     private readonly Plugin plugin;
     private readonly ShopPage shopPage = new();
     private readonly ListsPage listsPage = new();
+    private readonly PlanPage planPage = new();
     private readonly SettingsPage settingsPage = new();
     private readonly HistoryPage historyPage = new();
     private readonly PluginsPage pluginsPage = new();
@@ -264,6 +265,7 @@ public sealed class AppWindow : Window, IDisposable
         {
             case Page.Shop: shopPage.Draw(plugin, this); break;
             case Page.Lists: listsPage.Draw(plugin); break;
+            case Page.Plan: planPage.Draw(plugin, this); break;
             case Page.Settings: settingsPage.Draw(plugin); break;
             case Page.History: historyPage.Draw(plugin); break;
             case Page.Plugins: pluginsPage.Draw(); break;

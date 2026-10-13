@@ -39,7 +39,7 @@ internal sealed partial class ListsPage
     private const float ModeWidth = 76f;
     private const float QuantityWidth = 112f;
     private const float OwnedWidth = 62f;
-    private const float CapWidth = 94f;
+    private const float CapWidth = 132f;
     private const float ExcessWidth = 64f;
     private const float HeaderRowHeight = 26f;
     private const float EmptyLinesHeight = 70f;
@@ -230,12 +230,12 @@ internal sealed partial class ListsPage
         var origin = ImGui.GetCursorScreenPos();
         var height = HeaderRowHeight * scale;
         var itemX = columns.Left + (LinePadX + RailWidth) * scale;
-        SortHeader("##ashop_sort_name", L.Lists.ColumnItem, SortColumn.Name, itemX, origin.Y, columns.Quality - CellGap * scale - itemX, height);
+        SortHeader("##ashop_sort_name", L.Lists.ColumnItem, SortColumn.Name, itemX, origin.Y, columns.Quality - CellGap * scale - itemX, height, null);
         HeaderLabel(L.Lists.ColumnQuality, columns.Quality, origin.Y, QualityWidth * scale, height, L.Lists.QualityHelp);
         HeaderLabel(L.Lists.ColumnMode, columns.Mode, origin.Y, ModeWidth * scale, height, null);
-        SortHeader("##ashop_sort_quantity", L.Lists.ColumnQuantity, SortColumn.Quantity, columns.Quantity, origin.Y, QuantityWidth * scale, height);
+        SortHeader("##ashop_sort_quantity", L.Lists.ColumnQuantity, SortColumn.Quantity, columns.Quantity, origin.Y, QuantityWidth * scale, height, null);
         HeaderLabel(L.Lists.ColumnOwned, columns.Owned, origin.Y, OwnedWidth * scale, height, L.Lists.OwnedHelp);
-        SortHeader("##ashop_sort_cap", L.Lists.ColumnCap, SortColumn.Cap, columns.Cap, origin.Y, CapWidth * scale, height);
+        SortHeader("##ashop_sort_cap", L.Lists.ColumnCap, SortColumn.Cap, columns.Cap, origin.Y, CapWidth * scale, height, L.Lists.CapHelp);
         HeaderLabel(L.Lists.ColumnExcess, columns.Excess, origin.Y, ExcessWidth * scale, height, L.Lists.ExcessHelp);
 
         ImGui.SetCursorScreenPos(origin);
@@ -258,7 +258,7 @@ internal sealed partial class ListsPage
         }
     }
 
-    private void SortHeader(string id, LocString label, SortColumn column, float x, float y, float width, float height)
+    private void SortHeader(string id, LocString label, SortColumn column, float x, float y, float width, float height, LocString? help)
     {
         var active = sortColumn == column;
         var icon = !active ? FontAwesomeIcon.Sort : sortDescending ? FontAwesomeIcon.SortDown : FontAwesomeIcon.SortUp;
@@ -286,7 +286,7 @@ internal sealed partial class ListsPage
         TextDraw.Icon(icon, new Vector2(x + textSize.X + 6f * scale, y + (height - iconSize.Y) * 0.5f), active ? color : Styling.WithAlpha(color, 0.6f));
         if (hit.Hovered)
         {
-            Tooltip.Show(Loc.T(L.Lists.SortHint));
+            Tooltip.Show(help is { } helpText ? string.Concat(Loc.T(helpText), "\n", Loc.T(L.Lists.SortHint)) : Loc.T(L.Lists.SortHint));
         }
 
         if (!hit.Clicked)

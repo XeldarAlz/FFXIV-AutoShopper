@@ -1,4 +1,5 @@
 using AutoShopper.Core.Localization;
+using AutoShopper.Core.Preview.Model;
 using AutoShopper.Core.Shopping;
 using AutoShopper.Core.Shopping.Model;
 using AutoShopper.Windows.Components;
@@ -22,12 +23,17 @@ internal sealed class ShopPage
     private const float PickerWidth = 260f;
     private const float BadgeGap = 8f;
     private const long RevisionStride = 2;
+    private const float PlanCardGap = 10f;
+    // The plan card's text is rebuilt at most once a minute for the price age.
+    private const long PlanTextRefreshMs = 60_000;
 
     private readonly List<ShoppingList> pickerLists = [];
     private string[] pickerLabels = [];
     private int pickerRevision = -1;
     private CachedText summaryText;
     private CachedText issuesText;
+    private CachedText planHeadlineText;
+    private CachedText planDetailText;
 
     public void Draw(Plugin plugin, AppWindow window)
     {
@@ -55,7 +61,106 @@ internal sealed class ShopPage
         Styling.VSpace(20f);
         SectionTitle(Loc.T(L.Shop.Lists));
         DrawListCard(plugin.Lists, window);
+        DrawPlanCard(plugin, window);
         Styling.VSpace(12f);
+    }
+
+    // A summary of the plan for the selected list; the Plan page holds the details and the price fetch.
+    private void DrawPlanCard(Plugin plugin, AppWindow window)
+    {
+        var list = plugin.Lists.Selected;
+        if (list is null)
+        {
+            return;
+        }
+
+        Styling.VSpace(PlanCardGap);
+        var scale = ImGuiHelpers.GlobalScale;
+        var size = new Vector2(ImGui.GetContentRegionAvail().X, ListCardHeight * scale);
+        var origin = ImGui.GetCursorScreenPos();
+        var end = origin + size;
+        var drawList = ImGui.GetWindowDrawList();
+        var result = plugin.Preview.LatestFor(list);
+        var priced = result?.Input.Prices is not null && plugin.Preview.Scope is not null;
+        var over = priced && plugin.Configuration.MaxSpend > 0 && result!.Selected.Totals.PurchaseEstimate > plugin.Configuration.MaxSpend;
+        var accent = !priced ? Styling.AccentNebula : over || !result!.Selected.IsComplete ? Styling.AccentRose : Styling.AccentMint;
+        Paint.Glass(drawList, origin, end, Styling.CardRounding * scale, accent, 0.04f);
+
+        var padX = ListCardPadX * scale;
+        var midY = origin.Y + size.Y * 0.5f;
+        var iconBox = ListIconBox * scale;
+        var iconCenter = new Vector2(origin.X + padX + iconBox * 0.5f, midY);
+        drawList.AddCircleFilled(iconCenter, iconBox * 0.5f, Paint.Col(Styling.WithAlpha(accent, 0.14f)));
+        TextDraw.IconCentered(FontAwesomeIcon.MapMarkedAlt, iconCenter, Styling.Lighten(accent, 0.3f));
+
+        var openLabel = Loc.T(L.Shop.OpenPlan);
+        var openWidth = PillButton.Width(openLabel, FontAwesomeIcon.MapMarkedAlt);
+        ImGui.SetCursorScreenPos(new Vector2(end.X - padX - openWidth, midY - Layout.ActionPillHeight * scale * 0.5f));
+        if (PillButton.Draw("##ashop_shop_open_plan", openLabel, Styling.AccentGlow, PillButton.Emphasis.Tinted, FontAwesomeIcon.MapMarkedAlt, height: Layout.ActionPillHeight))
+        {
+            window.Show(AppWindow.Page.Plan);
+        }
+
+        var contentX = iconCenter.X + iconBox * 0.5f + 14f * scale;
+        var contentWidth = MathF.Max(0f, end.X - padX - openWidth - 14f * scale - contentX);
+        var lineHeight = ImGui.GetTextLineHeight();
+        if (!priced)
+        {
+            var message = plugin.Preview.Scope is null ? Loc.T(L.Shop.PlanLogIn)
+                : plugin.Preview.Planning && result is null ? Loc.T(L.Plan.Planning)
+                : Loc.T(L.Shop.PlanNoPrices);
+            TextDraw.At(TextDraw.Truncate(message, contentWidth), new Vector2(contentX, midY - lineHeight * 0.5f), Styling.TextDim);
+        }
+        else
+        {
+            var key = PlanTextKey(result!, plugin.Configuration.MaxSpend);
+            var headline = planHeadlineText.Get(key, static _ => PlanHeadline());
+            var detail = planDetailText.Get(key, static _ => PlanDetail());
+            var top = midY - (lineHeight + 6f * scale + lineHeight) * 0.5f;
+            TextDraw.At(TextDraw.Truncate(headline, contentWidth), new Vector2(contentX, top), over ? Styling.AccentRoseSoft : Styling.TextStrong);
+            var detailColor = result!.Selected.IsComplete ? Styling.TextDim : Styling.AccentRoseSoft;
+            TextDraw.At(TextDraw.Truncate(detail, contentWidth), new Vector2(contentX, top + lineHeight + 6f * scale), detailColor);
+        }
+
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(size);
+    }
+
+    private static long PlanTextKey(PreviewResult result, long cap)
+        => HashCode.Combine(result, result.Mode, cap, Environment.TickCount64 / PlanTextRefreshMs);
+
+    private static string PlanHeadline()
+    {
+        var plugin = Plugin.Instance;
+        var result = plugin.Preview.LatestFor(plugin.Lists.Selected);
+        if (result is null)
+        {
+            return string.Empty;
+        }
+
+        var total = Formatting.Gil(result.Selected.Totals.PurchaseEstimate);
+        var cap = plugin.Configuration.MaxSpend;
+        return cap > 0 ? Loc.T(L.Plan.BudgetLine, total, Formatting.Gil(cap)) : Loc.T(L.Shop.PlanNoCap, total);
+    }
+
+    private static string PlanDetail()
+    {
+        var plugin = Plugin.Instance;
+        var result = plugin.Preview.LatestFor(plugin.Lists.Selected);
+        if (result is null)
+        {
+            return string.Empty;
+        }
+
+        var plan = result.Selected;
+        var detail = Loc.Plural(L.Shop.PlanStops, plan.Totals.StopCount);
+        if (!plan.IsComplete)
+        {
+            detail = string.Concat(detail, TextDraw.Separator, Loc.Plural(L.Shop.PlanMissing, plan.Totals.MissingQuantity));
+        }
+
+        var oldest = plan.Provenance.OldestObservationUtc;
+        return oldest == default ? detail : string.Concat(detail, TextDraw.Separator, Loc.T(L.Shop.PlanOldest, Formatting.RelativeTime(oldest)));
     }
 
     private void DrawListCard(ShoppingListStore store, AppWindow window)
