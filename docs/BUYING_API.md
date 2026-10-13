@@ -127,7 +127,7 @@ or
 { "schema": 1, "accepted": true, "runId": "4e1a...", "refusal": null, "message": null }
 ```
 
-Refusal codes: `UnsupportedSchema`, `InvalidRequest`, `ConsentRequired`, `ConsentDenied`, `Busy` (any run, UI or API, is active, or any other Auto Shopper task such as a travel helper), and Auto Shopper's readiness names that apply: `SetupNeeded`, `LoggedOut`, `JournalDamaged`, `NeedsReconciliation`, `InterruptedRun`, `ReadingUnavailable`, `BuyingUnavailable`. `message` is the localized reason Auto Shopper would print: "Cannot start: <reason>."
+Refusal codes: `UnsupportedSchema`, `InvalidRequest`, `ConsentRequired`, `ConsentDenied`, `Busy` (any run, UI or API, is active or has not finished ending, or any other Auto Shopper task such as a travel helper is running), and Auto Shopper's readiness names that apply: `SetupNeeded`, `LoggedOut`, `JournalDamaged`, `NeedsReconciliation`, `InterruptedRun`, `ReadingUnavailable`, `BuyingUnavailable`. `message` is the localized reason Auto Shopper would print: "Cannot start: <reason>."
 
 - Checks run in this order: schema and request shape, consent, busy, readiness.
 - `InvalidRequest` names the field at fault in its message, as for quotes (`lines[0].quality`, `maxSpend`, `callerRunId` and so on). Once Auto Shopper's item data has loaded, a line naming an item the market board does not sell (`lines[n].itemId`), or `HighQuality` for an item that has no HQ (`lines[n].quality`), is refused as `InvalidRequest` too. When the item data has not loaded yet, the run is accepted and checks those lines in its preflight.

@@ -20,7 +20,7 @@ internal sealed partial class AutoShopController
     private ShopRunState? shopRun;
     private bool stopping;
 
-    public bool Running => Svc.Automation.Running || Paused || stopping;
+    public bool Running => Svc.Automation.Running || Paused || stopping || shopRun is not null;
 
     public bool Stopping => stopping;
 
