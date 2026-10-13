@@ -1,3 +1,4 @@
+using AutoShopper.Core.Market.Model;
 using AutoShopper.Core.Planning;
 using AutoShopper.Core.Shared;
 
@@ -13,7 +14,6 @@ internal readonly record struct ObservedListing(
     long UnitPrice,
     long TotalTax,
     bool IsMannequin,
-    bool IsSellingAsSet,
     uint WorldId,
     int SearchGeneration,
     DateTime ObservedAtUtc)
@@ -32,4 +32,7 @@ internal readonly record struct ObservedListing(
     {
         return new PlanOffer(WorldId, dataCenterId, ItemId, IsHq, Quantity, UnitPrice, TotalTax, ToListingKey(), ObservedAtUtc, false);
     }
+
+    public override string ToString()
+        => ListingFields.Describe(ListingId, RetainerId, ItemId, IsHq, Quantity, UnitPrice, TotalTax, IsMannequin);
 }

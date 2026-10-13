@@ -12,8 +12,17 @@ public sealed class MarketModelTests
         ObservedListing[] captured = [Captured(1), Captured(2), Captured(3)];
         OfferedListing[] offered = [Offered(3), Offered(1), Offered(2)];
 
-        Assert.Equal(CrossCheckResult.Match, ListingCrossCheck.Compare(captured, offered));
-        Assert.Equal(CrossCheckResult.Match, ListingCrossCheck.Compare([], []));
+        Assert.Equal(CrossCheck.Match, ListingCrossCheck.Compare(captured, offered));
+        Assert.Equal(CrossCheck.Match, ListingCrossCheck.Compare([], []));
+    }
+
+    [Fact]
+    public void CrossCheckMatchesTheMannequinFlagOfThePage()
+    {
+        ObservedListing[] captured = [Captured(1), Captured(2) with { IsMannequin = true }];
+        OfferedListing[] offered = [Offered(1), Offered(2) with { OnMannequin = true }];
+
+        Assert.Equal(CrossCheck.Match, ListingCrossCheck.Compare(captured, offered));
     }
 
     [Fact]
@@ -21,11 +30,15 @@ public sealed class MarketModelTests
     {
         ObservedListing[] captured = [Captured(1), Captured(2)];
 
-        Assert.Equal(CrossCheckResult.CountMismatch, ListingCrossCheck.Compare(captured, [Offered(1)]));
-        Assert.Equal(CrossCheckResult.MissingListing, ListingCrossCheck.Compare(captured, [Offered(1), Offered(9)]));
-        Assert.Equal(CrossCheckResult.FieldMismatch, ListingCrossCheck.Compare(captured, [Offered(1), Offered(2) with { UnitPrice = 999 }]));
-        Assert.Equal(CrossCheckResult.FieldMismatch, ListingCrossCheck.Compare(captured, [Offered(1), Offered(2) with { OnMannequin = true }]));
-        Assert.Equal(CrossCheckResult.DuplicateListing, ListingCrossCheck.Compare([Captured(1), Captured(1)], [Offered(1), Offered(1)]));
+        Assert.Equal(CrossCheckResult.CountMismatch, ListingCrossCheck.Compare(captured, [Offered(1)]).Result);
+        Assert.Equal(CrossCheckResult.MissingListing, ListingCrossCheck.Compare(captured, [Offered(1), Offered(9)]).Result);
+        Assert.Equal(CrossCheckResult.DuplicateListing, ListingCrossCheck.Compare([Captured(1), Captured(1)], [Offered(1), Offered(1)]).Result);
+
+        var price = ListingCrossCheck.Compare(captured, [Offered(2) with { UnitPrice = 999 }, Offered(1)]);
+        Assert.Equal(new CrossCheck(CrossCheckResult.FieldMismatch, 1, 0, ListingField.UnitPrice), price);
+
+        var mannequin = ListingCrossCheck.Compare(captured, [Offered(1), Offered(2) with { OnMannequin = true }]);
+        Assert.Equal(new CrossCheck(CrossCheckResult.FieldMismatch, 1, 1, ListingField.Mannequin), mannequin);
     }
 
     [Fact]
@@ -51,16 +64,15 @@ public sealed class MarketModelTests
     }
 
     [Fact]
-    public void SnapshotMarksOwnMannequinAndSetListings()
+    public void SnapshotMarksOwnAndMannequinListings()
     {
         var own = Listing() with { ListingId = 1, SellerContentId = Character };
         var mannequin = Listing() with { ListingId = 2, IsMannequin = true };
-        var set = Listing() with { ListingId = 3, IsSellingAsSet = true };
         var plain = Listing() with { ListingId = 4 };
 
-        var snapshot = ListingSnapshot.Create(Ore, HomeWorld, SearchGeneration, Now, Character, 5, [own, mannequin, set, plain]);
+        var snapshot = ListingSnapshot.Create(Ore, HomeWorld, SearchGeneration, Now, Character, 5, [own, mannequin, plain]);
 
-        Assert.Equal([ListingMarks.Own, ListingMarks.Mannequin, ListingMarks.Set, ListingMarks.None], snapshot.Marks.AsSpan().ToArray());
+        Assert.Equal([ListingMarks.Own, ListingMarks.Mannequin, ListingMarks.None], snapshot.Marks.AsSpan().ToArray());
         Assert.False(snapshot.IsComplete);
         Assert.True(snapshot.TryFind(4, out var found));
         Assert.Equal(plain, found);

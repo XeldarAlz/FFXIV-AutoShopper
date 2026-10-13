@@ -137,7 +137,7 @@ public sealed class ReplanTests
         var planner = NewPlanner();
         var first = planner.Plan(InitialRequest());
         var live = new AutoShopper.Core.Execution.Model.ObservedListing(
-            900, 1, 2, Ore, true, 6, 80, 7, false, false, Delta.WorldId, 1, ObservedAt);
+            900, 1, 2, Ore, true, 6, 80, 7, false, Delta.WorldId, 1, ObservedAt);
 
         var replanned = planner.Replan(first, [], [], Delta, [live.ToPlanOffer(Delta.DataCenterId)]);
 

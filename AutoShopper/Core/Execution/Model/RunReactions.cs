@@ -38,7 +38,6 @@ internal static class RunReactions
         GuardRejection.PurchasePending => RunResponse.Of(RunReaction.NeedsReconciliation, RunIssueReason.UncertainPurchase),
         GuardRejection.InvalidListing => RunResponse.Of(RunReaction.SkipListing),
         GuardRejection.Mannequin => RunResponse.Of(RunReaction.SkipListing),
-        GuardRejection.SetListing => RunResponse.Of(RunReaction.SkipListing),
         GuardRejection.OwnRetainer => RunResponse.Of(RunReaction.SkipListing),
         GuardRejection.ItemMismatch => RunResponse.Of(RunReaction.Research),
         GuardRejection.QualityMismatch => RunResponse.Of(RunReaction.Research),
