@@ -149,7 +149,7 @@ internal sealed class BuyingApi : IDisposable
                 RunLog.Info($"Buying API: a run from {displayName} was refused: it is denied.");
                 return StartRunResponse.Refuse(ApiRefusal.ConsentDenied, Refused(Loc.T(L.Api.ReasonDenied, displayName)));
             case ConsentState.Unknown:
-                Consents.Ask(caller, displayName);
+                Consents.Ask(caller, displayName, request.MaxSpend);
                 RunLog.Info($"Buying API: {displayName} ({caller}) asks to buy through Auto Shopper; the Shop page asks the player.");
                 return StartRunResponse.Refuse(ApiRefusal.ConsentRequired, Refused(Loc.T(L.Api.ReasonConsent, displayName)));
         }

@@ -6,6 +6,7 @@ public sealed class CallerConsentTests
 {
     private const string Caller = "AutoGcSupply";
     private const string DisplayName = "Auto GC Supply";
+    private const long MaxSpend = 150_000;
 
     [Fact]
     public void ACallerNobodyAnsweredIsUnknown()
@@ -21,10 +22,10 @@ public sealed class CallerConsentTests
     {
         var consents = new CallerConsents([]);
 
-        consents.Ask(Caller, DisplayName);
-        consents.Ask(Caller, DisplayName);
+        consents.Ask(Caller, DisplayName, MaxSpend);
+        consents.Ask(Caller, DisplayName, MaxSpend);
 
-        Assert.Equal([new ConsentRequest(Caller, DisplayName)], consents.Pending);
+        Assert.Equal([new ConsentRequest(Caller, DisplayName, MaxSpend)], consents.Pending);
         Assert.Equal(ConsentState.Unknown, consents.StateOf(Caller));
     }
 
@@ -32,13 +33,55 @@ public sealed class CallerConsentTests
     public void AskingAgainUnderANewNameUpdatesTheQuestion()
     {
         var consents = new CallerConsents([]);
-        consents.Ask(Caller, DisplayName);
+        consents.Ask(Caller, DisplayName, MaxSpend);
         var revision = consents.Revision;
 
-        consents.Ask(Caller, "GC Supply");
+        consents.Ask(Caller, "GC Supply", MaxSpend);
 
-        Assert.Equal([new ConsentRequest(Caller, "GC Supply")], consents.Pending);
+        Assert.Equal([new ConsentRequest(Caller, "GC Supply", MaxSpend)], consents.Pending);
         Assert.True(consents.Revision > revision);
+    }
+
+    [Fact]
+    public void TheQuestionShowsTheCapOfTheNewestRequest()
+    {
+        var consents = new CallerConsents([]);
+        consents.Ask(Caller, DisplayName, MaxSpend);
+        var revision = consents.Revision;
+
+        consents.Ask(Caller, DisplayName, 900_000);
+
+        Assert.Equal([new ConsentRequest(Caller, DisplayName, 900_000)], consents.Pending);
+        Assert.True(consents.Revision > revision);
+    }
+
+    [Fact]
+    public void AtMostEightCallersWaitForAnAnswerAndTheOldestMakesWay()
+    {
+        var consents = new CallerConsents([]);
+        for (var index = 0; index <= ApiContract.PendingConsentCapacity; index++)
+        {
+            consents.Ask($"Caller{index}", $"Caller {index}", MaxSpend);
+        }
+
+        Assert.Equal(ApiContract.PendingConsentCapacity, consents.Pending.Count);
+        Assert.Equal("Caller1", consents.Pending[0].Caller);
+        Assert.Equal($"Caller{ApiContract.PendingConsentCapacity}", consents.Pending[^1].Caller);
+    }
+
+    [Fact]
+    public void ACallerAlreadyWaitingAsksAgainWithoutPushingAnotherOut()
+    {
+        var consents = new CallerConsents([]);
+        for (var index = 0; index < ApiContract.PendingConsentCapacity; index++)
+        {
+            consents.Ask($"Caller{index}", $"Caller {index}", MaxSpend);
+        }
+
+        consents.Ask("Caller0", "Caller zero", MaxSpend);
+
+        Assert.Equal(ApiContract.PendingConsentCapacity, consents.Pending.Count);
+        Assert.Equal(new ConsentRequest("Caller0", "Caller zero", MaxSpend), consents.Pending[0]);
     }
 
     [Fact]
@@ -46,7 +89,7 @@ public sealed class CallerConsentTests
     {
         var answers = new List<CallerConsent>();
         var consents = new CallerConsents(answers);
-        consents.Ask(Caller, DisplayName);
+        consents.Ask(Caller, DisplayName, MaxSpend);
 
         consents.Allow(Caller, DisplayName);
 
@@ -62,10 +105,10 @@ public sealed class CallerConsentTests
     public void DenyStoresTheAnswerAndADeniedCallerAskingAgainIsNotQueued()
     {
         var consents = new CallerConsents([]);
-        consents.Ask(Caller, DisplayName);
+        consents.Ask(Caller, DisplayName, MaxSpend);
 
         consents.Deny(Caller, DisplayName);
-        consents.Ask(Caller, DisplayName);
+        consents.Ask(Caller, DisplayName, MaxSpend);
 
         Assert.Equal(ConsentState.Denied, consents.StateOf(Caller));
         Assert.Empty(consents.Pending);
@@ -96,7 +139,7 @@ public sealed class CallerConsentTests
 
         Assert.Equal(ConsentState.Unknown, consents.StateOf(Caller));
         Assert.Empty(answers);
-        consents.Ask(Caller, DisplayName);
+        consents.Ask(Caller, DisplayName, MaxSpend);
         Assert.Single(consents.Pending);
     }
 

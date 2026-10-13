@@ -7,6 +7,7 @@ namespace AutoShopper.Windows.Sections;
 internal static class ConsentCard
 {
     private static CachedText titleText;
+    private static CachedText factsText;
 
     public static void Draw(Plugin plugin)
     {
@@ -19,7 +20,8 @@ internal static class ConsentCard
 
         var request = pending[0];
         var title = titleText.Get(api.Consents.Revision, static _ => Title());
-        var card = ActionCard.Begin(title, Loc.T(L.Api.ConsentBody), null, null, Styling.AccentGlow, 2, FontAwesomeIcon.Plug);
+        var facts = factsText.Get(api.Consents.Revision, static _ => Facts());
+        var card = ActionCard.Begin(title, Loc.T(L.Api.ConsentBody), null, facts, Styling.AccentGlow, 2, FontAwesomeIcon.Plug);
         var allow = ActionCard.Button(ref card, "##ashop_consent_allow", Loc.T(L.Api.Allow), Styling.AccentMint, PillButton.Emphasis.Filled, true);
         var deny = ActionCard.Button(ref card, "##ashop_consent_deny", Loc.T(L.Api.Deny), Styling.AccentRose, PillButton.Emphasis.Ghost, true);
         ActionCard.End(card);
@@ -37,5 +39,11 @@ internal static class ConsentCard
     {
         var pending = Plugin.Instance.Api.Consents.Pending;
         return pending.Count == 0 ? string.Empty : Loc.T(L.Api.ConsentTitle, pending[0].DisplayName);
+    }
+
+    private static string Facts()
+    {
+        var pending = Plugin.Instance.Api.Consents.Pending;
+        return pending.Count == 0 ? string.Empty : Loc.T(L.Api.ConsentFacts, pending[0].Caller, Loc.Gil(pending[0].MaxSpend));
     }
 }

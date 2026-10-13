@@ -853,6 +853,7 @@
   "api.reason.denied": "{0} reddedildi; Auto Shopper'da Ayarlar, Genel bölümünden izin verin",
   "api.consent.title": "{0}, Auto Shopper üzerinden satın almak istiyor.",
   "api.consent.body": "Her tur için kendi alışveriş listesini ve bir harcama sınırı gönderir. Deneme turunuz, dünyalarınız, elde tutulacak gil ve satın alma denetimleri geçerli kalır; bunu Ayarlar, Genel bölümünden geri alabilirsiniz.",
+  "api.consent.facts": "İç ad: {0}. Bu tur en fazla {1} harcamak istiyor. Bir eklentinin turları, tur başına harcama sınırınız yerine eklentinin gönderdiği sınıra uyar.",
   "api.allow": "İzin ver",
   "api.deny": "Reddet",
   "api.revoke": "Geri al",

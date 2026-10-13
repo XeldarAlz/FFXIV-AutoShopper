@@ -6,6 +6,7 @@ internal static partial class L
     {
         public static readonly LocString ConsentTitle = new("api.consent.title", "{0} wants to buy through Auto Shopper.");
         public static readonly LocString ConsentBody = new("api.consent.body", "It sends its own shopping list and a spend cap for each run. Your dry run, worlds, gil reserve and purchase checks still apply, and you can revoke this in Settings, General.");
+        public static readonly LocString ConsentFacts = new("api.consent.facts", "Internal name: {0}. This run asks to spend up to {1}. A plugin's runs keep to the cap they send, in place of your run spend cap.");
         public static readonly LocString Allow = new("api.allow", "Allow");
         public static readonly LocString Deny = new("api.deny", "Deny");
         public static readonly LocString Revoke = new("api.revoke", "Revoke");

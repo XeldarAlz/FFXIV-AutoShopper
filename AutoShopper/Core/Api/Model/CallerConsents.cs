@@ -17,7 +17,7 @@ internal enum ConsentState : byte
     Denied,
 }
 
-internal readonly record struct ConsentRequest(string Caller, string DisplayName);
+internal readonly record struct ConsentRequest(string Caller, string DisplayName, long MaxSpend);
 
 internal sealed class CallerConsents
 {
@@ -46,26 +46,31 @@ internal sealed class CallerConsents
         return answers[index].Allowed ? ConsentState.Allowed : ConsentState.Denied;
     }
 
-    public void Ask(string caller, string displayName)
+    public void Ask(string caller, string displayName, long maxSpend)
     {
         if (IndexOfAnswer(caller) >= 0)
         {
             return;
         }
 
+        var request = new ConsentRequest(caller, displayName, maxSpend);
         var index = IndexOfPending(caller);
-        if (index >= 0 && string.Equals(pending[index].DisplayName, displayName, StringComparison.Ordinal))
+        if (index >= 0 && pending[index] == request)
         {
             return;
         }
 
-        var request = new ConsentRequest(caller, displayName);
         if (index >= 0)
         {
             pending[index] = request;
         }
         else
         {
+            if (pending.Count >= ApiContract.PendingConsentCapacity)
+            {
+                pending.RemoveAt(0);
+            }
+
             pending.Add(request);
         }
 

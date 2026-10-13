@@ -853,6 +853,7 @@
   "api.reason.denied": "{0} está denegado; permítelo en Ajustes, General de Auto Shopper",
   "api.consent.title": "{0} quiere comprar a través de Auto Shopper.",
   "api.consent.body": "Envía su propia lista de compra y un límite de gasto para cada ronda. Tu simulacro, tus mundos, tus guiles a conservar y las comprobaciones de compra siguen aplicándose, y puedes revocarlo en Ajustes, General.",
+  "api.consent.facts": "Nombre interno: {0}. Esta ronda pide gastar hasta {1}. Las rondas de un plugin se ciñen al límite que envía, en lugar de tu límite de gasto por ronda.",
   "api.allow": "Permitir",
   "api.deny": "Denegar",
   "api.revoke": "Revocar",

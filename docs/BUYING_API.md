@@ -31,7 +31,8 @@ Lets another Dalamud plugin price items and run a bounded Auto Shopper shopping 
 ## Consent
 
 - `StartRun` is refused with `ConsentRequired` until the player allows the caller once inside Auto Shopper.
-- On that refusal Auto Shopper shows a card on its Shop page: "<caller display name> wants to buy through Auto Shopper." with Allow and Deny. The answer is stored per caller internal name (`caller` field). Settings, General has an "Other plugins" group listing every answered caller: an allowed caller has a Revoke button, a denied caller an Allow button.
+- On that refusal Auto Shopper shows a card on its Shop page: "<caller display name> wants to buy through Auto Shopper." with Allow and Deny. Below it the card names the caller's internal name (`caller`) and the `maxSpend` of the request that asked, and says that a plugin's runs keep to the cap they send in place of the player's run spend cap. A caller that asks again before an answer updates the card with its newest display name and cap. At most 8 callers wait for an answer at a time: a ninth pushes the oldest question out, and that caller is asked again on its next `StartRun`.
+- The answer is stored per caller internal name (`caller` field) and covers every later run of that caller, whatever cap it asks for. Settings, General has an "Other plugins" group listing every answered caller: an allowed caller has a Revoke button, a denied caller an Allow button.
 - Revoke forgets the answer: the caller's next `StartRun` is refused with `ConsentRequired` and the card asks again.
 - A denied caller is refused with `ConsentDenied` until the player allows it from Settings.
 - Quotes need no consent.
@@ -115,6 +116,7 @@ or
 
 - `quality`: `Any`, `HighQuality`, `NormalQuality` (Auto Shopper's `ItemQuality` names). Omitted means `Any`.
 - Lines are bought as fixed quantities (`QuantityMode.Buy`). `maxUnitPrice` is per unit with the 5% fee included; 0 means no per-line cap. `excessAllowance` is the extra units the line may take when only bigger stacks are listed.
+- `maxSpend` is this run's spend cap in gil, fees included. It takes the place of the player's own run spend cap (Settings, Shopping) for this run and is not limited by it: an allowed caller can ask for any cap up to 999,999,999 on each run. The player sees it on the consent card (for the request that asked) and in the chat line Auto Shopper prints when a real run is authorized, and the run never spends past it.
 - 1 to 100 lines, `maxSpend` 1 to 999,999,999, every number inside Auto Shopper's `ShoppingLimits`: `quantity` 1 to 999,999, `maxUnitPrice` 0 to 999,999,999, `excessAllowance` 0 to 999,999. Each item may appear once per quality: two lines with the same `itemId` and `quality` are refused (`InvalidRequest`); the same item as `NormalQuality` and `HighQuality` is fine.
 - `callerRunId` is optional, at most 64 characters, and comes back unchanged in `RunStatus`.
 - `label` is optional; it is cleaned like `callerDisplayName`, cut to 64 characters and names the run in chat and History. Without one the run is named after `callerDisplayName`.

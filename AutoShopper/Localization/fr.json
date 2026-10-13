@@ -853,6 +853,7 @@
   "api.reason.denied": "{0} est refusé ; autorisez-le dans Réglages, Général d'Auto Shopper",
   "api.consent.title": "{0} veut acheter via Auto Shopper.",
   "api.consent.body": "Il envoie sa propre liste de courses et une limite de dépense pour chaque tournée. Votre simulation, vos mondes, vos gils à garder et les vérifications d'achat s'appliquent toujours, et vous pouvez révoquer cela dans Réglages, Général.",
+  "api.consent.facts": "Nom interne : {0}. Cette tournée demande à dépenser jusqu'à {1}. Les tournées d'un plugin respectent la limite qu'il envoie, à la place de votre limite de dépense par tournée.",
   "api.allow": "Autoriser",
   "api.deny": "Refuser",
   "api.revoke": "Révoquer",
