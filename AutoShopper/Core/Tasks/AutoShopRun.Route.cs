@@ -301,7 +301,8 @@ internal sealed partial class AutoShopRun
     }
 
     // Prices are fetched again only for the worlds still in play, only when the run's own are older than the stale
-    // setting, and at most once per PriceRefreshIntervalMs; otherwise the run keeps the estimates it has.
+    // setting, and at most once per PriceRefreshIntervalMs; otherwise the run keeps the estimates it has. The fetch
+    // is the run's own and merges into its copy; the snapshot the windows show is left as it was.
     private async Task RefreshPricesIfStale(ImmutableArray<PlanWorld> worlds, ImmutableArray<uint> itemIds)
     {
         if (worlds.IsEmpty || itemIds.IsEmpty)
@@ -323,8 +324,7 @@ internal sealed partial class AutoShopRun
         }
 
         run.LastPriceRefreshAtMs = now;
-        var before = prices.Latest?.Generation ?? 0;
-        var started = prices.TryStart(ScopeWorldsOf(worlds), itemIds);
+        var started = prices.TryStartDetached(ScopeWorldsOf(worlds), itemIds, CancelToken, out var fetch);
         if (started != PriceStartResult.Started)
         {
             RunLog.Info($"Run: the stale prices were not refreshed ({started}).");
@@ -333,18 +333,18 @@ internal sealed partial class AutoShopRun
 
         Status = Loc.T(L.Buyer.StatusPrices);
         var deadline = now + PriceRefreshBudgetMs;
-        while (prices.Fetching && Environment.TickCount64 < deadline && !CancelToken.IsCancellationRequested)
+        while (!fetch.IsCompleted && Environment.TickCount64 < deadline && !CancelToken.IsCancellationRequested)
         {
             await NextFrame(SlowPollFrames);
         }
 
-        if (prices.Latest is not { } latest || latest.Generation <= before || latest.FailedRequestCount >= latest.RequestCount)
+        if (!fetch.IsCompletedSuccessfully || fetch.Result is not { } refreshed || refreshed.FailedRequestCount >= refreshed.RequestCount)
         {
             RunLog.Info("Run: the price refresh brought nothing usable back; the run keeps its older estimates.");
             return;
         }
 
-        run.UsePrices(latest);
+        run.UsePrices(refreshed);
         RunLog.Info($"Run: refreshed the estimates for {worlds.Length} world(s) still in play.");
     }
 

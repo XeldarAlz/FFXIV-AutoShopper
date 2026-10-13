@@ -15,7 +15,9 @@ internal enum PriceStartResult : byte
 }
 
 // Owns the Universalis client and the newest price snapshot. A fetch only starts on request from the framework
-// thread, runs on the thread pool, and a newer fetch or the plugin's unload cancels the one in flight.
+// thread, runs on the thread pool, and a newer fetch or the plugin's unload cancels the one in flight. A run's own
+// refresh is fetched apart: it shares the cooldown and the request limits, but never becomes the snapshot the windows
+// show, so a run that prices only what it has left never shrinks the Plan page.
 internal sealed class PriceService : IDisposable
 {
     // A manual fetch is allowed once in this window, so repeated clicks never turn into a stream of requests.
@@ -23,6 +25,7 @@ internal sealed class PriceService : IDisposable
 
     private readonly UniversalisClient client;
     private readonly object gate = new();
+    private readonly CancellationTokenSource lifetime = new();
     private CancellationTokenSource? cancellation;
     private PriceSnapshot? latest;
     private long generation;
@@ -105,6 +108,43 @@ internal sealed class PriceService : IDisposable
         return PriceStartResult.Started;
     }
 
+    // The snapshot comes back through fetch and is never published as Latest; null when nothing came back.
+    public PriceStartResult TryStartDetached(ImmutableArray<ScopeWorld> worlds, ImmutableArray<uint> itemIds, CancellationToken token, out Task<PriceSnapshot?> fetch)
+    {
+        fetch = Task.FromResult<PriceSnapshot?>(null);
+        if (CooldownRemaining > TimeSpan.Zero)
+        {
+            return PriceStartResult.CoolingDown;
+        }
+
+        if (worlds.IsDefaultOrEmpty)
+        {
+            return PriceStartResult.NoWorlds;
+        }
+
+        var chunks = UniversalisScope.Chunk(UniversalisScope.Plan(worlds), itemIds.AsSpan());
+        if (chunks.IsEmpty)
+        {
+            return PriceStartResult.NothingToPrice;
+        }
+
+        CancellationTokenSource linked;
+        lock (gate)
+        {
+            if (disposed)
+            {
+                return PriceStartResult.NothingToPrice;
+            }
+
+            linked = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.Token);
+            Volatile.Write(ref lastStartMs, Environment.TickCount64);
+        }
+
+        RunLog.Info($"Fetching Universalis prices for a run: {itemIds.Length} items on {worlds.Length} worlds in {chunks.Length} requests.");
+        fetch = Task.Run(() => FetchDetachedAsync(worlds, chunks, linked));
+        return PriceStartResult.Started;
+    }
+
     public void Dispose()
     {
         lock (gate)
@@ -113,9 +153,39 @@ internal sealed class PriceService : IDisposable
             cancellation?.Cancel();
             cancellation?.Dispose();
             cancellation = null;
+            lifetime.Cancel();
+            lifetime.Dispose();
         }
 
         client.Dispose();
+    }
+
+    private async Task<PriceSnapshot?> FetchDetachedAsync(ImmutableArray<ScopeWorld> worlds, ImmutableArray<PriceChunk> chunks, CancellationTokenSource linked)
+    {
+        try
+        {
+            var results = await client.FetchAllAsync(chunks, null, linked.Token).ConfigureAwait(false);
+            var snapshot = PriceSnapshotBuilder.Build(0, DateTime.UtcNow, worlds, results, null);
+            RunLog.Info($"Run prices ready: {snapshot.Offers.Length} listings for {snapshot.Items.Length} items; {snapshot.FailedRequestCount} of {snapshot.RequestCount} requests failed.");
+            return snapshot;
+        }
+        catch (OperationCanceledException) when (linked.IsCancellationRequested)
+        {
+            return null;
+        }
+        catch (Exception exception)
+        {
+            if (!disposed)
+            {
+                RunLog.Error(exception, "The run's price fetch failed");
+            }
+
+            return null;
+        }
+        finally
+        {
+            linked.Dispose();
+        }
     }
 
     private async Task FetchAsync(long fetchGeneration, ImmutableArray<ScopeWorld> worlds, ImmutableArray<PriceChunk> chunks, PriceSnapshot? previous, CancellationToken token)

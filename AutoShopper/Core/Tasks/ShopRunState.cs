@@ -73,8 +73,8 @@ internal sealed class ShopRunState : IDisposable
     // The worlds the run planned on when it was authorized or resumed; a replan never reaches past them.
     public ImmutableArray<PlanWorld> RunWorlds { get; private set; } = ImmutableArray<PlanWorld>.Empty;
 
-    // The estimates the run plans what is left on, refreshed only once older than the stale setting.
-    public PriceSnapshot? Prices { get; private set; }
+    // The run's own copy of the estimates it plans what is left on, refreshed only once older than the stale setting.
+    public RunEstimates? Prices { get; private set; }
 
     public long LastPriceRefreshAtMs { get; set; }
 
@@ -189,7 +189,7 @@ internal sealed class ShopRunState : IDisposable
         Plan = plan;
         MaxStops = Math.Max(0, maxStops);
         RunWorlds = runWorlds.IsDefault ? ImmutableArray<PlanWorld>.Empty : runWorlds;
-        Prices = prices;
+        Prices = prices is null ? null : RunEstimates.From(prices);
         Route = RunRoute.Start(plan.Stops);
         Changed();
     }
@@ -201,9 +201,9 @@ internal sealed class ShopRunState : IDisposable
         Changed();
     }
 
-    public void UsePrices(PriceSnapshot prices)
+    public void UsePrices(PriceSnapshot refresh)
     {
-        Prices = prices;
+        Prices = Prices is { } current ? current.MergedWith(refresh) : RunEstimates.From(refresh);
         Changed();
     }
 
