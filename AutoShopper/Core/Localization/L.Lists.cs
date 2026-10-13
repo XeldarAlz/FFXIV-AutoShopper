@@ -40,7 +40,7 @@ internal static partial class L
         public static readonly LocString ColumnMode = new("lists.column.mode", "Mode");
         public static readonly LocString ColumnQuantity = new("lists.column.quantity", "Quantity");
         public static readonly LocString ColumnOwned = new("lists.column.owned", "Owned");
-        public static readonly LocString ColumnCap = new("lists.column.cap", "Max per unit");
+        public static readonly LocString ColumnCap = new("lists.column.cap", "Max/unit incl. fee");
         public static readonly LocString ColumnExcess = new("lists.column.excess", "Extra");
         public static readonly LocString SortHint = new("lists.sortHint", "Click to sort. Sorting changes only this view, never the list.");
 
@@ -54,7 +54,7 @@ internal static partial class L
         public static readonly LocString ModeReach = new("lists.mode.reach", "Top up to this many");
         public static readonly LocString ModeReachHelp = new("lists.mode.reachHelp", "Buy only what is missing for you to own the quantity.");
         public static readonly LocString CapHint = new("lists.capHint", "no cap");
-        public static readonly LocString CapHelp = new("lists.capHelp", "The most this line may pay for one unit. Leave it empty for no cap of its own; the run's spending limit still applies.");
+        public static readonly LocString CapHelp = new("lists.capHelp", "The most this line may pay for one unit, including the 5% market fee. Leave it empty for no cap of its own; the run's spending limit still applies.");
         public static readonly LocString ExcessHelp = new("lists.excessHelp", "How many units over the quantity the run may buy when only bigger stacks are listed. 0 never buys more than asked.");
         public static readonly LocString OwnedHelp = new("lists.ownedHelp", "Counted in your bags, crystals, armory chest and equipped gear. Saddlebags and retainers are not counted.");
         public static readonly LocString OwnedUnknown = new("lists.ownedUnknown", "Log in to see what you own.");

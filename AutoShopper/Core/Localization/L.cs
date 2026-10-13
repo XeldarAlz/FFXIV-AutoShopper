@@ -18,6 +18,7 @@ internal static partial class L
     {
         public static readonly LocString NavShop = new("shell.nav.shop", "Shop");
         public static readonly LocString NavLists = new("shell.nav.lists", "Lists");
+        public static readonly LocString NavPlan = new("shell.nav.plan", "Plan");
         public static readonly LocString NavSettings = new("shell.nav.settings", "Settings");
         public static readonly LocString NavHistory = new("shell.nav.history", "History");
         public static readonly LocString NavPlugins = new("shell.nav.plugins", "Plugins");
@@ -59,6 +60,13 @@ internal static partial class L
         public static readonly LocString ListsEmpty = new("shop.listsEmpty", "No shopping list yet. Make one on the Lists page.");
         public static readonly LocString OpenLists = new("shop.openLists", "Open lists");
         public static readonly LocString EditList = new("shop.editList", "Edit list");
+        public static readonly LocString OpenPlan = new("shop.openPlan", "Open plan");
+        public static readonly LocString PlanLogIn = new("shop.planLogIn", "Log in to plan this list.");
+        public static readonly LocString PlanNoPrices = new("shop.planNoPrices", "No prices yet. Open the plan to get prices from Universalis.");
+        public static readonly LocString PlanNoCap = new("shop.planNoCap", "Estimate {0}  ·  no spend cap set");
+        public static readonly LocPlural PlanStops = new("shop.planStops", "{0} stop", "{0} stops");
+        public static readonly LocPlural PlanMissing = new("shop.planMissing", "{0} unit not covered", "{0} units not covered");
+        public static readonly LocString PlanOldest = new("shop.planOldest", "oldest price {0}");
 
         public static readonly LocString Start = new("shop.start", "START");
         public static readonly LocString Stop = new("shop.stop", "STOP");
