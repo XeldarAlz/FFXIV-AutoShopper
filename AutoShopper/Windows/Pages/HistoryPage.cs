@@ -20,10 +20,15 @@ internal sealed class HistoryPage
     private const float BadgeGap = 6f;
     private const float SummaryButtonGap = 6f;
     private const string SummaryMenuId = "##ashop_hist_summary_menu";
+    private const float RowGap = 2f;
 
-    private static readonly Dictionary<RunRecord, string> details = new(ReferenceEqualityComparer.Instance);
-    private static LanguageInfo? detailLanguage;
+    // Row texts are rebuilt this often at most, so "5m ago" stays current without formatting every row every frame.
+    private const long RowTextRefreshMs = 15_000;
 
+    private readonly Dictionary<RunRecord, RowText> rowTexts = new(ReferenceEqualityComparer.Instance);
+    private int rowTextsRevision = -1;
+    private long rowTextsStep = -1;
+    private LanguageInfo? rowTextsLanguage;
     private bool confirmClear;
     private CachedText finishedText;
     private CachedText timeText;
@@ -55,18 +60,7 @@ internal sealed class HistoryPage
         Styling.VSpace(12f);
 
         DrawRecentRunsLabel();
-        var records = history.Records;
-        for (var index = 0; index < records.Count; index++)
-        {
-            if (DrawRow(plugin.Summaries, records[index], index))
-            {
-                menuRecord = records[index];
-                ImGui.OpenPopup(SummaryMenuId);
-            }
-
-            Styling.VSpace(2f);
-        }
-
+        DrawRows(plugin.Summaries, history);
         DrawSummaryMenu(plugin.Summaries);
 
         Styling.VSpace(8f);
@@ -213,17 +207,67 @@ internal sealed class HistoryPage
     private static string ChartTooltip(RunRecord record)
         => Loc.T(L.History.ChartTooltip, Formatting.RelativeTime(record.EndedAtUtc), Formatting.Elapsed(record.Duration));
 
-    // True when the row's summary button was clicked.
-    private static bool DrawRow(RunSummaries summaries, RunRecord record, int index)
+    // Only the rows inside the window are drawn; one Dummy holds the height of the whole list, so up to 500 records
+    // cost the same as the handful on screen.
+    private void DrawRows(RunSummaries summaries, RunHistory history)
     {
+        RefreshRowTexts(history.Revision);
+        var records = history.Records;
         var scale = ImGuiHelpers.GlobalScale;
+        var spacing = ImGui.GetStyle().ItemSpacing.Y;
         var size = new Vector2(ImGui.GetContentRegionAvail().X, Layout.HistoryRowHeight * scale);
-        if (!ImGui.IsRectVisible(size))
+        var stride = size.Y + RowGap * scale + spacing * 2f;
+        var top = ImGui.GetCursorScreenPos();
+        var windowTop = ImGui.GetWindowPos().Y;
+        var first = Math.Clamp((int)MathF.Floor((windowTop - top.Y) / stride), 0, records.Count);
+        var last = Math.Clamp((int)MathF.Ceiling((windowTop + ImGui.GetWindowHeight() - top.Y) / stride), first, records.Count);
+        for (var index = first; index < last; index++)
         {
-            ImGui.Dummy(size);
-            return false;
+            var record = records[index];
+            ImGui.SetCursorScreenPos(new Vector2(top.X, top.Y + index * stride));
+            if (DrawRow(summaries, record, RowTextFor(record), index, size))
+            {
+                menuRecord = record;
+                ImGui.OpenPopup(SummaryMenuId);
+            }
         }
 
+        ImGui.SetCursorScreenPos(top);
+        ImGui.Dummy(new Vector2(size.X, records.Count * stride - spacing));
+    }
+
+    // The cache is emptied whenever its texts could be wrong: the history changed (which also drops records that
+    // left it), the language changed, or the relative times moved on.
+    private void RefreshRowTexts(int revision)
+    {
+        var step = Environment.TickCount64 / RowTextRefreshMs;
+        if (revision == rowTextsRevision && step == rowTextsStep && ReferenceEquals(rowTextsLanguage, Loc.Current))
+        {
+            return;
+        }
+
+        rowTexts.Clear();
+        rowTextsRevision = revision;
+        rowTextsStep = step;
+        rowTextsLanguage = Loc.Current;
+    }
+
+    private RowText RowTextFor(RunRecord record)
+    {
+        if (rowTexts.TryGetValue(record, out var cached))
+        {
+            return cached;
+        }
+
+        var text = new RowText(Formatting.RelativeTime(record.EndedAtUtc), RowDetail(record));
+        rowTexts[record] = text;
+        return text;
+    }
+
+    // True when the row's summary button was clicked.
+    private static bool DrawRow(RunSummaries summaries, RunRecord record, in RowText text, int index, Vector2 size)
+    {
+        var scale = ImGuiHelpers.GlobalScale;
         var origin = ImGui.GetCursorScreenPos();
         var end = origin + size;
         var drawList = ImGui.GetWindowDrawList();
@@ -241,8 +285,8 @@ internal sealed class HistoryPage
         var padX = PadX * scale;
         var midY = origin.Y + size.Y * 0.5f;
         var textX = DrawRunIcon(origin.X + padX, midY);
-        var when = Formatting.RelativeTime(record.EndedAtUtc);
-        var detail = RowDetail(record);
+        var when = text.When;
+        var detail = text.Detail;
 
         var whenSize = TextDraw.Measure(when);
         Vector2 detailSize;
@@ -299,20 +343,8 @@ internal sealed class HistoryPage
         return Badge.DrawLeft(drawList, OutcomeLabel(outcome), OutcomeColor(outcome), x, midY);
     }
 
-    // Built once per row and language: a recorded run never changes.
     private static string RowDetail(RunRecord record)
     {
-        if (!ReferenceEquals(detailLanguage, Loc.Current))
-        {
-            details.Clear();
-            detailLanguage = Loc.Current;
-        }
-
-        if (details.TryGetValue(record, out var cached))
-        {
-            return cached;
-        }
-
         var detail = Loc.T(L.History.RowDetail, WhereText(record.WorldName, record.DataCenterName), Formatting.Elapsed(record.Duration));
         if (record.Units > 0 || record.Spent > 0)
         {
@@ -320,7 +352,6 @@ internal sealed class HistoryPage
             detail = string.Concat(detail, TextDraw.Separator, spent, TextDraw.Separator, Loc.Plural(L.History.Units, record.Units));
         }
 
-        details[record] = detail;
         return detail;
     }
 
@@ -419,4 +450,6 @@ internal sealed class HistoryPage
 
         TextDraw.At(question, new Vector2(x - gap * 1.5f - questionSize.X, origin.Y + (buttonHeight - questionSize.Y) * 0.5f), Styling.AccentRoseSoft);
     }
+
+    private readonly record struct RowText(string When, string Detail);
 }
