@@ -256,16 +256,16 @@ internal static partial class L
 
         public static readonly LocString[] Release1000 =
         [
-            new("changelog.r1000.1", "Shopping lists: add any marketable item by name or id, pick Any, HQ or NQ, buy a set amount or top up to what you want to own, and cap the price per unit, 5% fee included"),
-            new("changelog.r1000.2", "Imports plain text, CSV, Auto Shopper JSON, Artisan crafting lists and Teamcraft lists, expanding crafting lists into the ingredients to buy, with a crystal top-up helper and text, CSV or JSON exports"),
-            new("changelog.r1000.3", "Gets Universalis prices across the worlds and data centers of your region you allow, from a preset or picked world by world; Japanese data centers other than the one you are on stay off by default"),
-            new("changelog.r1000.4", "Plans the basket three ways (Cheapest, Balanced, Fewest stops) from whole listings only, within the extra units you allow, and shows the route, estimated totals and every unit it cannot cover; the plan copies as a checklist"),
-            new("changelog.r1000.5", "Travels between worlds and across data centers with Lifestream, carries on by itself after a data center transfer, and walks to a market board, in your preferred city when none is in reach"),
-            new("changelog.r1000.6", "Reads the live listings at every stop and plans what is left again from what the board really shows before it buys"),
-            new("changelog.r1000.7", "Checks every purchase before it is sent, one at a time: character, world, item, quality, stack size, the line's price cap, the run spend cap you must set, the gil you keep and your bag space; listings from your own retainers, mannequins and sets are never bought"),
-            new("changelog.r1000.8", "Writes each purchase to a journal before sending it, confirms it by the server's answer and the change in your gil and bags, and stops to ask you whenever an answer is unclear"),
-            new("changelog.r1000.9", "Pause, resume and stop a run from the window or with /ashop, then a way home and an after-run action, and History with copyable run summaries that hold no names or ids"),
-            new("changelog.r1000.10", "Dry run is on until you switch it off: a run does everything except buy; the switch sits next to Start and asks before it turns off"),
+            new("changelog.r1000.1", "Shopping lists: Any, HQ or NQ, buy an amount or top up to a target, with a max price per unit including the 5% fee"),
+            new("changelog.r1000.2", "Imports text, CSV, JSON, Artisan and Teamcraft lists with recipe expansion, plus a crystal top-up helper and exports"),
+            new("changelog.r1000.3", "Universalis prices across the worlds you allow in your region; Japanese data centers other than yours stay off by default"),
+            new("changelog.r1000.4", "Three plan modes (Cheapest, Balanced, Fewest stops) from whole listings, with the route, estimated totals and any units it cannot cover"),
+            new("changelog.r1000.5", "Travels between worlds and data centers with Lifestream, carries on after a data center transfer, and walks to a market board"),
+            new("changelog.r1000.6", "Reads the live listings at every stop and plans again from what the board really shows"),
+            new("changelog.r1000.7", "Checks every purchase against your caps, gil reserve and bag space, one at a time, and never buys from your own retainers, mannequins or sets"),
+            new("changelog.r1000.8", "Writes each purchase to a journal before sending it, confirms it by the server's answer and your gil and bags, and asks you when unsure"),
+            new("changelog.r1000.9", "Pause, resume and stop, a way home and an after-run action, and History with copyable summaries free of names and ids"),
+            new("changelog.r1000.10", "Dry run is on until you switch it off: a run does everything except buy, and the switch next to Start asks first"),
         ];
     }
 
