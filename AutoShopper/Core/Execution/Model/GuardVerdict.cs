@@ -27,6 +27,8 @@ internal enum GuardRejection : byte
     ReserveBreached = 22,
     UniqueAlreadyOwned = 23,
     InventoryFull = 24,
+    // Crystals share one pouch stack per kind, which the listing would push past its limit.
+    CrystalLimitExceeded = 25,
 }
 
 internal readonly record struct GuardVerdict(GuardRejection Rejection, long Payable)

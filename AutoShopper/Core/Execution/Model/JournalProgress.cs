@@ -66,6 +66,9 @@ internal sealed class JournalProgress
 
     public required int FailedAttemptCount { get; init; }
 
+    // Stops made on a world the run had already shopped, as the newest checkpoint counted them.
+    public int Revisits { get; init; }
+
     public required ImmutableArray<uint> CompletedWorldIds { get; init; }
 
     public required ImmutableArray<uint> ExcludedWorldIds { get; init; }

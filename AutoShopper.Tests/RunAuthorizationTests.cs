@@ -71,6 +71,41 @@ public sealed class RunAuthorizationTests
         Assert.Equal(authorization.CreatedAtUtc, restored.CreatedAtUtc);
     }
 
+    [Fact]
+    public void TheStopAndRevisitLimitsTravelWithTheAuthorization()
+    {
+        RunAuthorization.TryCreate(RunId, Character, HomeWorld, [OreDemand], [HomeWorld], MaxSpend, Reserve, 1, Now, out var authorization, maxStops: 4, worldRevisits: 2);
+
+        Assert.Equal(AuthorizationProblem.None, RunAuthorization.TryRestore(authorization!.ToJournalEvent(1, Now), out var restored));
+
+        Assert.Equal(4, restored!.MaxStops);
+        Assert.Equal(2, restored.WorldRevisits);
+        Assert.False(restored.DryRun);
+    }
+
+    [Fact]
+    public void AJournalFromBeforeTheLimitsWereRecordedLeavesThemUnknown()
+    {
+        var recorded = Authorization().ToJournalEvent(1, Now) with { MaxStops = null, WorldRevisits = null };
+
+        Assert.Equal(AuthorizationProblem.None, RunAuthorization.TryRestore(recorded, out var restored));
+
+        Assert.Null(restored!.MaxStops);
+        Assert.Null(restored.WorldRevisits);
+    }
+
+    [Fact]
+    public void ADryRunIsRecordedAsOne()
+    {
+        RunAuthorization.TryCreate(RunId, Character, HomeWorld, [OreDemand], [HomeWorld], MaxSpend, Reserve, 1, Now, out var authorization, dryRun: true);
+
+        var recorded = authorization!.ToJournalEvent(1, Now);
+
+        Assert.True(recorded.DryRun);
+        Assert.Equal(AuthorizationProblem.None, RunAuthorization.TryRestore(recorded, out var restored));
+        Assert.True(restored!.DryRun);
+    }
+
     private static AuthorizationProblem Create(
         out RunAuthorization? authorization,
         Guid? runId = null,

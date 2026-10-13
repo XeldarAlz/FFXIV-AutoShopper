@@ -15,15 +15,22 @@ internal sealed partial class AutoShopRun
     // stops waiting and treats the purchase as uncertain, while the run state keeps listening for it.
     private const int SettlementGraceMs = 30_000;
 
+    // Nothing after the last wait yields a frame until the packet is sent, so a Pause or a Stop that lands during the
+    // pacing wait is caught right after it.
     private async Task<RunResponse> BuyListing(ListingChoice choice, uint itemId, string name)
     {
         await WaitForPurchasePacing();
-        var market = Owner.Market;
-        if (!market.Tracker.TryReadLive(choice.Listing.ListingId, out var live))
+        if (CancelToken.IsCancellationRequested)
         {
-            var stale = market.Tracker.Snapshot is null;
-            RunLog.Info($"Run: listing {choice.Listing.ListingId} of item {itemId} is {(stale ? "in a stale copy" : "gone")}.");
-            return RunResponse.Of(stale ? RunReaction.Research : RunReaction.ExcludeAndResearch);
+            return RunResponse.Of(RunReaction.EndRun);
+        }
+
+        var market = Owner.Market;
+        var read = market.Tracker.ReadLive(choice.Listing.ListingId, out var live);
+        if (read != LiveListingRead.Found)
+        {
+            RunLog.Info($"Run: listing {choice.Listing.ListingId} of item {itemId} is {(read == LiveListingRead.Stale ? "in a stale copy" : "gone")}.");
+            return RunReactions.ForLiveRead(read);
         }
 
         run.SetState(RunState.Guarding);
@@ -145,6 +152,7 @@ internal sealed partial class AutoShopRun
         return new GuardInput
         {
             Authorization = run.Authorization!,
+            TravelCommitment = TravelCommitment(),
             ActiveRunId = run.FinalState is null ? run.RunId : Guid.Empty,
             CharacterContentId = Svc.PlayerState.ContentId,
             CurrentWorldId = Svc.PlayerState.CurrentWorld.RowId,
@@ -163,6 +171,27 @@ internal sealed partial class AutoShopRun
             UniqueItemAlreadyOwned = found && item.IsUnique && owned > 0,
             OwnRetainerIds = InventoryReader.OwnRetainerIds(),
         };
+    }
+
+    // The teleports the stops still ahead and the way home may take, kept out of what purchases may spend.
+    private long TravelCommitment()
+    {
+        var stopsAhead = run.Route?.CountWithStatus(RouteStatus.Ahead) ?? 0;
+        var awayFromHome = Svc.PlayerState.CurrentWorld.RowId != Svc.PlayerState.HomeWorld.RowId;
+        return TravelBudget.Commitment(stopsAhead, Owner.Configuration.ReturnHomeAfterRun && (stopsAhead > 0 || awayFromHome));
+    }
+
+    // A dry run counts what it would have spent as gone, as its purchases do.
+    private bool TripAffordable()
+    {
+        var inventory = InventoryReader.ReadLive(0);
+        if (!inventory.Available)
+        {
+            return true;
+        }
+
+        var gil = run.DryRun ? Math.Max(0, inventory.Gil - run.Tally.WouldBuySpend) : inventory.Gil;
+        return TravelBudget.Affords(gil, run.Authorization!.GilReserve, TravelBudget.TeleportEstimateGil);
     }
 
     private IntentRecorded IntentFor(Guid attemptId, in ListingChoice choice, in ObservedListing live, long payable, in LiveInventory inventory) => new()

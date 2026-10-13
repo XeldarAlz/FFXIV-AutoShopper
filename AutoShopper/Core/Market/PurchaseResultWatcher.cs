@@ -1,4 +1,5 @@
 using System.Text;
+using AutoShopper.Core.Inventory;
 using AutoShopper.Core.Market.Model;
 using Dalamud.Game.Chat;
 using Dalamud.Game.Network.Structures;
@@ -19,14 +20,17 @@ internal readonly record struct PurchaseOutcome(
     uint RawLogMessageId,
     long GilBefore,
     long GilAfter,
+    int OwnedBefore,
+    int OwnedAfter,
     string Evidence)
 {
-    public static PurchaseOutcome None => new(PurchaseOutcomeKind.None, Guid.Empty, 0, 0, PurchaseRejection.None, PurchaseUnknownCause.None, 0, 0, MarketGil.Unavailable, MarketGil.Unavailable, string.Empty);
+    public static PurchaseOutcome None => new(PurchaseOutcomeKind.None, Guid.Empty, 0, 0, PurchaseRejection.None, PurchaseUnknownCause.None, 0, 0, MarketGil.Unavailable, MarketGil.Unavailable, -1, -1, string.Empty);
 }
 
 // Listens for the answer to the one purchase in flight: the purchase response hook first, Dalamud's request and
-// purchase events second, the chat log lines third. Every raw value goes to the log at Info, attributed or not, so
-// the first supervised purchases can pin what the codes mean. Framework thread only.
+// purchase events second, the chat log lines third. An answer counts only once the purse and the bags agree with it.
+// Every raw value goes to the log at Info, attributed or not, so the first supervised purchases can pin what the codes
+// mean. Framework thread only.
 internal sealed unsafe class PurchaseResultWatcher : IDisposable
 {
     private const int LoggedParameters = 3;
@@ -34,7 +38,8 @@ internal sealed unsafe class PurchaseResultWatcher : IDisposable
     private readonly Hook<InfoProxyItemSearch.Delegates.ProcessPurchaseResponse>? responseHook;
     private PurchaseEvidence? evidence;
     private PurchaseOutcome outcome = PurchaseOutcome.None;
-    private long gilBefore = MarketGil.Unavailable;
+    private PurseReading before = PurseReading.Unreadable;
+    private long answeredAtMs;
     private bool responseThreadReported;
     private bool requestThreadReported;
     private bool purchaseThreadReported;
@@ -71,12 +76,21 @@ internal sealed unsafe class PurchaseResultWatcher : IDisposable
         responseHook?.Dispose();
     }
 
-    public void Arm(in PurchaseExpectation expected, long nowMs, long gil, int deadlineMs)
+    public void Arm(in PurchaseExpectation expected, long nowMs, int deadlineMs)
     {
         evidence = new PurchaseEvidence(expected, nowMs, deadlineMs);
-        gilBefore = gil;
-        outcome = PurchaseOutcome.None with { Kind = PurchaseOutcomeKind.Pending, AttemptId = expected.AttemptId, Quantity = (int)expected.Listing.Quantity, Payable = expected.Payable, GilBefore = gil };
-        RunLog.Info($"Market: purchase {expected.AttemptId} armed: {expected.Listing}, payable {expected.Payable}, gil {gil}, answer due within {evidence.ResultDeadlineMs} ms.");
+        before = ReadPurse(expected.Listing.ItemId);
+        answeredAtMs = 0;
+        outcome = PurchaseOutcome.None with
+        {
+            Kind = PurchaseOutcomeKind.Pending,
+            AttemptId = expected.AttemptId,
+            Quantity = (int)expected.Listing.Quantity,
+            Payable = expected.Payable,
+            GilBefore = before.Gil,
+            OwnedBefore = before.Owned,
+        };
+        RunLog.Info($"Market: purchase {expected.AttemptId} armed: {expected.Listing}, payable {expected.Payable}, gil {before.Gil}, owned {before.Owned}, answer due within {evidence.ResultDeadlineMs} ms.");
     }
 
     // Only for an attempt whose packet provably never left.
@@ -92,7 +106,8 @@ internal sealed unsafe class PurchaseResultWatcher : IDisposable
         RunLog.Info($"Market: purchase {attemptId} disarmed; nothing was sent.");
     }
 
-    // Once per frame while a purchase is in flight; the outcome stays the same once decided.
+    // Once per frame while a purchase is in flight; the outcome stays the same once decided. The signals are weighed
+    // again on every poll of the settle window, so one that contradicts the answer late still leaves it uncertain.
     public PurchaseOutcome Poll()
     {
         if (evidence is null || outcome.Kind != PurchaseOutcomeKind.Pending)
@@ -100,13 +115,26 @@ internal sealed unsafe class PurchaseResultWatcher : IDisposable
             return outcome;
         }
 
-        var decision = evidence.Decide(Environment.TickCount64);
+        var now = Environment.TickCount64;
+        var answer = evidence.Decide(now);
+        if (answer.Kind == PurchaseOutcomeKind.Pending)
+        {
+            return outcome;
+        }
+
+        if (answeredAtMs == 0)
+        {
+            answeredAtMs = now;
+        }
+
+        var expected = evidence.Expected;
+        var after = ReadPurse(expected.Listing.ItemId);
+        var decision = PurchaseReconciliation.Reconcile(answer, expected.Payable, (int)expected.Listing.Quantity, before, after, now - answeredAtMs);
         if (decision.Kind == PurchaseOutcomeKind.Pending)
         {
             return outcome;
         }
 
-        var gilAfter = MarketGil.Read();
         var logMessageId = evidence.FailureLogCount > 0 ? evidence.FailureLogId : evidence.SuccessLogSeen ? PurchaseMessages.SuccessCandidate : 0u;
         outcome = outcome with
         {
@@ -115,11 +143,35 @@ internal sealed unsafe class PurchaseResultWatcher : IDisposable
             UnknownCause = decision.Cause,
             RawErrorId = evidence.ResponseErrorId,
             RawLogMessageId = logMessageId,
-            GilAfter = gilAfter,
+            GilAfter = after.Gil,
+            OwnedAfter = after.Owned,
             Evidence = evidence.Describe(),
         };
-        RunLog.Info($"Market: purchase {outcome.AttemptId} {decision.Kind} (rejection {decision.Rejection}, cause {decision.Cause}): {outcome.Evidence}; gil {gilBefore} to {gilAfter}, spent {gilBefore - gilAfter}, payable {outcome.Payable}.");
+        RunLog.Info($"Market: purchase {outcome.AttemptId} {decision.Kind} (answer {answer.Kind}, rejection {decision.Rejection}, cause {decision.Cause}, {now - answeredAtMs} ms after the answer): {outcome.Evidence}; gil {before.Gil} to {after.Gil}, spent {PurchaseReconciliation.Charged(before, after)}, payable {expected.Payable}; owned {before.Owned} to {after.Owned}, quantity {expected.Listing.Quantity}.");
         return outcome;
+    }
+
+    // For an attempt whose run is gone before its answer settled. Its journal holds it without an outcome, which reads
+    // as uncertain, so the watcher only lets go of it and the next purchase is not refused for it.
+    public void Abandon(Guid attemptId)
+    {
+        if (evidence is null || evidence.Expected.AttemptId != attemptId)
+        {
+            return;
+        }
+
+        RunLog.Warning($"Market: purchase {attemptId} let go before its answer settled ({evidence.Describe()}); the journal keeps it as uncertain.");
+        evidence = null;
+        outcome = PurchaseOutcome.None;
+    }
+
+    // An attempt still held when no run waits for it has nothing left to report to.
+    public void AbandonAny()
+    {
+        if (evidence is not null)
+        {
+            Abandon(evidence.Expected.AttemptId);
+        }
     }
 
     public bool Acknowledge(Guid attemptId)
@@ -132,6 +184,12 @@ internal sealed unsafe class PurchaseResultWatcher : IDisposable
         evidence = null;
         outcome = PurchaseOutcome.None;
         return true;
+    }
+
+    private static PurseReading ReadPurse(uint listedItemId)
+    {
+        var inventory = InventoryReader.ReadLive(MarketItemId.Normalize(listedItemId));
+        return inventory.Available ? new PurseReading(inventory.Gil, inventory.Owned) : PurseReading.Unreadable;
     }
 
     private string Attribution()

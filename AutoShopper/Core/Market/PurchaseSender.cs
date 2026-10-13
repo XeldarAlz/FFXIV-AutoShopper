@@ -115,7 +115,7 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
             return PurchaseSendResult.DryRunWouldBuy(payable);
         }
 
-        watcher.Arm(new PurchaseExpectation(attempt.AttemptId, guarded, payable), now, MarketGil.Read(), configuration.ResultTimeoutMs);
+        watcher.Arm(new PurchaseExpectation(attempt.AttemptId, guarded, payable), now, configuration.ResultTimeoutMs);
         var sent = proxy->SendPurchaseRequestPacket();
         RunLog.Info($"Market: purchase {attempt.AttemptId} sent: returned {sent}, request event seen {watcher.RequestObserved}.");
 

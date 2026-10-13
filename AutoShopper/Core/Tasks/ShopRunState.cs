@@ -485,10 +485,15 @@ internal sealed class ShopRunState : IDisposable
         return written;
     }
 
+    // A run cleared with a purchase still unanswered lets the watcher go of it; its journal already reads it as uncertain.
     public void Dispose()
     {
         disposed = true;
         Unhook();
+        if (InFlight is { } purchase)
+        {
+            market.Watcher.Abandon(purchase.Attempt.AttemptId);
+        }
     }
 
     private void SettleIfAnswered()
@@ -570,24 +575,29 @@ internal sealed class ShopRunState : IDisposable
     }
 
     // The reservation stays: an uncertain purchase may have been charged, so its gil is spoken for until the player
-    // says whether it went through.
+    // says whether it went through, and at what the purse lost when that is more than the payable.
     private bool SettleUnknown(in InFlightPurchase purchase, in PurchaseOutcome outcome)
     {
+        var attemptId = purchase.Attempt.AttemptId;
+        var charged = PurchaseReconciliation.Charged(new PurseReading(outcome.GilBefore, outcome.OwnedBefore), new PurseReading(outcome.GilAfter, outcome.OwnedAfter));
+        var booked = PurchaseReconciliation.Booked(purchase.Payable, charged);
         var written = Journal.TryAppend(new PurchaseUnknown
         {
             Sequence = Journal.NextSequence,
             RunId = RunId,
             AtUtc = DateTime.UtcNow,
-            AttemptId = purchase.Attempt.AttemptId,
+            AttemptId = attemptId,
             Reason = $"{outcome.UnknownCause}; {Describe(outcome)}",
+            Charged = charged,
         });
+        Spend.RaiseReservation(attemptId, booked);
         AddIssue(RunIssueReason.UncertainPurchase, MarketItemId.Normalize(purchase.Attempt.Listing.ItemId), purchase.Attempt.Listing.WorldId, purchase.Quantity);
-        RunLog.Warning($"Run: purchase {purchase.Attempt.AttemptId} has no clear answer ({outcome.UnknownCause}); buying stops until it is reconciled.");
+        RunLog.Warning($"Run: purchase {attemptId} has no clear answer ({outcome.UnknownCause}); {booked} gil stays booked for it (payable {purchase.Payable}, the purse lost {charged}) and buying stops until it is reconciled.");
         return written;
     }
 
     private static string Describe(in PurchaseOutcome outcome)
-        => $"{outcome.Evidence}; response code {outcome.RawErrorId}, log message {outcome.RawLogMessageId}; gil {outcome.GilBefore} to {outcome.GilAfter}";
+        => $"{outcome.Evidence}; response code {outcome.RawErrorId}, log message {outcome.RawLogMessageId}; gil {outcome.GilBefore} to {outcome.GilAfter}; owned {outcome.OwnedBefore} to {outcome.OwnedAfter}";
 
     private void RefreshExcludedSnapshot()
     {

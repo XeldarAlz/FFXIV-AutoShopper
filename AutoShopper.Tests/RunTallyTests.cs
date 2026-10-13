@@ -127,6 +127,7 @@ public sealed class RunReactionTests
         (GuardRejection.WrongCharacter, RunReaction.EndRun),
         (GuardRejection.ExecutionUnavailable, RunReaction.EndRun),
         (GuardRejection.PurchasePending, RunReaction.NeedsReconciliation),
+        (GuardRejection.CrystalLimitExceeded, RunReaction.SkipListing),
     ];
 
     private static readonly (GuardRejection Rejection, RunIssueReason Issue)[] GuardIssues =
@@ -136,6 +137,7 @@ public sealed class RunReactionTests
         (GuardRejection.ReserveBreached, RunIssueReason.InsufficientGil),
         (GuardRejection.InventoryFull, RunIssueReason.InventoryFull),
         (GuardRejection.ExecutionUnavailable, RunIssueReason.UnsupportedGameVersion),
+        (GuardRejection.CrystalLimitExceeded, RunIssueReason.CrystalLimit),
     ];
 
     private static readonly (PurchaseRejection Rejection, RunReaction Reaction, bool HasIssue)[] ServerReactions =
@@ -191,6 +193,24 @@ public sealed class RunReactionTests
             Assert.Equal(reaction, response.Reaction);
             Assert.Equal(hasIssue, response.HasIssue);
         }
+    }
+
+    [Fact]
+    public void AFullCrystalPouchSkipsTheListingWithoutStoppingTheRun()
+    {
+        var response = RunReactions.ForGuard(GuardRejection.CrystalLimitExceeded);
+
+        Assert.Equal(RunReaction.SkipListing, response.Reaction);
+        Assert.NotEqual(RunReaction.StopBuying, response.Reaction);
+    }
+
+    [Fact]
+    public void AStaleLiveReadIsSearchedAgainWithoutCountingAsARefusal()
+    {
+        Assert.Equal(RunReaction.Continue, RunReactions.ForLiveRead(LiveListingRead.Found).Reaction);
+        Assert.Equal(RunReaction.Research, RunReactions.ForLiveRead(LiveListingRead.Stale).Reaction);
+        Assert.Equal(RunReaction.ExcludeAndResearch, RunReactions.ForLiveRead(LiveListingRead.Gone).Reaction);
+        Assert.False(RunReactions.ForLiveRead(LiveListingRead.Stale).HasIssue);
     }
 
     [Fact]

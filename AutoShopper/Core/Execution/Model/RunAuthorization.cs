@@ -42,6 +42,15 @@ internal sealed class RunAuthorization
 
     public required DateTime CreatedAtUtc { get; init; }
 
+    // The most stops (0 for no limit) and the world revisits the run planned with, so a resume keeps them; null in a
+    // journal written before they were recorded.
+    public int? MaxStops { get; init; }
+
+    public int? WorldRevisits { get; init; }
+
+    // A dry run is authorized in memory only, so one read back from the journal file is always a real run.
+    public bool DryRun { get; init; }
+
     public static AuthorizationProblem TryCreate(
         Guid runId,
         ulong characterContentId,
@@ -52,7 +61,10 @@ internal sealed class RunAuthorization
         long gilReserve,
         int policyVersion,
         DateTime createdAtUtc,
-        out RunAuthorization? authorization)
+        out RunAuthorization? authorization,
+        int? maxStops = null,
+        int? worldRevisits = null,
+        bool dryRun = false)
     {
         authorization = null;
         var frozenDemands = demands.IsDefault ? [] : demands.AsSpan().ToArray();
@@ -76,6 +88,9 @@ internal sealed class RunAuthorization
             GilReserve = gilReserve,
             PolicyVersion = policyVersion,
             CreatedAtUtc = createdAtUtc,
+            MaxStops = maxStops is { } stops ? Math.Max(0, stops) : null,
+            WorldRevisits = worldRevisits is { } revisits ? Math.Max(0, revisits) : null,
+            DryRun = dryRun,
         };
         return AuthorizationProblem.None;
     }
@@ -98,7 +113,10 @@ internal sealed class RunAuthorization
             recorded.GilReserve,
             recorded.PolicyVersion,
             recorded.AuthorizedAtUtc,
-            out authorization);
+            out authorization,
+            recorded.MaxStops,
+            recorded.WorldRevisits,
+            recorded.DryRun);
     }
 
     public RunAuthorized ToJournalEvent(long sequence, DateTime atUtc)
@@ -122,6 +140,9 @@ internal sealed class RunAuthorization
             GilReserve = GilReserve,
             PolicyVersion = PolicyVersion,
             AuthorizedAtUtc = CreatedAtUtc,
+            MaxStops = MaxStops,
+            WorldRevisits = WorldRevisits,
+            DryRun = DryRun,
         };
     }
 

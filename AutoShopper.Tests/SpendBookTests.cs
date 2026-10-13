@@ -21,6 +21,20 @@ public sealed class SpendBookTests
     }
 
     [Fact]
+    public void AnUncertainAttemptsReservationOnlyEverGrows()
+    {
+        var book = new SpendBook(10_000);
+        book.TryReserve(FirstAttempt, 4_000);
+
+        Assert.Equal(SpendBookResult.Applied, book.RaiseReservation(FirstAttempt, 4_500));
+        Assert.Equal(4_500, book.Reserved);
+        Assert.Equal(SpendBookResult.Applied, book.RaiseReservation(FirstAttempt, 3_000));
+        Assert.Equal(4_500, book.Reserved);
+        Assert.Equal(SpendBookResult.NoSuchAttempt, book.RaiseReservation(SecondAttempt, 9_000));
+        Assert.Equal(4_500, book.Reserved);
+    }
+
+    [Fact]
     public void OnlyOneAttemptMayBePending()
     {
         var book = new SpendBook(10_000);

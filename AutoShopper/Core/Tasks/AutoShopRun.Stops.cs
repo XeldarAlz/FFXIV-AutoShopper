@@ -17,6 +17,10 @@ internal enum StopReach : byte
     BoardUnreachable = 2,
     // Logged out, or back from a transfer in a way only the player's Resume may carry on from.
     LeftForResume = 3,
+    // The trip could take the purse below the reserve, so it was not started.
+    OutOfGil = 4,
+    // A party, a duty, a trade or an open window kept the trip from starting, and the run paused for the player.
+    Held = 5,
 }
 
 internal enum ItemEnd : byte
@@ -66,6 +70,13 @@ internal sealed partial class AutoShopRun
             {
                 case StopReach.LeftForResume:
                     return LeaveForResume();
+                case StopReach.OutOfGil:
+                    run.AddIssue(RunIssueReason.InsufficientGil, 0, stop.World.WorldId, 0);
+                    run.SkipAhead(RouteSkip.TravelHalted, TravelFailure.None);
+                    return new RunEnd(RunState.CompletedPartial, "the next trip could take the gil below the reserve");
+                case StopReach.Held:
+                    run.AddIssue(RunIssueReason.TravelFailed, 0, stop.World.WorldId, 0);
+                    return new RunEnd(RunState.CompletedPartial, "a party, a duty, a trade or an open window held the trip up");
                 case StopReach.BoardUnreachable:
                     run.AddIssue(RunIssueReason.BoardUnreachable, 0, stop.World.WorldId, 0);
                     return new RunEnd(RunState.Failed, "no market board could be reached");
@@ -102,6 +113,12 @@ internal sealed partial class AutoShopRun
     {
         if (stop.World.WorldId != Svc.PlayerState.CurrentWorld.RowId)
         {
+            if (!TripAffordable())
+            {
+                Warn($"Run: the trip to {stop.World.Name} was not started: it could take the gil below the reserve of {run.Authorization!.GilReserve}.");
+                return StopReach.OutOfGil;
+            }
+
             var travel = await TravelToStop(stop.World);
             if (travel != StopReach.Reached || CancelToken.IsCancellationRequested)
             {
@@ -164,6 +181,11 @@ internal sealed partial class AutoShopRun
         var name = ItemName(itemId);
         while (true)
         {
+            if (CancelToken.IsCancellationRequested)
+            {
+                return ItemEnd.EndRun;
+            }
+
             if (Satisfied(demands))
             {
                 return ItemEnd.Done;
@@ -262,6 +284,11 @@ internal sealed partial class AutoShopRun
                 case RunReaction.BackOffAndResearch:
                     Status = Loc.T(L.Buyer.StatusBackOff);
                     await DelayMs(BackOffMs);
+                    if (CancelToken.IsCancellationRequested)
+                    {
+                        return ChoicesEnd.EndRun;
+                    }
+
                     return AfterRejection(itemId, world);
                 case RunReaction.SkipItem:
                     return ChoicesEnd.SkipItem;
@@ -293,6 +320,11 @@ internal sealed partial class AutoShopRun
     private async Task<ListingSnapshot?> SearchListings(uint itemId)
     {
         var tracker = Owner.Market.Tracker;
+        if (CancelToken.IsCancellationRequested)
+        {
+            return null;
+        }
+
         try
         {
             var state = tracker.Request(itemId);

@@ -30,6 +30,56 @@ public sealed class JournalReplayerTests
     }
 
     [Fact]
+    public void AnUncertainAttemptIsBookedAtWhatThePurseLostWhenThatIsMore()
+    {
+        var journal = new JournalBuilder().Authorize();
+        journal.Intent(FirstAttempt).Submitted(FirstAttempt).Unknown(FirstAttempt, charged: 6_000);
+
+        var progress = JournalReplayer.Replay(journal.Entries);
+        var review = JournalReview.Build(journal.Entries);
+
+        Assert.True(progress.NeedsReconciliation);
+        Assert.Equal(6_000, progress.ReservedSpend);
+        Assert.Equal(6_000, Assert.Single(progress.Attempts).ReservedAmount);
+        Assert.Equal(6_000, Assert.Single(review.Unresolved).Payable);
+    }
+
+    [Fact]
+    public void AnUncertainAttemptIsNeverBookedBelowItsPayable()
+    {
+        var journal = new JournalBuilder().Authorize();
+        journal.Intent(FirstAttempt).Submitted(FirstAttempt).Unknown(FirstAttempt, charged: 0);
+        journal.Intent(SecondAttempt, listingId: 78).Submitted(SecondAttempt).Unknown(SecondAttempt);
+
+        var progress = JournalReplayer.Replay(journal.Entries);
+
+        Assert.Equal(2 * 5_050, progress.ReservedSpend);
+    }
+
+    [Fact]
+    public void AnAnsweredAttemptIsBookedAtItsAnswer()
+    {
+        var journal = new JournalBuilder().Authorize();
+        journal.Intent(FirstAttempt).Submitted(FirstAttempt).Unknown(FirstAttempt, charged: 6_000).Reconciled(FirstAttempt, purchased: true, 5, 6_000);
+
+        var progress = JournalReplayer.Replay(journal.Entries);
+
+        Assert.False(progress.NeedsReconciliation);
+        Assert.Equal(6_000, progress.ConfirmedSpend);
+        Assert.Equal(0, progress.ReservedSpend);
+    }
+
+    [Fact]
+    public void RevisitsComeBackFromTheNewestCheckpoint()
+    {
+        var journal = new JournalBuilder().Authorize();
+        journal.Checkpoint(revisits: 1).Checkpoint(revisits: 2);
+
+        Assert.Equal(2, JournalReplayer.Replay(journal.Entries).Revisits);
+        Assert.Equal(0, JournalReplayer.Replay(new JournalBuilder().Authorize().Entries).Revisits);
+    }
+
+    [Fact]
     public void DuplicateConfirmationsAreAppliedOnce()
     {
         var journal = new JournalBuilder().Authorize();
@@ -502,9 +552,9 @@ public sealed class JournalReplayerTests
             return this;
         }
 
-        public JournalBuilder Unknown(Guid attemptId)
+        public JournalBuilder Unknown(Guid attemptId, long charged = -1)
         {
-            entries.Add(new PurchaseUnknown { Sequence = NextSequence(), RunId = RunId, AtUtc = Now, AttemptId = attemptId, Reason = "timeout" });
+            entries.Add(new PurchaseUnknown { Sequence = NextSequence(), RunId = RunId, AtUtc = Now, AttemptId = attemptId, Reason = "timeout", Charged = charged });
             return this;
         }
 
@@ -514,7 +564,7 @@ public sealed class JournalReplayerTests
             return this;
         }
 
-        public JournalBuilder Checkpoint(int attemptCount = 0, int failedAttemptCount = 0, ImmutableArray<string>? excluded = null, ImmutableArray<uint>? completed = null, ImmutableArray<uint>? excludedWorlds = null)
+        public JournalBuilder Checkpoint(int attemptCount = 0, int failedAttemptCount = 0, ImmutableArray<string>? excluded = null, ImmutableArray<uint>? completed = null, ImmutableArray<uint>? excludedWorlds = null, int revisits = 0)
         {
             entries.Add(new Checkpoint
             {
@@ -528,6 +578,7 @@ public sealed class JournalReplayerTests
                 ExcludedListingKeys = excluded ?? [],
                 CompletedWorldIds = completed ?? [],
                 ExcludedWorldIds = excludedWorlds ?? [],
+                Revisits = revisits,
             });
             return this;
         }

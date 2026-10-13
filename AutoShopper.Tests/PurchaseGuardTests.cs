@@ -54,6 +54,7 @@ public sealed class PurchaseGuardTests
         [GuardRejection.ReserveBreached] = input => input with { CurrentGil = 15_000 },
         [GuardRejection.UniqueAlreadyOwned] = input => input with { UniqueItemAlreadyOwned = true },
         [GuardRejection.InventoryFull] = input => input with { FreeInventorySlots = 0 },
+        [GuardRejection.CrystalLimitExceeded] = input => input with { IsCrystal = true, ItemStackSize = 9_999, OwnedQuantity = 9_999 },
     };
 
     [Fact]
@@ -154,11 +155,11 @@ public sealed class PurchaseGuardTests
     }
 
     [Fact]
-    public void CrystalThatWouldOverflowItsPouchStackIsRefused()
+    public void CrystalThatWouldOverflowItsPouchStackIsRefusedOnItsOwn()
     {
         var input = ValidInput() with { IsCrystal = true, ItemStackSize = 9_999, OwnedQuantity = 9_996, FreeInventorySlots = 50 };
 
-        Assert.Equal(GuardRejection.InventoryFull, PurchaseGuard.Evaluate(input).Rejection);
+        Assert.Equal(GuardRejection.CrystalLimitExceeded, PurchaseGuard.Evaluate(input).Rejection);
     }
 
     [Fact]

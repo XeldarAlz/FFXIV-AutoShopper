@@ -53,7 +53,17 @@ internal static class RunReactions
         GuardRejection.ReserveBreached => RunResponse.Of(RunReaction.SkipListing, RunIssueReason.InsufficientGil),
         GuardRejection.UniqueAlreadyOwned => RunResponse.Of(RunReaction.SkipItem, RunIssueReason.UniqueOwned),
         GuardRejection.InventoryFull => RunResponse.Of(RunReaction.StopBuying, RunIssueReason.InventoryFull),
+        GuardRejection.CrystalLimitExceeded => RunResponse.Of(RunReaction.SkipListing, RunIssueReason.CrystalLimit),
         _ => RunResponse.Of(RunReaction.SkipListing),
+    };
+
+    // A stale copy is searched again and counts as no refusal; only a listing the live search no longer holds is
+    // left out and counts toward giving up on the item.
+    public static RunResponse ForLiveRead(LiveListingRead read) => read switch
+    {
+        LiveListingRead.Found => RunResponse.Of(RunReaction.Continue),
+        LiveListingRead.Stale => RunResponse.Of(RunReaction.Research),
+        _ => RunResponse.Of(RunReaction.ExcludeAndResearch),
     };
 
     public static RunResponse ForRefusal(PurchaseRefusal refusal) => refusal switch

@@ -148,24 +148,25 @@ internal sealed unsafe class ListingRequestTracker : IDisposable
         return State;
     }
 
-    // The live listing with this id under the current generation, read from the proxy, never by index.
-    public bool TryReadLive(ulong listingId, out ObservedListing listing)
+    // The live listing with this id under the current generation, read from the proxy, never by index. A proxy that
+    // holds another item has moved on before the generation did, so the copy is stale rather than the listing gone.
+    public LiveListingRead ReadLive(ulong listingId, out ObservedListing listing)
     {
         listing = default;
         var proxy = InfoProxyItemSearch.Instance();
         if (Snapshot is null || proxy == null || proxy->SearchItemId != machine.ItemId)
         {
-            return false;
+            return LiveListingRead.Stale;
         }
 
         var index = IndexOfListing(proxy, listingId);
         if (index < 0)
         {
-            return false;
+            return LiveListingRead.Gone;
         }
 
         listing = Observe(proxy->Listings[index], Svc.PlayerState.CurrentWorld.RowId, machine.Generation, DateTime.UtcNow);
-        return true;
+        return LiveListingRead.Found;
     }
 
     public static int IndexOfListing(InfoProxyItemSearch* proxy, ulong listingId)

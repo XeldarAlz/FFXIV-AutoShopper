@@ -100,6 +100,14 @@ internal sealed partial class AutoShopController
             return;
         }
 
+        // A run read back from the journal buys for real, so it never resumes while Dry run says nothing is bought.
+        if (plugin.Configuration.DryRun || interrupted.Authorization.DryRun)
+        {
+            Diag($"Resume of run {interrupted.RunId} refused: Dry run is on (setting {plugin.Configuration.DryRun}, recorded {interrupted.Authorization.DryRun}).");
+            ECommons.DalamudServices.Svc.Chat.PrintError($"{AshopConstants.LogPrefix} {Loc.T(L.Resume.DryRunOn)}");
+            return;
+        }
+
         BeginShopRun(ShopRunState.FromJournal(plugin.Market, plugin.Ledger.Journal, interrupted), "resume of an interrupted run");
     }
 
@@ -357,7 +365,18 @@ internal sealed partial class AutoShopController
         }
 
         run.ApplyTo(ending);
-        ending.Outcome ??= ShopRunState.OutcomeOf(run.FinalState ?? final);
+        var outcome = ShopRunState.OutcomeOf(run.FinalState ?? final);
+        // A purchase without a clear answer outweighs whatever the run was about to be recorded as, a GM alert's stop included.
+        if (outcome == RunOutcome.NeedsReconciliation && ending.Outcome != RunOutcome.NeedsReconciliation)
+        {
+            ending.Outcome = RunOutcome.NeedsReconciliation;
+            ECommons.DalamudServices.Svc.Chat.PrintError($"{AshopConstants.LogPrefix} {Loc.T(L.Buyer.ChatUncertain)}");
+        }
+        else
+        {
+            ending.Outcome ??= outcome;
+        }
+
         if (!run.DryRun)
         {
             Plugin.Instance.Ledger.Invalidate();

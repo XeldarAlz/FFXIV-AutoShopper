@@ -137,7 +137,7 @@ internal sealed class JournalReview
                 intent?.IsHq ?? false,
                 intent?.WorldId ?? 0,
                 intent?.Quantity ?? 0,
-                intent?.Payable ?? 0,
+                intent is null ? 0 : attempt.ReservedAmount,
                 intent?.AtUtc ?? default,
                 intent?.GilBefore ?? -1,
                 intent?.OwnedBefore ?? -1));

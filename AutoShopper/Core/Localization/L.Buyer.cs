@@ -54,6 +54,7 @@ internal static partial class L
         public static readonly LocString JournalWriteFailed = new("issue.journalWriteFailed", "The purchase journal could not be written");
         public static readonly LocString CharacterChanged = new("issue.characterChanged", "Character or world changed");
         public static readonly LocString NotMarketable = new("issue.notMarketable", "Not sold on the market board");
+        public static readonly LocString CrystalLimit = new("issue.crystalLimit", "More than the crystal pouch holds");
         public static readonly LocString OnWorld = new("issue.onWorld", "on {0}");
         public static readonly LocPlural Missing = new("issue.missing", "{0} unit missing", "{0} units missing");
     }
@@ -76,9 +77,10 @@ internal static partial class L
     {
         public static readonly LocString Title = new("resume.title", "A run was interrupted");
         public static readonly LocString Body = new("resume.body", "Started {0}: {1} of {2} units bought, {3} spent. Resume plans what is left again with fresh prices.");
-        public static readonly LocString ResumeRun = new("resume.resume", "Resume");
+        public static readonly LocString ResumeRun = new("resume.resume", "Resume real buying");
         public static readonly LocString Discard = new("resume.discard", "Discard");
         public static readonly LocString OtherCharacter = new("resume.otherCharacter", "This run belongs to another character. Log in with that character to resume it, or discard it.");
+        public static readonly LocString DryRunOn = new("resume.dryRunOn", "Dry run is on, but Resume carries this run on with real purchases. Turn Dry run off in Settings to resume it, or discard it.");
     }
 
     internal static class Journal

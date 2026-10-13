@@ -133,6 +133,28 @@ internal sealed class SpendBook
         return SpendBookResult.Applied;
     }
 
+    // An uncertain purchase keeps its reservation; when the purse lost more than it, the reservation grows to match.
+    public SpendBookResult RaiseReservation(Guid attemptId, long amount)
+    {
+        if (settledAttempts.Contains(attemptId))
+        {
+            return SpendBookResult.AlreadySettled;
+        }
+
+        if (attemptId == Guid.Empty || attemptId != PendingAttemptId)
+        {
+            return SpendBookResult.NoSuchAttempt;
+        }
+
+        if (amount < 0)
+        {
+            return SpendBookResult.InvalidAmount;
+        }
+
+        Reserved = Math.Max(Reserved, amount);
+        return SpendBookResult.Applied;
+    }
+
     public SpendBookResult Release(Guid attemptId)
     {
         if (settledAttempts.Contains(attemptId))

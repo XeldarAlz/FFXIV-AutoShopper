@@ -92,14 +92,16 @@ internal static class LedgerCards
         EndCard(card);
     }
 
+    // A resumed run buys for real, so the button says so and stays off while Dry run is on.
     private static void DrawInterrupted(Plugin plugin, JournalProgress interrupted)
     {
         var ownCharacter = interrupted.Authorization!.CharacterContentId == ECommons.DalamudServices.Svc.PlayerState.ContentId;
+        var dryRun = plugin.Configuration.DryRun;
         var body = resumeText.Get(HashCode.Combine(plugin.Ledger.Revision, Environment.TickCount64 / TimeUnits.MillisecondsPerMinute), static _ => DescribeInterrupted());
-        var detail = ownCharacter ? null : Loc.T(L.Resume.OtherCharacter);
+        var detail = !ownCharacter ? Loc.T(L.Resume.OtherCharacter) : dryRun ? Loc.T(L.Resume.DryRunOn) : null;
         var running = plugin.Controller.Running;
         var card = BeginCard(Loc.T(L.Resume.Title), body, detail, null, Styling.AccentAmber, 2);
-        if (ActionButton(ref card, "##ashop_resume_run", Loc.T(L.Resume.ResumeRun), Styling.AccentMint, PillButton.Emphasis.Filled, ownCharacter && !running))
+        if (ActionButton(ref card, "##ashop_resume_run", Loc.T(L.Resume.ResumeRun), Styling.AccentMint, PillButton.Emphasis.Filled, ownCharacter && !running && !dryRun))
         {
             plugin.Controller.ResumeInterrupted();
         }

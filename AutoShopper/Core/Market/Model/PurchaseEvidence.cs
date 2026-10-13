@@ -19,6 +19,12 @@ internal enum PurchaseUnknownCause : byte
     RequestMismatch = 3,
     MissingRequest = 4,
     MissingAgreement = 5,
+    // The answer held, but the purse did not change by what it should have.
+    GilMismatch = 6,
+    // The answer held, but the bags did not change by what they should have.
+    InventoryMismatch = 7,
+    // The purse or the bags could not be read to check the answer against.
+    PurseUnreadable = 8,
 }
 
 internal readonly record struct PurchaseDecision(PurchaseOutcomeKind Kind, PurchaseRejection Rejection, PurchaseUnknownCause Cause)

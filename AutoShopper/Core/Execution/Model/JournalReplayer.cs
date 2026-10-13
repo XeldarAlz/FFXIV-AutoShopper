@@ -117,6 +117,8 @@ internal static class JournalReplayer
 
         public bool ReportedUnknown { get; set; }
 
+        public long UnknownCharge { get; set; } = -1;
+
         public Reconciled? Reconciliation { get; set; }
     }
 
@@ -134,6 +136,7 @@ internal static class JournalReplayer
         private RunEnded? ended;
         private int checkpointAttemptCount;
         private int checkpointFailedCount;
+        private int checkpointRevisits;
         private long lastSequence;
         private bool tornTail;
 
@@ -190,6 +193,7 @@ internal static class JournalReplayer
             lastCheckpoint = checkpoint;
             checkpointAttemptCount = Math.Max(checkpointAttemptCount, checkpoint.AttemptCount);
             checkpointFailedCount = Math.Max(checkpointFailedCount, checkpoint.FailedAttemptCount);
+            checkpointRevisits = Math.Max(checkpointRevisits, checkpoint.Revisits);
             for (var index = 0; index < checkpoint.ExcludedListingKeys.Length; index++)
             {
                 var key = checkpoint.ExcludedListingKeys[index];
@@ -250,8 +254,9 @@ internal static class JournalReplayer
                 case PurchaseRejected:
                     attempt.Rejected = true;
                     return;
-                case PurchaseUnknown:
+                case PurchaseUnknown unknown:
                     attempt.ReportedUnknown = true;
+                    attempt.UnknownCharge = Math.Max(attempt.UnknownCharge, unknown.Charged);
                     return;
                 case Reconciled reconciled:
                     attempt.Reconciliation = reconciled;
@@ -321,6 +326,7 @@ internal static class JournalReplayer
                 ReservedSpend = reservedSpend,
                 AttemptCount = Math.Max(intentCount, checkpointAttemptCount),
                 FailedAttemptCount = Math.Max(failedCount, checkpointFailedCount),
+                Revisits = checkpointRevisits,
                 CompletedWorldIds = Sorted(completedWorldIds),
                 ExcludedWorldIds = Sorted(excludedWorldIds),
                 ExcludedListingKeys = SortedKeys(),
@@ -367,6 +373,13 @@ internal static class JournalReplayer
                 status = AttemptStatus.NotSent;
             }
 
+            // An uncertain attempt holds no less gil than the purse was seen to lose across it.
+            var reserved = intent?.Payable ?? 0;
+            if (status == AttemptStatus.Unknown && intent is not null)
+            {
+                reserved = Math.Max(reserved, builder.UnknownCharge);
+            }
+
             return new AttemptRecord(
                 builder.AttemptId,
                 builder.FirstSequence,
@@ -375,7 +388,7 @@ internal static class JournalReplayer
                 intent?.ListingId ?? 0,
                 intent?.WorldId ?? 0,
                 intent?.Quantity ?? 0,
-                intent?.Payable ?? 0,
+                reserved,
                 status,
                 confirmedQuantity,
                 charged);

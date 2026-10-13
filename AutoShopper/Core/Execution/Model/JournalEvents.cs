@@ -43,6 +43,13 @@ internal sealed record RunAuthorized : JournalEvent
 
     public required DateTime AuthorizedAtUtc { get; init; }
 
+    // Absent from a journal written before the run's stop and revisit limits were recorded.
+    public int? MaxStops { get; init; }
+
+    public int? WorldRevisits { get; init; }
+
+    public bool DryRun { get; init; }
+
     public override bool IsWellFormed()
     {
         return base.IsWellFormed() && CharacterContentId != 0 && MaxSpend > 0 && !Demands.IsDefault && !AllowedWorldIds.IsDefault;
@@ -134,6 +141,9 @@ internal sealed record PurchaseUnknown : AttemptEvent
     public override string Kind => JournalEventKind.PurchaseUnknown;
 
     public string Reason { get; init; } = string.Empty;
+
+    // What the purse lost across the attempt, -1 when it could not be read; the attempt is booked at no less than this.
+    public long Charged { get; init; } = -1;
 }
 
 internal sealed record Reconciled : AttemptEvent
@@ -175,6 +185,9 @@ internal sealed record Checkpoint : JournalEvent
     public int AttemptCount { get; init; }
 
     public int FailedAttemptCount { get; init; }
+
+    // Stops made on a world the run had already shopped.
+    public int Revisits { get; init; }
 
     public override bool IsWellFormed()
     {

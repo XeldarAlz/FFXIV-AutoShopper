@@ -150,7 +150,10 @@ internal sealed partial class AutoShopRun
             configuration.GilReserve,
             PolicyVersion,
             now,
-            out var authorization);
+            out var authorization,
+            plan.Request.Settings.MaxStops,
+            configuration.WorldRevisits,
+            run.DryRun);
         if (problem != AuthorizationProblem.None)
         {
             return problem switch
