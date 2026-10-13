@@ -8,6 +8,7 @@ public sealed class QuoteQueueTests
     private const string OtherCaller = "OtherPlugin";
 
     private static readonly TimeSpan JustOver = TimeSpan.FromMilliseconds(1);
+    private static readonly DateTime Start = new(2026, 10, 13, 18, 0, 0, DateTimeKind.Utc);
 
     [Fact]
     public void AQuoteWaitsOutTheWindowLeftToThePlayerAfterTheCooldown()
@@ -43,7 +44,7 @@ public sealed class QuoteQueueTests
         for (var count = 0; count < ApiContract.MaximumWaitingQuotesPerCaller; count++)
         {
             Assert.True(queue.HasRoomFor(Caller));
-            queue.Add(Guid.NewGuid(), Caller);
+            queue.Add(Guid.NewGuid(), Caller, Start);
         }
 
         Assert.False(queue.HasRoomFor(Caller));
@@ -54,8 +55,8 @@ public sealed class QuoteQueueTests
     public void AQuoteThatStartedMakesRoomForAnother()
     {
         var queue = new QuoteQueue();
-        queue.Add(Guid.NewGuid(), Caller);
-        queue.Add(Guid.NewGuid(), Caller);
+        queue.Add(Guid.NewGuid(), Caller, Start);
+        queue.Add(Guid.NewGuid(), Caller, Start);
 
         queue.RemoveFirst();
 
@@ -69,9 +70,9 @@ public sealed class QuoteQueueTests
         var mine = Guid.NewGuid();
         var other = Guid.NewGuid();
         var alsoMine = Guid.NewGuid();
-        queue.Add(mine, Caller);
-        queue.Add(other, OtherCaller);
-        queue.Add(alsoMine, Caller);
+        queue.Add(mine, Caller, Start);
+        queue.Add(other, OtherCaller, Start);
+        queue.Add(alsoMine, Caller, Start);
         var removed = new List<Guid>();
 
         queue.RemoveCaller(Caller, removed);
@@ -89,7 +90,7 @@ public sealed class QuoteQueueTests
     {
         var queue = new QuoteQueue();
         var other = Guid.NewGuid();
-        queue.Add(other, OtherCaller);
+        queue.Add(other, OtherCaller, Start);
         var removed = new List<Guid>();
 
         queue.RemoveCaller(Caller, removed);
@@ -105,9 +106,9 @@ public sealed class QuoteQueueTests
         var first = Guid.NewGuid();
         var second = Guid.NewGuid();
         var third = Guid.NewGuid();
-        queue.Add(first, Caller);
-        queue.Add(second, OtherCaller);
-        queue.Add(third, Caller);
+        queue.Add(first, Caller, Start);
+        queue.Add(second, OtherCaller, Start);
+        queue.Add(third, Caller, Start);
 
         Assert.Equal(first, queue.First);
         queue.RemoveFirst();
@@ -116,5 +117,76 @@ public sealed class QuoteQueueTests
         Assert.Equal(third, queue.First);
         queue.RemoveFirst();
         Assert.Equal(0, queue.Count);
+    }
+
+    [Fact]
+    public void AWaitingQuoteNobodyAsksAboutForAMinuteIsDropped()
+    {
+        var store = new RecentStore<string>(ApiContract.QuoteCapacity, ApiContract.QuoteLifetime);
+        var queue = new QuoteQueue();
+        var abandoned = Guid.NewGuid();
+        store.Add(abandoned, "abandoned", Start);
+        queue.Add(abandoned, Caller, Start);
+        var removed = new List<Guid>();
+
+        queue.RemoveAbandoned(store, Start + ApiContract.UnpolledQuoteLifetime, removed);
+        Assert.Empty(removed);
+        Assert.Equal(1, queue.Count);
+
+        queue.RemoveAbandoned(store, Start + ApiContract.UnpolledQuoteLifetime + JustOver, removed);
+        Assert.Equal([abandoned], removed);
+        Assert.Equal(0, queue.Count);
+        Assert.True(queue.HasRoomFor(Caller));
+    }
+
+    [Fact]
+    public void AskingForAWaitingQuoteKeepsItInLine()
+    {
+        var store = new RecentStore<string>(ApiContract.QuoteCapacity, ApiContract.QuoteLifetime);
+        var queue = new QuoteQueue();
+        var polled = Guid.NewGuid();
+        var silent = Guid.NewGuid();
+        store.Add(polled, "polled", Start);
+        store.Add(silent, "silent", Start);
+        queue.Add(polled, Caller, Start);
+        queue.Add(silent, OtherCaller, Start);
+        var later = Start + TimeSpan.FromSeconds(50);
+        var removed = new List<Guid>();
+
+        queue.NotePolled(polled, later);
+        queue.RemoveAbandoned(store, Start + ApiContract.UnpolledQuoteLifetime + JustOver, removed);
+
+        Assert.Equal([silent], removed);
+        Assert.Equal(polled, queue.First);
+
+        removed.Clear();
+        queue.RemoveAbandoned(store, later + ApiContract.UnpolledQuoteLifetime + JustOver, removed);
+        Assert.Equal([polled], removed);
+    }
+
+    [Fact]
+    public void AQuoteTheStoreNoLongerHoldsLeavesTheLineAndTheCallersCap()
+    {
+        var store = new RecentStore<string>(ApiContract.QuoteCapacity, ApiContract.QuoteLifetime);
+        var queue = new QuoteQueue();
+        var pushedOut = Guid.NewGuid();
+        var kept = Guid.NewGuid();
+        store.Add(pushedOut, "pushed out", Start);
+        queue.Add(pushedOut, Caller, Start);
+        for (var count = 0; count < ApiContract.QuoteCapacity - 1; count++)
+        {
+            store.Add(Guid.NewGuid(), "newer", Start);
+        }
+
+        store.Add(kept, "kept", Start);
+        queue.Add(kept, Caller, Start);
+        Assert.False(queue.HasRoomFor(Caller));
+        var removed = new List<Guid>();
+
+        queue.RemoveAbandoned(store, Start, removed);
+
+        Assert.Equal([pushedOut], removed);
+        Assert.Equal(kept, queue.First);
+        Assert.True(queue.HasRoomFor(Caller));
     }
 }

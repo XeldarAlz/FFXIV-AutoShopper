@@ -1,6 +1,6 @@
 namespace AutoShopper.Core.Api.Model;
 
-internal readonly record struct WaitingQuote(Guid QuoteId, string Caller);
+internal readonly record struct WaitingQuote(Guid QuoteId, string Caller, DateTime LastPolledAtUtc);
 
 internal sealed class QuoteQueue
 {
@@ -15,15 +15,40 @@ internal sealed class QuoteQueue
 
     public bool HasRoomFor(string caller) => CountOf(caller) < ApiContract.MaximumWaitingQuotesPerCaller;
 
-    public void Add(Guid quoteId, string caller) => waiting.Add(new WaitingQuote(quoteId, caller));
+    public void Add(Guid quoteId, string caller, DateTime nowUtc) => waiting.Add(new WaitingQuote(quoteId, caller, nowUtc));
 
     public void RemoveFirst() => waiting.RemoveAt(0);
 
+    public void NotePolled(Guid quoteId, DateTime nowUtc)
+    {
+        for (var index = 0; index < waiting.Count; index++)
+        {
+            if (waiting[index].QuoteId != quoteId)
+            {
+                continue;
+            }
+
+            waiting[index] = waiting[index] with { LastPolledAtUtc = nowUtc };
+            return;
+        }
+    }
+
     public void RemoveCaller(string caller, List<Guid> removed)
+        => RemoveWhere(caller, static (quote, owner) => string.Equals(quote.Caller, owner, StringComparison.Ordinal), removed);
+
+    public void RemoveAbandoned<T>(RecentStore<T> stored, DateTime nowUtc, List<Guid> removed)
+        where T : class
+        => RemoveWhere((stored, nowUtc), static (quote, state) => Abandoned(quote, state.stored, state.nowUtc), removed);
+
+    private static bool Abandoned<T>(WaitingQuote quote, RecentStore<T> stored, DateTime nowUtc)
+        where T : class
+        => nowUtc - quote.LastPolledAtUtc > ApiContract.UnpolledQuoteLifetime || !stored.TryGet(quote.QuoteId, nowUtc, out _);
+
+    private void RemoveWhere<TState>(TState state, Func<WaitingQuote, TState, bool> matches, List<Guid> removed)
     {
         for (var index = waiting.Count - 1; index >= 0; index--)
         {
-            if (!string.Equals(waiting[index].Caller, caller, StringComparison.Ordinal))
+            if (!matches(waiting[index], state))
             {
                 continue;
             }

@@ -56,7 +56,8 @@ Lets another Dalamud plugin price items and run a bounded Auto Shopper shopping 
 - 1 to 100 items, `itemId` > 0, `quantity` 1 to 9999. Duplicate item ids are refused (`InvalidRequest`).
 - Prices come from Auto Shopper's price service for Auto Shopper's configured world scope, fetched detached (it never replaces the Plan page's prices).
 - Auto Shopper allows one Universalis fetch every 30 seconds across the Plan page, runs and quotes, and a quote always lets the player and runs go first: it fetches only once 40 seconds have passed since Auto Shopper last started a fetch (the 30 second cooldown, then 10 seconds for the player to press Get prices on the Plan page), while no Plan page fetch is under way and no run is fetching its prices. Until then it stays `Pending`. Quotes that wait fetch one at a time, in the order they were asked for.
-- A caller can have at most 2 quotes waiting for their turn at a time. Another `QuoteStart` from it is refused with `Busy` until one of them has started fetching.
+- A caller can have at most 2 quotes waiting for their turn at a time. Another `QuoteStart` from it is refused with `Busy` until one of them has started fetching or was dropped.
+- A waiting quote stays in line only while its caller polls it: one that no `QuoteResult` asked about for 60 seconds (counted from its `QuoteStart`, then from the last `QuoteResult` for it) is dropped before it fetches, and `QuoteResult` then answers `Unknown`. A caller that gives up on a quote only has to stop polling it. A waiting quote pushed out by 16 newer quotes (see below) leaves the line too. Neither counts toward the caller's 2 any longer.
 
 ## QuoteStart response
 
@@ -93,7 +94,7 @@ or
 }
 ```
 
-- `state`: `Pending`, `Ready`, `Failed`, `Unknown` (no such quote id, or expired).
+- `state`: `Pending`, `Ready`, `Failed`, `Unknown` (no such quote id, expired, or dropped while it waited because nobody polled it for 60 seconds).
 - `items` is filled and `fetchedAtUtc` set only when `state` is `Ready`; otherwise `items` is `[]` and `fetchedAtUtc` is `null`. `items` keeps the order of the request.
 - `Failed` means the price fetch did not come back complete (any Universalis request of it failed, or it could not start); `refusal` is then `PricesUnavailable`. Ask for a new quote.
 - Per quality, `total` is the cheapest combination of whole listings that covers `quantity` units within the scope, with the 5% market fee included. `units` is how many units that combination buys (it can exceed `quantity` when only bigger stacks exist, or when a bigger stack is cheaper). `unitPrice` is `total / units` rounded up. `highestUnitPrice` is the dearest listing of that combination per unit: each listing's stack price with the fee, divided by its units and rounded up, and the highest of those. A `StartRun` line whose `maxUnitPrice` is at least `highestUnitPrice` lets every listing of the combination through at its quoted price, where `unitPrice`, an average, can turn the dearer ones away. `available` is false when no combination covers the quantity, and every other number of that quality is then 0.

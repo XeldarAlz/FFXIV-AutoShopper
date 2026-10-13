@@ -43,6 +43,8 @@ internal sealed class ApiQuotes : IDisposable
         }
 
         var caller = request.Caller!;
+        var now = DateTime.UtcNow;
+        DropAbandoned(now);
         if (!waiting.HasRoomFor(caller))
         {
             RunLog.Info($"Buying API: a quote from {callerDisplayName} was refused: {ApiContract.MaximumWaitingQuotesPerCaller} of its quotes already wait.");
@@ -50,11 +52,11 @@ internal sealed class ApiQuotes : IDisposable
         }
 
         var quote = new Quote(Guid.NewGuid(), request.Items!, scope.Allowed);
-        quotes.Add(quote.Id, quote, DateTime.UtcNow);
+        quotes.Add(quote.Id, quote, now);
         var started = waiting.Count == 0 && MayStart() && TryFetch(quote);
         if (!started)
         {
-            waiting.Add(quote.Id, caller);
+            waiting.Add(quote.Id, caller, now);
             Hook();
         }
 
@@ -65,13 +67,15 @@ internal sealed class ApiQuotes : IDisposable
     public QuoteResultResponse Result(Guid quoteId)
     {
         var id = ApiIds.Format(quoteId);
-        if (!quotes.TryGet(quoteId, DateTime.UtcNow, out var quote))
+        var now = DateTime.UtcNow;
+        if (!quotes.TryGet(quoteId, now, out var quote))
         {
             return QuoteResultResponse.Unknown(id);
         }
 
         if (quote.Pricing is not { IsCompleted: true } pricing)
         {
+            waiting.NotePolled(quoteId, now);
             return new QuoteResultResponse { QuoteId = id, State = QuoteState.Pending };
         }
 
@@ -133,24 +137,32 @@ internal sealed class ApiQuotes : IDisposable
     private void StartWaiting()
     {
         var now = DateTime.UtcNow;
-        Quote? first = null;
-        while (waiting.Count > 0 && !quotes.TryGet(waiting.First, now, out first))
-        {
-            waiting.RemoveFirst();
-        }
-
-        if (first is null)
+        DropAbandoned(now);
+        if (waiting.Count == 0)
         {
             Unhook();
             return;
         }
 
-        if (!MayStart() || !TryFetch(first))
+        if (!MayStart() || !quotes.TryGet(waiting.First, now, out var first) || !TryFetch(first))
         {
             return;
         }
 
         waiting.RemoveFirst();
+    }
+
+    private void DropAbandoned(DateTime nowUtc)
+    {
+        dropped.Clear();
+        waiting.RemoveAbandoned(quotes, nowUtc, dropped);
+        for (var index = 0; index < dropped.Count; index++)
+        {
+            if (quotes.Remove(dropped[index]))
+            {
+                RunLog.Info($"Buying API: quote {dropped[index]} was dropped: nobody asked for its result for {ApiContract.UnpolledQuoteLifetime.TotalSeconds:0} seconds while it waited for its turn at the price fetch.");
+            }
+        }
     }
 
     private static async Task<QuotePricing?> Price(Guid quoteId, Task<PriceSnapshot?> fetch, QuoteRequestItem[] items)

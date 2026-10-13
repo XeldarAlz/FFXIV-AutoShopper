@@ -16,5 +16,6 @@ internal static class ApiContract
     public const int MaximumWaitingQuotesPerCaller = 2;
 
     public static readonly TimeSpan QuoteLifetime = TimeSpan.FromMinutes(10);
+    public static readonly TimeSpan UnpolledQuoteLifetime = TimeSpan.FromSeconds(60);
     public static readonly TimeSpan QuoteYieldWindow = TimeSpan.FromSeconds(10);
 }

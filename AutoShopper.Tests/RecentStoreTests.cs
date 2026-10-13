@@ -102,6 +102,32 @@ public sealed class RecentStoreTests
     }
 
     [Fact]
+    public void ARemovedEntryIsNoLongerFound()
+    {
+        var store = new RecentStore<string>(ApiContract.QuoteCapacity, ApiContract.QuoteLifetime);
+        var removed = Guid.NewGuid();
+        var kept = Guid.NewGuid();
+        store.Add(removed, "removed", Start);
+        store.Add(kept, "kept", Start);
+
+        Assert.True(store.Remove(removed));
+
+        Assert.False(store.TryGet(removed, Start, out _));
+        Assert.True(store.TryGet(kept, Start, out _));
+        Assert.Equal(1, store.Count);
+    }
+
+    [Fact]
+    public void RemovingAnUnknownIdLeavesTheStoreAsItWas()
+    {
+        var store = new RecentStore<string>(ApiContract.QuoteCapacity, ApiContract.QuoteLifetime);
+        store.Add(Guid.NewGuid(), "kept", Start);
+
+        Assert.False(store.Remove(Guid.NewGuid()));
+        Assert.Equal(1, store.Count);
+    }
+
+    [Fact]
     public void AnUnknownIdIsNotFound()
     {
         var store = new RecentStore<string>(ApiContract.RunResultCapacity, TimeSpan.Zero);

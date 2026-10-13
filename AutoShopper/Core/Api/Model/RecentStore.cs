@@ -42,6 +42,18 @@ internal sealed class RecentStore<T>
         return value is not null;
     }
 
+    public bool Remove(Guid id)
+    {
+        var index = IndexOf(id);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        entries.RemoveAt(index);
+        return true;
+    }
+
     public T? NewestWhere(Func<T, bool> predicate, DateTime nowUtc)
     {
         Prune(nowUtc);
