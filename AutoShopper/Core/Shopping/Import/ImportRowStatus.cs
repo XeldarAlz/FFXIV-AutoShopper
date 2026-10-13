@@ -19,4 +19,8 @@ public enum ImportRowProblem : byte
     UnknownMode,
     NameTooLong,
     MissingItem,
+    UnknownRecipe,
+    SkippedCraft,
+    NotMarketable,
+    CraftedFromOtherRows,
 }

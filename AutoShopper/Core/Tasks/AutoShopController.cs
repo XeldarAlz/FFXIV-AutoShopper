@@ -325,6 +325,7 @@ internal sealed partial class AutoShopController
     {
         stopping = false;
         shopRun = state;
+        Plugin.Instance.Summaries.Track(state);
         var newSession = new ShopSession();
         state.ApplyTo(newSession);
         BeginRun(newSession, owner => new AutoShopRun(state, owner), plan);

@@ -36,6 +36,8 @@ public sealed class ShopSession
 
     public string ListName { get; internal set; } = string.Empty;
 
+    public Guid RunId { get; internal set; }
+
     public bool DryRun { get; internal set; }
 
     // For a dry run, what it would have spent and bought.

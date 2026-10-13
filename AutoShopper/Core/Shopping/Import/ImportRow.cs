@@ -20,6 +20,8 @@ public sealed class ImportRow
     // tried as a name when the shorter one is unknown.
     public string? WholeName { get; internal set; }
 
+    public string? Section { get; internal set; }
+
     public uint RequestedItemId { get; internal set; }
 
     public Guid LineId { get; internal set; }

@@ -374,6 +374,7 @@ internal sealed class ShopRunState : IDisposable
     public void ApplyTo(ShopSession session)
     {
         session.DryRun = DryRun;
+        session.RunId = RunId;
         session.ListName = ListName;
         session.Spent = DryRun ? Tally.WouldBuySpend : Tally.ConfirmedSpend;
         session.Units = DryRun ? Tally.WouldBuyUnits : Tally.ConfirmedUnits;

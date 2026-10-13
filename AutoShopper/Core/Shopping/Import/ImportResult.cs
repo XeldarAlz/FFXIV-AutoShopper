@@ -13,6 +13,11 @@ public sealed class ImportResult
 
     public List<ImportRow> Rows { get; } = [];
 
+    // A crafting list holds recipes rather than items; it fills Rows only once it is expanded.
+    public List<CraftingImport> Crafts { get; } = [];
+
+    public bool IsCraftingList => Crafts.Count > 0;
+
     public string? ListName { get; internal set; }
 
     // CSV columns and JSON properties this version does not read.
@@ -43,5 +48,6 @@ public sealed class ImportResult
     {
         Error = error;
         Rows.Clear();
+        Crafts.Clear();
     }
 }

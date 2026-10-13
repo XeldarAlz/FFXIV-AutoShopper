@@ -78,6 +78,13 @@ internal sealed partial class ItemCatalog : IItemNameResolver, IItemTraits, IIte
         return false;
     }
 
+    // Any item, marketable or not, read straight from the game data; for the rare name the catalog does not hold.
+    public static bool TryGetGameName(uint itemId, out string name)
+    {
+        name = Svc.Data.GetExcelSheet<Item>().GetRowOrDefault(itemId) is { } row ? row.Name.ExtractText().Trim() : string.Empty;
+        return name.Length > 0;
+    }
+
     public NameResolution Resolve(string nameOrId)
     {
         var current = snapshot;

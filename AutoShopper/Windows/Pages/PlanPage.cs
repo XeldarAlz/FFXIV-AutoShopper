@@ -43,14 +43,13 @@ internal sealed partial class PlanPage
         DrawHeader(plugin, list);
         if (list is null)
         {
-            EmptyCard(FontAwesomeIcon.ClipboardList, Loc.T(L.Plan.NoList));
-            Styling.VSpace(10f);
-            if (PillButton.Draw("##ashop_plan_open_lists", Loc.T(L.Shop.OpenLists), Styling.AccentGlow, PillButton.Emphasis.Tinted, FontAwesomeIcon.ClipboardList,
-                    height: Layout.ActionPillHeight))
-            {
-                window.Show(AppWindow.Page.Lists);
-            }
+            DrawOpenListsCard(window, FontAwesomeIcon.ClipboardList, Loc.T(L.Plan.NoList));
+            return;
+        }
 
+        if (list.Lines.Count == 0)
+        {
+            DrawOpenListsCard(window, FontAwesomeIcon.ListUl, Loc.T(L.Plan.EmptyList));
             return;
         }
 

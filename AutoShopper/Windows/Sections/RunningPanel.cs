@@ -72,6 +72,7 @@ internal static class RunningPanel
         DrawRoute(current, run);
         DrawLines(current);
         DrawIssues(current);
+        DrawSummaryAction(run);
     }
 
     // The stops behind and ahead, the trip under way with its time, why stops were skipped, and the way home.
@@ -541,5 +542,38 @@ internal static class RunningPanel
         }
 
         return cachedZoneName;
+    }
+
+    private const string SummaryMenuId = "##ashop_run_summary_menu";
+    private const float SummaryNoticeGap = 12f;
+
+    private static TransientNotice summaryNotice;
+
+    // Copies what the run did so far, or all of it once it ended, as text or JSON.
+    private static void DrawSummaryAction(ShopRunState run)
+    {
+        var scale = ImGuiHelpers.GlobalScale;
+        Styling.VSpace(SectionGap);
+        var origin = ImGui.GetCursorScreenPos();
+        var width = ImGui.GetContentRegionAvail().X;
+        var height = Layout.ActionPillHeight * scale;
+        var label = Loc.T(L.Exports.CopyRunSummary);
+        var buttonWidth = PillButton.Width(label, FontAwesomeIcon.FileExport);
+        ImGui.SetCursorScreenPos(new Vector2(origin.X + width - buttonWidth, origin.Y));
+        if (PillButton.Draw("##ashop_run_copy_summary", label, Styling.AccentGlow, PillButton.Emphasis.Ghost, FontAwesomeIcon.FileExport,
+                height: Layout.ActionPillHeight, tooltip: Loc.T(L.Exports.SummaryHelp)))
+        {
+            ImGui.OpenPopup(SummaryMenuId);
+        }
+
+        if (SummaryMenu.Draw(SummaryMenuId, out var format))
+        {
+            SummaryMenu.Deliver(Plugin.Instance.Summaries.Export(run, format), ref summaryNotice);
+        }
+
+        var noticeRight = origin.X + width - buttonWidth - SummaryNoticeGap * scale;
+        summaryNotice.DrawRight(noticeRight, origin.Y + height * 0.5f, noticeRight - origin.X);
+        ImGui.SetCursorScreenPos(origin);
+        ImGui.Dummy(new Vector2(width, height));
     }
 }

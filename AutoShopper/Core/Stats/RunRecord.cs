@@ -13,6 +13,9 @@ public sealed class RunRecord
     public bool CrossedDataCenter { get; set; }
     public RunOutcome? Outcome { get; set; }
 
+    // Finds the run's events in the purchase journal for its summary; null on runs recorded before it was kept.
+    public Guid? RunId { get; set; }
+
     public string ListName { get; set; } = "";
     public bool DryRun { get; set; }
     public long Spent { get; set; }

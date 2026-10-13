@@ -20,6 +20,7 @@ internal sealed class ShoppingListStore
     private readonly Configuration configuration;
     private readonly ItemCatalog catalog;
     private readonly InventoryReader inventory;
+    private readonly Predicate<uint> isCrystal;
 
     private ListAnalysis? analysis;
     private ShoppingList? analysedList;
@@ -31,6 +32,7 @@ internal sealed class ShoppingListStore
         this.configuration = configuration;
         this.catalog = catalog;
         this.inventory = inventory;
+        isCrystal = IsCrystal;
         if (Repair())
         {
             configuration.Save();
@@ -172,6 +174,17 @@ internal sealed class ShoppingListStore
         return AddLineResult.Added;
     }
 
+    public CrystalRestockOutcome AddCrystals(ShoppingList list, CrystalElements elements, CrystalKinds kinds, int target)
+    {
+        var outcome = CrystalRestock.Apply(list.Lines, elements, kinds, target, isCrystal);
+        if (outcome.Added + outcome.Updated > 0)
+        {
+            Touch(list);
+        }
+
+        return outcome;
+    }
+
     public void RemoveLine(ShoppingList list, Guid lineId)
     {
         var index = list.IndexOfLine(lineId);
@@ -221,6 +234,8 @@ internal sealed class ShoppingListStore
         inventory.Watch(analysis.ItemIds);
         return analysis;
     }
+
+    private bool IsCrystal(uint itemId) => catalog.TryGet(itemId, out var item) && item.IsCrystal;
 
     private static int AppendRows(ShoppingList list, IReadOnlyList<ImportRow> rows)
     {

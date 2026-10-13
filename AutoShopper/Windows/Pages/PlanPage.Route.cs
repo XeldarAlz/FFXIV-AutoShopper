@@ -20,7 +20,7 @@ internal sealed partial class PlanPage
 
     private static void DrawRoute(PlanView current)
     {
-        SectionTitle(Loc.T(L.Plan.Route), Loc.T(L.Plan.RouteNote));
+        RouteTitle(current);
         var route = current.Route;
         if (route.Length == 0)
         {

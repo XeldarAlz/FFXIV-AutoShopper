@@ -5,10 +5,10 @@ namespace AutoShopper.Core.Shopping.Import;
 
 internal static class JsonListParser
 {
-    // The native format nests three levels deep; anything deeper is not one of ours.
+    // The native format nests three levels deep and an Artisan list four; anything deeper is not one of ours.
     private const int MaximumDepth = 8;
 
-    private static readonly JsonDocumentOptions options = new()
+    public static readonly JsonDocumentOptions DocumentOptions = new()
     {
         MaxDepth = MaximumDepth,
         CommentHandling = JsonCommentHandling.Skip,
@@ -21,7 +21,7 @@ internal static class JsonListParser
         JsonDocument document;
         try
         {
-            document = JsonDocument.Parse(text, options);
+            document = JsonDocument.Parse(text, DocumentOptions);
         }
         catch (JsonException)
         {
@@ -223,7 +223,7 @@ internal static class JsonListParser
         row.Name = ShoppingLimits.CleanName(name, ShoppingLimits.MaximumItemNameLength);
     }
 
-    private static NumberStatus NumberOf(JsonElement value, out long number)
+    public static NumberStatus NumberOf(JsonElement value, out long number)
     {
         number = 0;
         switch (value.ValueKind)
@@ -246,5 +246,5 @@ internal static class JsonListParser
         }
     }
 
-    private static bool Is(JsonProperty property, string name) => property.NameEquals(name) || ImportFields.Is(property.Name, name);
+    public static bool Is(JsonProperty property, string name) => property.NameEquals(name) || ImportFields.Is(property.Name, name);
 }

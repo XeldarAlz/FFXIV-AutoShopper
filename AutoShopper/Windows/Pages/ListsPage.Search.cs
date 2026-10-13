@@ -40,11 +40,13 @@ internal sealed partial class ListsPage
         var origin = ImGui.GetCursorScreenPos();
         var width = ImGui.GetContentRegionAvail().X;
         var gap = ToolbarGap * scale;
+        var crystalsLabel = Loc.T(L.Lists.Crystals);
         var importLabel = Loc.T(L.Lists.Import);
         var exportLabel = Loc.T(L.Lists.Export);
+        var crystalsWidth = PillButton.Width(crystalsLabel, FontAwesomeIcon.Gem);
         var importWidth = PillButton.Width(importLabel, FontAwesomeIcon.FileImport);
         var exportWidth = PillButton.Width(exportLabel, FontAwesomeIcon.FileExport);
-        var searchWidth = MathF.Max(1f, width - importWidth - exportWidth - gap * 2f);
+        var searchWidth = MathF.Max(1f, width - crystalsWidth - importWidth - exportWidth - gap * 3f);
 
         var wasFocused = searchFocused;
         ImGui.SetCursorScreenPos(origin);
@@ -54,13 +56,16 @@ internal sealed partial class ListsPage
         HandleSearchKeys(plugin, list, wasFocused || searchFocused);
 
         ImGui.SetCursorScreenPos(origin + new Vector2(searchWidth + gap, 0f));
+        DrawCrystalsButton(crystalsLabel);
+
+        ImGui.SetCursorScreenPos(origin + new Vector2(searchWidth + crystalsWidth + gap * 2f, 0f));
         if (PillButton.Draw("##ashop_lists_import", importLabel, Styling.AccentGlow, importOpen ? PillButton.Emphasis.Filled : PillButton.Emphasis.Tinted,
                 FontAwesomeIcon.FileImport, height: Layout.ActionPillHeight))
         {
             ToggleImport();
         }
 
-        ImGui.SetCursorScreenPos(origin + new Vector2(searchWidth + importWidth + gap * 2f, 0f));
+        ImGui.SetCursorScreenPos(origin + new Vector2(searchWidth + crystalsWidth + importWidth + gap * 3f, 0f));
         if (PillButton.Draw("##ashop_lists_export", exportLabel, Styling.TextSecondary, PillButton.Emphasis.Ghost, FontAwesomeIcon.FileExport,
                 enabled: list.Lines.Count > 0, height: Layout.ActionPillHeight, tooltip: Loc.T(L.Lists.ExportHelp)))
         {
@@ -70,6 +75,15 @@ internal sealed partial class ListsPage
         DrawExportMenu(plugin.Items, list);
         ImGui.SetCursorScreenPos(origin);
         ImGui.Dummy(new Vector2(width, Layout.ActionPillHeight * scale));
+    }
+
+    private void DrawCrystalsButton(string label)
+    {
+        if (PillButton.Draw("##ashop_lists_crystals", label, Styling.AccentBlue, crystalsOpen ? PillButton.Emphasis.Filled : PillButton.Emphasis.Tinted,
+                FontAwesomeIcon.Gem, height: Layout.ActionPillHeight, tooltip: Loc.T(L.Lists.CrystalsHelp)))
+        {
+            ToggleCrystals();
+        }
     }
 
     private void DrawExportMenu(ItemCatalog catalog, ShoppingList list)
