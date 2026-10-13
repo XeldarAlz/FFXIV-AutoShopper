@@ -13,10 +13,12 @@ public static class ListImporter
 
     public static ImportFormat Detect(string text)
     {
+        // A text this long is refused as too large before it is read, so its shape is not worth scanning.
+        var scansShape = text.Length <= ShoppingLimits.MaximumImportBytes;
         var start = text.AsSpan().TrimStart();
         if (!start.IsEmpty && start[0] == '{')
         {
-            return ImportFormat.Json;
+            return scansShape && ArtisanListParser.LooksLikeArtisan(text) ? ImportFormat.ArtisanList : ImportFormat.Json;
         }
 
         var position = 0;
@@ -27,21 +29,28 @@ public static class ListImporter
                 continue;
             }
 
-            return CsvListParser.LooksLikeHeader(line.Trim()) ? ImportFormat.Csv : ImportFormat.Text;
+            if (CsvListParser.LooksLikeHeader(line.Trim()))
+            {
+                return ImportFormat.Csv;
+            }
+
+            break;
         }
 
-        return ImportFormat.Text;
+        return scansShape && TeamcraftTextParser.LooksLikeTeamcraft(text) ? ImportFormat.TeamcraftText : ImportFormat.Text;
     }
 
-    public static ImportResult Parse(string text)
+    public static ImportResult Parse(string text) => Parse(text, Detect(text.TrimStart(ByteOrderMark)));
+
+    // Reads the text as the given format, for when the user names the source instead of leaving it to detection.
+    public static ImportResult Parse(string text, ImportFormat format)
     {
         text = text.TrimStart(ByteOrderMark);
         if (string.IsNullOrWhiteSpace(text))
         {
-            return ImportResult.Failed(ImportFormat.Text, ImportError.Empty);
+            return ImportResult.Failed(format, ImportError.Empty);
         }
 
-        var format = Detect(text);
         if (Encoding.UTF8.GetByteCount(text) > ShoppingLimits.MaximumImportBytes)
         {
             return ImportResult.Failed(format, ImportError.TooLarge);
@@ -51,6 +60,8 @@ public static class ListImporter
         {
             ImportFormat.Json => JsonListParser.Parse(text),
             ImportFormat.Csv => CsvListParser.Parse(text),
+            ImportFormat.ArtisanList => ArtisanListParser.Parse(text),
+            ImportFormat.TeamcraftText => TeamcraftTextParser.Parse(text),
             _ => TextListParser.Parse(text),
         };
     }
