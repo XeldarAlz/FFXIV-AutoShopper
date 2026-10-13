@@ -69,7 +69,42 @@ public sealed class ApiRequestTests
         Assert.Equal(RequestCheck.Invalid("json"), ApiRequests.ReadQuote("{\"schema\":", out _));
         Assert.Equal(RequestCheck.Invalid("json"), ApiRequests.ReadRun("[1,2]", out _));
         Assert.Equal(RequestCheck.Invalid("json"), ApiRequests.ReadRun("null", out _));
-        Assert.Equal(RequestCheck.Invalid("json"), ApiRequests.ReadRun("{\"maxSpend\":99999999999999999999}", out _));
+        Assert.Equal(RequestCheck.Invalid("json"), ApiRequests.ReadRun("{\"schema\":1,\"maxSpend\":99999999999999999999}", out _));
+        Assert.Equal(RequestCheck.Invalid("json"), ApiRequests.ReadRun("{\"schema\":1} trailing", out _));
+    }
+
+    [Fact]
+    public void ALaterSchemaIsUnsupportedWhateverShapeItHas()
+    {
+        const string json = """{"schema":2,"caller":"AutoGcSupply","items":{"5057":{"quantity":"three"}}}""";
+
+        var check = ApiRequests.ReadQuote(json, out var request);
+
+        Assert.Equal(new RequestCheck(ApiRefusal.UnsupportedSchema, "schema"), check);
+        Assert.Null(request);
+    }
+
+    [Fact]
+    public void ARunWithoutSchemaOneIsUnsupportedBeforeItsShapeIsRead()
+    {
+        var unsupported = new RequestCheck(ApiRefusal.UnsupportedSchema, "schema");
+
+        Assert.Equal(unsupported, ApiRequests.ReadRun("""{"caller":"AutoGcSupply","lines":"all of them"}""", out _));
+        Assert.Equal(unsupported, ApiRequests.ReadRun("""{"schema":"1","maxSpend":1}""", out _));
+        Assert.Equal(unsupported, ApiRequests.ReadRun("""{"schema":1.5,"maxSpend":1}""", out _));
+        Assert.Equal(unsupported, ApiRequests.ReadRun("""{"lines":[{"schema":1}],"maxSpend":{"schema":1}}""", out _));
+    }
+
+    [Fact]
+    public void TheSchemaIsFoundWhateverItsCaseAndPlace()
+    {
+        const string json = """{"caller":"AutoGcSupply","items":[{"itemId":5057,"quantity":3}],"SCHEMA":1}""";
+
+        var check = ApiRequests.ReadQuote(json, out var request);
+
+        Assert.True(check.IsValid);
+        Assert.NotNull(request);
+        Assert.Equal(1, request.Schema);
     }
 
     [Fact]

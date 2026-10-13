@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Text;
+using System.Text.Json.Serialization.Metadata;
 using AutoShopper.Core.Shopping.Model;
 
 namespace AutoShopper.Core.Api.Model;
@@ -23,11 +25,17 @@ internal static class ApiRequests
     private const string LinesField = "lines";
     private const string MaxSpendField = "maxSpend";
 
-    public static RequestCheck ReadQuote(string? json, [NotNullWhen(true)] out QuoteRequest? request)
-        => ApiJson.TryRead(json, ApiJsonContext.Default.QuoteRequest, out request) ? Check(request) : RequestCheck.Invalid(JsonField);
+    public static RequestCheck ReadQuote(string? json, out QuoteRequest? request)
+    {
+        var read = Read(json, ApiJsonContext.Default.QuoteRequest, out request);
+        return read.IsValid ? Check(request!) : read;
+    }
 
-    public static RequestCheck ReadRun(string? json, [NotNullWhen(true)] out RunRequest? request)
-        => ApiJson.TryRead(json, ApiJsonContext.Default.RunRequest, out request) ? Check(request) : RequestCheck.Invalid(JsonField);
+    public static RequestCheck ReadRun(string? json, out RunRequest? request)
+    {
+        var read = Read(json, ApiJsonContext.Default.RunRequest, out request);
+        return read.IsValid ? Check(request!) : read;
+    }
 
     public static RequestCheck Check(QuoteRequest request)
     {
@@ -141,6 +149,29 @@ internal static class ApiRequests
     {
         var cleaned = ShoppingLimits.CleanName(displayName, ApiContract.MaximumNameLength);
         return cleaned.Length > 0 ? cleaned : caller;
+    }
+
+    private static RequestCheck Read<T>(string? json, JsonTypeInfo<T> type, out T? request)
+        where T : class
+    {
+        request = null;
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return RequestCheck.Invalid(JsonField);
+        }
+
+        var utf8 = Encoding.UTF8.GetBytes(json);
+        if (!ApiJson.TryReadSchema(utf8, out var schema))
+        {
+            return RequestCheck.Invalid(JsonField);
+        }
+
+        if (schema != ApiContract.Schema)
+        {
+            return new RequestCheck(ApiRefusal.UnsupportedSchema, SchemaField);
+        }
+
+        return ApiJson.TryRead(utf8, type, out request) ? RequestCheck.Valid : RequestCheck.Invalid(JsonField);
     }
 
     private static string? LineProblem(RunRequestLine[] lines, int index)

@@ -6,7 +6,7 @@ Lets another Dalamud plugin price items and run a bounded Auto Shopper shopping 
 
 - Dalamud IPC call gates, registered by Auto Shopper with `GetIpcProvider` and unregistered on dispose.
 - Every payload is a JSON string (System.Text.Json, camelCase property names, enums as strings). No custom type crosses plugin load contexts and no `Task` is returned across IPC: long work is started and then polled.
-- Every request and response carries `"schema": 1`. A request with another schema value is refused with `UnsupportedSchema`.
+- Every request and response carries `"schema": 1`. Auto Shopper reads a request's top-level `schema` before anything else: when it is missing or anything but the number 1, the request is refused with `UnsupportedSchema` whatever the rest of it looks like, so a later schema that changes the shape of a request still gets that answer. Text that is not one well-formed JSON object is refused with `InvalidRequest` (field `json`).
 - Calls may arrive on any thread. Auto Shopper reads and checks the request on the calling thread, then moves the work onto the framework thread before touching its controller, ledger or configuration, and answers from managed snapshots. A call made off the framework thread waits for the next framework tick.
 - Requests are read leniently: property names match whatever their case, unknown properties are ignored, and an enum may be given by name or by number (a number outside the enum is refused like any other bad value).
 - Quote ids and run ids are GUID strings such as `"4e1a0b3c-2d5f-4a6b-8c7d-9e0f1a2b3c4d"`. Any GUID format is accepted back.
