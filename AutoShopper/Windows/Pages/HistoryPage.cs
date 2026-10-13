@@ -400,6 +400,11 @@ internal sealed class HistoryPage
             lines += "\n" + Loc.T(L.History.TooltipList, record.ListName);
         }
 
+        if (ReturnHomeLabel(record.ReturnHome) is { } wayHome)
+        {
+            lines += "\n" + Loc.T(L.Route.LabelValue, Loc.T(L.Route.ReturnHome), wayHome);
+        }
+
         return lines;
     }
 
@@ -450,6 +455,17 @@ internal sealed class HistoryPage
 
         TextDraw.At(question, new Vector2(x - gap * 1.5f - questionSize.X, origin.Y + (buttonHeight - questionSize.Y) * 0.5f), Styling.AccentRoseSoft);
     }
+
+    // Rows written before the way home was recorded, and runs that never asked for it, carry no line.
+    private static string? ReturnHomeLabel(ReturnHomeResult? result) => result switch
+    {
+        ReturnHomeResult.AlreadyHome => Loc.T(L.Route.HomeAlready),
+        ReturnHomeResult.Underway => Loc.T(L.Route.HomeUnderway),
+        ReturnHomeResult.Arrived => Loc.T(L.Route.HomeArrived),
+        ReturnHomeResult.Failed => Loc.T(L.Route.HomeFailed),
+        ReturnHomeResult.Skipped => Loc.T(L.Route.HomeSkipped),
+        _ => null,
+    };
 
     private readonly record struct RowText(string When, string Detail);
 }
