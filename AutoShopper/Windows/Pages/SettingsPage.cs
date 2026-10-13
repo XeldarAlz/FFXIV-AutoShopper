@@ -11,7 +11,7 @@ namespace AutoShopper.Windows.Pages;
 
 internal sealed class SettingsPage
 {
-    private enum Tab { General, Shopping, Travel, Humanizer, Safety }
+    private enum Tab { General, Shopping, Market, Travel, Humanizer, Safety }
 
     private readonly record struct Entry(Tab Tab, LocString Label, FontAwesomeIcon Icon, LocString Subtitle);
 
@@ -20,6 +20,7 @@ internal sealed class SettingsPage
     [
         new(Tab.General, L.Settings.CatGeneral, FontAwesomeIcon.Cog, L.Settings.CatGeneralSub),
         new(Tab.Shopping, L.Shopping.Tab, FontAwesomeIcon.Coins, L.Shopping.TabSub),
+        new(Tab.Market, L.Market.Tab, FontAwesomeIcon.Store, L.Market.TabSub),
         new(Tab.Travel, L.Travel.Tab, FontAwesomeIcon.Route, L.Travel.TabSub),
         new(Tab.Humanizer, L.Humanizer.Tab, FontAwesomeIcon.UserClock, L.Humanizer.TabSub),
         new(Tab.Safety, L.Safety.Tab, FontAwesomeIcon.UserSecret, L.Safety.TabSub),
@@ -111,6 +112,9 @@ internal sealed class SettingsPage
                 break;
             case Tab.Shopping:
                 ShoppingSettings.Draw(plugin);
+                break;
+            case Tab.Market:
+                MarketSettings.Draw(configuration);
                 break;
             case Tab.Travel:
                 AfterRunSettings.Draw(configuration);

@@ -66,7 +66,11 @@ The plugin needs two helpers to be installed and loaded: vnavmesh for movement a
 | `/ashop log` | Open the Console page |
 | `/ashop changelog` | Open the Changelog page |
 | `/ashop about` | Open the About page |
+| `/ashop add <item name or id> [quantity]` | Add an item to the selected shopping list |
 | `/ashop pause` | Pause or resume the current run |
+| `/ashop look <item name or id>` | Log every listing of one item at the market board in reach; it never buys (debug helper) |
+| `/ashop mbstatus` | Report whether the market board addresses and hooks of this game version are in place (debug helper) |
+| `/ashop board [city]` | Go to a market board and open it, in the given city or the preferred one; `/ashop board stop` cancels (debug helper) |
 | `/ashop target` | Log targeted NPC's BaseId (debug helper) |
 | `/ashop goto <territory> <x> <y> <z>` | Travel to a point, `/ashop goto stop` cancels (debug helper) |
 | `/ashop goto <world> [<aetheryte>] [i<n>]` | Travel to a world in your region, and on it to a named aetheryte and instance, e.g. `/ashop goto Zalera Wachunpelo i2` (debug helper) |

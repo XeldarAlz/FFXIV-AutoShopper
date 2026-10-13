@@ -24,6 +24,7 @@ internal sealed class ShopPage
     private const float BadgeGap = 8f;
     private const long RevisionStride = 2;
     private const float PlanCardGap = 10f;
+    private const float MarketStatusGap = 12f;
     // The plan card's text is rebuilt at most once a minute for the price age.
     private const long PlanTextRefreshMs = 60_000;
 
@@ -58,6 +59,8 @@ internal sealed class ShopPage
             window.Show(AppWindow.Page.Plugins);
         }
 
+        Styling.VSpace(MarketStatusGap);
+        MarketStatusLine.Draw(plugin.Market.Compatibility, plugin.Configuration.DryRun);
         Styling.VSpace(20f);
         SectionTitle(Loc.T(L.Shop.Lists));
         DrawListCard(plugin.Lists, window);

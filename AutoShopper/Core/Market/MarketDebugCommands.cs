@@ -3,20 +3,21 @@ using System.Threading.Tasks;
 using AutoShopper.Core.Items;
 using AutoShopper.Core.Market.Model;
 using AutoShopper.Core.Shared;
+using AutoShopper.Core.Shopping.Import;
 using AutoShopper.Core.Tasks;
 using AutoShopper.Core.Travel;
 using ECommons.DalamudServices;
 
 namespace AutoShopper.Core.Market;
 
-// /ashop look <item id> reads the listings of one item at the board in reach and writes them to the log;
+// /ashop look <item name or id> reads the listings of one item at the board in reach and writes them to the log;
 // /ashop mbstatus reports whether the market addresses and hooks are in place. Neither ever buys.
 internal static class MarketDebugCommands
 {
     public const string LookSubcommand = "look";
     public const string StatusSubcommand = "mbstatus";
 
-    private const string LookUsage = AshopConstants.LogPrefix + " Usage: /ashop look <item id>, beside a market board.";
+    private const string LookUsage = AshopConstants.LogPrefix + " Usage: /ashop look <item name or id>, beside a market board.";
 
     public static void PrintStatus(MarketServices market)
     {
@@ -35,9 +36,8 @@ internal static class MarketDebugCommands
 
     public static void Look(string arguments, MarketServices market, ItemCatalog items, bool runActive)
     {
-        if (!uint.TryParse(arguments, NumberStyles.None, CultureInfo.InvariantCulture, out var itemId) || itemId == 0)
+        if (!TryResolveItem(arguments, items, out var itemId))
         {
-            Svc.Chat.PrintError(LookUsage);
             return;
         }
 
@@ -68,6 +68,49 @@ internal static class MarketDebugCommands
 
         Print($"Market: looking up item {itemId}; the log lists every listing.");
         automation.Start(new MarketLookTask(itemId, market, items));
+    }
+
+    // An id is taken as it is; a name needs the item data, which loads on first use.
+    private static bool TryResolveItem(string arguments, ItemCatalog items, out uint itemId)
+    {
+        if (arguments.Length == 0)
+        {
+            itemId = 0;
+            Svc.Chat.PrintError(LookUsage);
+            return false;
+        }
+
+        if (uint.TryParse(arguments, NumberStyles.None, CultureInfo.InvariantCulture, out itemId))
+        {
+            if (itemId != 0)
+            {
+                return true;
+            }
+
+            Svc.Chat.PrintError(LookUsage);
+            return false;
+        }
+
+        if (!items.IsReady)
+        {
+            items.EnsureLoading();
+            PrintError("Market: the item data is still loading; try again in a moment, or give the item id.");
+            return false;
+        }
+
+        var resolution = items.Resolve(arguments);
+        switch (resolution.Status)
+        {
+            case ResolutionStatus.Resolved:
+                itemId = resolution.ItemId;
+                return true;
+            case ResolutionStatus.Ambiguous:
+                PrintError($"Market: \"{arguments}\" names {resolution.Candidates.Length} items; give the full name or the item id.");
+                return false;
+            default:
+                PrintError($"Market: no item sold on the market board is named \"{arguments}\".");
+                return false;
+        }
     }
 
     private static bool BoardInReach()
