@@ -1,9 +1,10 @@
 namespace AutoShopper.Core.Travel;
 
 // Where a journey ends: a world, and on it an optional aetheryte (0 for none) and instance (0 for any). It is written
-// to the configuration before a data center transfer, because Lifestream logs the character out to make one. Gateway
-// is the Lifestream city the world change happens at, 0 to leave the choice to Lifestream.
-public readonly record struct JourneyPlan(string World, uint AetheryteId, uint TerritoryId, int Instance, bool ReturnTrip, DateTime StartedAtUtc, int Gateway = 0)
+// to the configuration before a data center transfer, because Lifestream logs the character out to make one, with
+// the character it belongs to (0 when not known). Gateway is the Lifestream city the world change happens at, 0 to
+// leave the choice to Lifestream.
+public readonly record struct JourneyPlan(string World, uint AetheryteId, uint TerritoryId, int Instance, bool ReturnTrip, DateTime StartedAtUtc, int Gateway = 0, ulong CharacterContentId = 0)
 {
     public static JourneyPlan ToWorld(string world, uint aetheryteId, uint territoryId, int instance)
         => new(world, aetheryteId, territoryId, instance, ReturnTrip: false, DateTime.UtcNow);

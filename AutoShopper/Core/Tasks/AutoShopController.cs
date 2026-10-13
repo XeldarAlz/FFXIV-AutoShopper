@@ -125,7 +125,8 @@ internal sealed partial class AutoShopController
     // A logout, a character change or an unload stops the run where it stands and leaves its journal as it is, so
     // the Shop page offers to resume it later; it never resumes on its own. Lifestream's travel is left alone: a
     // transfer under way is picked up as a bare journey at the next login. A run that already ended only loses what
-    // was left of its way home and after-run action.
+    // was left of its way home and after-run action. A dry run's journal lives in memory and cannot be resumed, so
+    // it ends here as stopped and keeps its history row.
     public void Interrupt()
     {
         if (shopRun is not { } run)
@@ -135,11 +136,13 @@ internal sealed partial class AutoShopController
 
         var ending = session;
         var finished = run.FinalState is not null;
+        var wayHome = currentTask is AutoWayHome;
+        var taskWasLive = Svc.Automation.Running;
         stopping = false;
         currentTask = null;
         PauseReason = PauseReason.None;
         Svc.Automation.Stop();
-        ReleaseHelpers();
+        ReleaseHelpers(taskWasLive);
         TravelOwnership.Release(run);
         run.EndTransfer();
         Plugin.Instance.Configuration.ClearPendingContinuation();
@@ -148,9 +151,23 @@ internal sealed partial class AutoShopController
             run.Checkpoint(DateTime.UtcNow);
         }
 
+        if (ending is not null && wayHome)
+        {
+            SetReturnHome(ending, ReturnHomeResult.Failed);
+        }
+
+        var dryEnded = false;
         if (ending is not null && !finished)
         {
-            ending.Interrupted = true;
+            dryEnded = run.DryRun;
+            if (dryEnded)
+            {
+                EndShopRun(ending, RunState.Stopped, "the dry run was interrupted");
+            }
+            else
+            {
+                ending.Interrupted = true;
+            }
         }
 
         FinalizeRun(ending);
@@ -159,6 +176,12 @@ internal sealed partial class AutoShopController
         if (finished)
         {
             Diag($"Run {run.RunId} had ended; what was left of its way home and after-run action is dropped.");
+            return;
+        }
+
+        if (dryEnded)
+        {
+            Diag($"Dry run {run.RunId} interrupted; it ends as stopped, since a dry run cannot be resumed.");
             return;
         }
 
@@ -185,16 +208,16 @@ internal sealed partial class AutoShopController
     }
 
     // The run checks the login once the character stands on the planned world; another character back is interrupted
-    // at once, when the game already tells who logged in.
+    // at once, when the game already tells who logged in, the way home of a finished run included.
     public void OnLogin()
     {
-        if (shopRun is not { TransferLoggedOut: true, FinalState: null } run)
+        if (shopRun is not { TransferLoggedOut: true } run)
         {
             return;
         }
 
         var contentId = ECommons.DalamudServices.Svc.PlayerState.ContentId;
-        Diag("Logged back in during the run's data center transfer.");
+        Diag(run.FinalState is null ? "Logged back in during the run's data center transfer." : "Logged back in during the data center transfer of the run's way home.");
         if (contentId != 0 && run.Authorization is { } authorization && contentId != authorization.CharacterContentId)
         {
             Diag("Another character logged in after the transfer; the run is interrupted.");
@@ -215,9 +238,9 @@ internal sealed partial class AutoShopController
             return false;
         }
 
-        if (currentTask is AutoWayHome)
+        if (currentTask is AutoWayHome home)
         {
-            return journey.ReturnTrip;
+            return journey.ReturnTrip && journey.StartedAtUtc == home.JourneyStartedAtUtc;
         }
 
         return currentTask is AutoShopRun
@@ -254,6 +277,7 @@ internal sealed partial class AutoShopController
     // once it is settled; nothing new starts meanwhile.
     public void Stop()
     {
+        var taskWasLive = Svc.Automation.Running;
         if (shopRun is { InFlight: not null } waiting)
         {
             if (stopping)
@@ -263,9 +287,10 @@ internal sealed partial class AutoShopController
 
             stopping = true;
             currentTask = null;
+            deferredPause = PauseReason.None;
             PauseReason = PauseReason.None;
             Svc.Automation.Stop();
-            ReleaseHelpers();
+            ReleaseHelpers(taskWasLive);
             waiting.Settled = StopAfterSettlement;
             Diag("Stop requested while a purchase is in flight; the run ends once it is answered.");
             ECommons.DalamudServices.Svc.Chat.Print($"{AshopConstants.LogPrefix} {Loc.T(L.Buyer.ChatStopping)}");
@@ -274,14 +299,27 @@ internal sealed partial class AutoShopController
 
         stopping = false;
         var ending = session;
+        var wayHome = currentTask is AutoWayHome;
+        var journey = Svc.Automation.CurrentTask as AutoJourney;
         currentTask = null;
+        deferredPause = PauseReason.None;
         PauseReason = PauseReason.None;
         Svc.Automation.Stop();
+        if (journey is not null)
+        {
+            AutoJourney.EndStopped(journey);
+        }
+
         if (ending is not null)
         {
             EndShopRun(ending, RunState.Stopped, "stopped by the player");
             ending.Outcome ??= RunOutcome.Stopped;
-            ReleaseHelpers();
+            if (wayHome)
+            {
+                SetReturnHome(ending, ReturnHomeResult.Failed);
+            }
+
+            ReleaseHelpers(taskWasLive);
             AbandonTravel("the run was stopped");
         }
 
@@ -313,6 +351,7 @@ internal sealed partial class AutoShopController
     private void BeginRun(ShopSession newSession, Func<ShopSession, AutoCommon> taskFactory, string plan)
     {
         PauseReason = PauseReason.None;
+        deferredPause = PauseReason.None;
         ResetFaultBudget();
         session = newSession;
         runTaskFactory = taskFactory;
@@ -320,11 +359,25 @@ internal sealed partial class AutoShopController
         LaunchRun(newSession);
     }
 
+    // A run task that cannot be built is undone the way a logout undoes a run: an authorized real run stays in the
+    // journal for the Resume card, anything else is cleared.
     private void LaunchRun(ShopSession owningSession)
     {
         progress.Reset();
         progress.SetPhase(RunPhase.Preparing);
-        RunTask(runTaskFactory!(owningSession), () => OnRunEnded(owningSession));
+        if (RunTask(() => runTaskFactory!(owningSession), () => OnRunEnded(owningSession)))
+        {
+            return;
+        }
+
+        if (shopRun is null)
+        {
+            PauseReason = PauseReason.None;
+            ClearRun();
+            return;
+        }
+
+        Interrupt();
     }
 
     private bool CanRestart() => runTaskFactory is not null;
@@ -415,11 +468,24 @@ internal sealed partial class AutoShopController
 
     // The movement library fires OnCompleted off the game thread: its await of the task does not return to the framework
     // scheduler, and the runtime moves the continuation to the thread pool. Recording a run reads the object table, which
-    // Dalamud allows only on the game thread, so the hand-off is moved back there.
-    private void RunTask(AutoCommon task, Action onCompleted)
+    // Dalamud allows only on the game thread, so the hand-off is moved back there. Building a task hooks game functions
+    // and throws when one is missing; false then, once the log and the chat say so, and the caller undoes its setup.
+    private bool RunTask(Func<AutoCommon> build, Action onCompleted)
     {
-        currentTask = task;
-        Svc.Automation.Start(task, OnCompleted: () => _ = ECommons.DalamudServices.Svc.Framework.RunOnFrameworkThread(() => HandOff(task, onCompleted)));
+        try
+        {
+            var task = build();
+            currentTask = task;
+            Svc.Automation.Start(task, OnCompleted: () => _ = ECommons.DalamudServices.Svc.Framework.RunOnFrameworkThread(() => HandOff(task, onCompleted)));
+            return true;
+        }
+        catch (Exception exception)
+        {
+            currentTask = null;
+            RunLog.Error(exception, "A task could not be started");
+            ECommons.DalamudServices.Svc.Chat.PrintError($"{AshopConstants.LogPrefix} {Loc.T(L.Buyer.ChatTaskFailed)}");
+            return false;
+        }
     }
 
     private void HandOff(AutoCommon task, Action onCompleted)
@@ -440,14 +506,20 @@ internal sealed partial class AutoShopController
         runTaskFactory = null;
         progress.Reset();
         stopping = false;
+        deferredPause = PauseReason.None;
         shopRun?.Dispose();
         shopRun = null;
     }
 
     // A stopped task unwinds on a later frame, and after an unload that frame may never come, so the pathfinder is
-    // released here as well.
-    private static void ReleaseHelpers()
+    // released here as well; only when a task of this plugin was live, so pathing the player started is left alone.
+    private static void ReleaseHelpers(bool taskWasLive)
     {
+        if (!taskWasLive)
+        {
+            return;
+        }
+
         NavmeshIPC.Instance.Stop();
     }
 }

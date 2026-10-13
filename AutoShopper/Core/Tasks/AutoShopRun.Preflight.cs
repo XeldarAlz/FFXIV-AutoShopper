@@ -119,9 +119,13 @@ internal sealed partial class AutoShopRun
         var configuration = Owner.Configuration;
         var settings = PlanPreview.SettingsFor(configuration, scope);
         var runWorlds = RunPlanning.AuthorizedWorlds(authorization, scope.PlanWorlds);
+        // The limits the run was authorized with hold across a resume; a journal from before they were recorded
+        // falls back to the settings.
+        var maxStops = authorization.MaxStops ?? settings.MaxStops;
+        var revisitsLeft = Math.Max(0, (authorization.WorldRevisits ?? configuration.WorldRevisits) - run.Revisits);
         // A run whose most stops are used up plans no world, so its route is empty and it ends with what it bought.
-        var worlds = RouteReplanning.TryStopsLeft(settings.MaxStops, run.CompletedWorldIds.Count, out var stopsLeft)
-            ? RouteReplanning.EligibleWorlds(runWorlds, run.CompletedWorldIds, run.Exclusions, configuration.WorldRevisits, authorization)
+        var worlds = RouteReplanning.TryStopsLeft(maxStops, run.CompletedWorldIds.Count + run.Revisits, out var stopsLeft)
+            ? RouteReplanning.EligibleWorlds(runWorlds, run.CompletedWorldIds, run.Exclusions, revisitsLeft, authorization)
             : ImmutableArray<PlanWorld>.Empty;
         var request = RunPlanning.RemainingRequest(authorization, run.Tally, prices.Offers, worlds, settings with { MaxStops = stopsLeft }, run.ExcludedListingKeys);
         var plan = await OffThread(token => new Planner().Plan(request, token), "planning what is left of the run");
@@ -130,7 +134,7 @@ internal sealed partial class AutoShopRun
             return Loc.T(L.Buyer.RefusePlan);
         }
 
-        run.StartRoute(plan, runWorlds, prices, settings.MaxStops);
+        run.StartRoute(plan, runWorlds, prices, maxStops);
         RunLog.Info($"Run: resumed run {run.RunId}; {plan.Stops.Length} stop(s) planned for what is left.");
         Print(Loc.T(L.Buyer.ChatResumed));
         return null;

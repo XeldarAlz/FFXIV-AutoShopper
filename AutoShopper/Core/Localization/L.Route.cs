@@ -42,12 +42,15 @@ internal static partial class L
         public static readonly LocString HomeSkipped = new("route.home.skipped", "Kept off by the Japanese data center setting");
 
         public static readonly LocString ChatTransferContinue = new("route.chat.transferContinue", "Back from the data center transfer on {0}; the run carries on.");
+        public static readonly LocString ChatPauseAfterTransfer = new("route.chat.pauseAfterTransfer", "The data center transfer to {0} is under way, so the run pauses once it is over.");
         public static readonly LocString ChatLeftForResume = new("route.chat.leftForResume", "The run is waiting for you: {0}. Resume it from the Shop page.");
+        public static readonly LocString ChatHeldPaused = new("route.chat.heldPaused", "The trip to {0} is held up by a party, a duty, a trade or an open window. The run is paused; resume it once that is cleared.");
         public static readonly LocString ChatDryStopped = new("route.chat.dryStopped", "The dry run ended: {0}.");
         public static readonly LocString ChatAfterRunDry = new("route.chat.afterRunDry", "Dry run: the after-run action ({0}) is skipped.");
         public static readonly LocString ChatHomeArrived = new("route.chat.homeArrived", "Back home on {0}.");
         public static readonly LocString ChatHomeFailed = new("route.chat.homeFailed", "The way home did not finish; the character stays on {0}.");
         public static readonly LocString ChatHomeSkippedJapan = new("route.chat.homeSkippedJapan", "The way home needs travel between Japanese data centers, which is off in Settings; staying on {0}.");
+        public static readonly LocString ChatHomeOtherRegion = new("route.chat.homeOtherRegion", "The home world is in another region, and travel never leaves the region; staying on {0}.");
         public static readonly LocString ReasonLoggedOut = new("route.reason.loggedOut", "the character logged out");
         public static readonly LocString ReasonOtherCharacter = new("route.reason.otherCharacter", "another character logged in");
         public static readonly LocString ReasonNotOurs = new("route.reason.notOurs", "the login did not complete the planned transfer");

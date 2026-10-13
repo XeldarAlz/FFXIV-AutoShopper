@@ -1,5 +1,4 @@
 using AutoShopper.Core.External;
-using AutoShopper.Core.Ipc;
 using AutoShopper.Core.Travel;
 using ECommons.DalamudServices;
 using System.Globalization;
@@ -63,7 +62,7 @@ internal sealed class AutoGoto(uint territoryId, Vector3 destination) : AutoComm
 
         if (char.IsAsciiDigit(arguments[0]))
         {
-            StartPointTrip(arguments, automation);
+            StartPointTrip(arguments);
             return;
         }
 
@@ -99,28 +98,18 @@ internal sealed class AutoGoto(uint territoryId, Vector3 destination) : AutoComm
             return;
         }
 
-        var journey = automation.CurrentTask is AutoJourney;
+        var journey = automation.CurrentTask as AutoJourney;
         automation.Stop();
-        if (!journey)
+        if (journey is null || !AutoJourney.EndStopped(journey))
         {
             Svc.Chat.Print($"{AshopConstants.LogPrefix} Goto stopped.");
             return;
         }
 
-        // The player's stop ends the journey for good, so a later login must not pick it up again.
-        Plugin.Instance.Configuration.ClearPendingJourney();
-        var lifestream = LifestreamIPC.Instance;
-        if (!lifestream.IsBusy())
-        {
-            Svc.Chat.Print($"{AshopConstants.LogPrefix} Goto stopped.");
-            return;
-        }
-
-        lifestream.Abort();
         Svc.Chat.Print($"{AshopConstants.LogPrefix} Goto stopped; Lifestream's travel was aborted with it.");
     }
 
-    private static void StartPointTrip(string arguments, Automation automation)
+    private static void StartPointTrip(string arguments)
     {
         if (!TryParsePoint(arguments, out var territoryId, out var destination))
         {
@@ -129,7 +118,7 @@ internal sealed class AutoGoto(uint territoryId, Vector3 destination) : AutoComm
         }
 
         Svc.Chat.Print($"{AshopConstants.LogPrefix} Goto: heading to {TerritoryNames.Of(territoryId)} ({territoryId}) at {destination.X:F1}, {destination.Y:F1}, {destination.Z:F1}.");
-        automation.Start(new AutoGoto(territoryId, destination));
+        TaskStarter.TryStart(() => new AutoGoto(territoryId, destination));
     }
 
     private static void StartHomeTrip()

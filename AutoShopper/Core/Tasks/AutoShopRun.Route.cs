@@ -27,6 +27,8 @@ internal sealed partial class AutoShopRun
     // A route refreshes stale estimates at most this often, on top of the price service's own cooldown.
     private const long PriceRefreshIntervalMs = 10 * TimeUnits.MillisecondsPerMinute;
     private const int PriceRefreshBudgetMs = 60_000;
+    // Long enough for a window or a trade to be closed, or a duty queue left, before the run pauses for the player.
+    private const int BlockerClearMs = 30_000;
 
     private TravelFailure lastTravelFailure;
     private string resumeReason = string.Empty;
@@ -60,11 +62,9 @@ internal sealed partial class AutoShopRun
         run.SetState(RunState.Traveling);
         run.SetTravel(crossDataCenter ? TravelPhase.TransferringDataCenter : TravelPhase.ChangingWorld, target.Name);
         await CloseMarketWindows(Scope);
-        if (TransferGuard.Blocker(partyBlocks: false) is { } blocker)
+        if (!await WaitOutBlocker(target.Name, partyBlocks: false))
         {
-            Warn($"Run: the trip to {target.Name} was not started: {blocker}");
-            lastTravelFailure = TravelFailure.Blocked;
-            return StopReach.TravelFailed;
+            return StopReach.Held;
         }
 
         var outcome = await TravelToWorld(JourneyPlan.ToWorldThrough(target.Name, GatewayFor()));
@@ -76,6 +76,20 @@ internal sealed partial class AutoShopRun
         if (!AfterTransferLogin(target))
         {
             return StopReach.LeftForResume;
+        }
+
+        // A pause asked for while the transfer was under way waited for it, and takes effect now; a Resume travels on
+        // from wherever the transfer left the character.
+        if (Owner.Controller.ApplyDeferredPause())
+        {
+            session.CrossedDataCenter |= crossDataCenter && outcome == JourneyOutcome.Arrived;
+            return StopReach.Reached;
+        }
+
+        if (outcome == JourneyOutcome.Blocked)
+        {
+            lastTravelFailure = TravelFailure.Blocked;
+            return await WaitOutBlocker(target.Name, partyBlocks: true) ? StopReach.TravelFailed : StopReach.Held;
         }
 
         if (outcome != JourneyOutcome.Arrived)
@@ -96,6 +110,32 @@ internal sealed partial class AutoShopRun
         NoteWorld();
         RunLog.Info($"Run: arrived on {target.Name} ({target.DataCenterName}).");
         return StopReach.Reached;
+    }
+
+    // A party, a duty queue, a trade or a window in the way holds up every trip alike, so it never counts against the
+    // world: it gets BlockerClearMs to clear, then the run pauses for the player. False once the run paused or stopped.
+    private async Task<bool> WaitOutBlocker(string world, bool partyBlocks)
+    {
+        if (TransferGuard.Blocker(partyBlocks) is not { } blocker)
+        {
+            return true;
+        }
+
+        Warn($"Run: the trip to {world} waits up to {BlockerClearMs / TimeUnits.MillisecondsPerSecond}s: {blocker}");
+        var phase = run.TravelPhase;
+        var target = run.TravelTarget;
+        run.SetTravel(TravelPhase.WaitingToRetry, world);
+        var cleared = await WaitUntilTimed(() => TransferGuard.Blocker(partyBlocks) is null, BlockerClearMs, "trip-blocker");
+        run.SetTravel(phase, target);
+        if (cleared || CancelToken.IsCancellationRequested)
+        {
+            return cleared;
+        }
+
+        Warn($"Run: the trip to {world} is still held up ({TransferGuard.Blocker(partyBlocks) ?? "cleared"}); the run pauses for the player");
+        PrintError(Loc.T(L.Route.ChatHeldPaused, world));
+        Owner.Controller.Pause(PauseReason.Manual);
+        return false;
     }
 
     // False leaves the run for the player's Resume: the character is logged out, or the login after the logout was not
@@ -207,6 +247,12 @@ internal sealed partial class AutoShopRun
     private async Task AfterTravelFailure(int stopIndex, PlanWorld world)
     {
         var failure = lastTravelFailure == TravelFailure.None ? TravelFailure.Abandoned : lastTravelFailure;
+        if (failure == TravelFailure.Blocked)
+        {
+            RunLog.Info($"Run: the trip to {world.Name} was held up and is cleared now; trying it again.");
+            return;
+        }
+
         var currentDataCenterId = Worlds.TryCurrent(out var current) ? current.DataCenterId : 0;
         var step = run.RecordTravelFailure(world, failure, currentDataCenterId);
         run.AddIssue(RunIssueReason.TravelFailed, 0, world.WorldId, 0);
@@ -259,7 +305,7 @@ internal sealed partial class AutoShopRun
             return;
         }
 
-        var revisitsLeft = Math.Max(0, Owner.Configuration.WorldRevisits - run.Revisits);
+        var revisitsLeft = Math.Max(0, (authorization.WorldRevisits ?? Owner.Configuration.WorldRevisits) - run.Revisits);
         var eligible = RouteReplanning.EligibleWorlds(run.RunWorlds, run.CompletedWorldIds, run.Exclusions, revisitsLeft, authorization);
         if (run.Exclusions.TravelHalted)
         {

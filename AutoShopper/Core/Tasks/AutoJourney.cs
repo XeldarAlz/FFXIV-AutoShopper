@@ -7,9 +7,24 @@ namespace AutoShopper.Core.Tasks;
 // One journey on its own: for the goto command, and for a login that picks up a plan the data center transfer interrupted.
 internal sealed class AutoJourney(JourneyPlan plan, bool resumed) : AutoCommon
 {
-    public static void Start(JourneyPlan plan) => clib.Services.Svc.Automation.Start(new AutoJourney(plan, resumed: false));
+    public static void Start(JourneyPlan plan) => TaskStarter.TryStart(() => new AutoJourney(plan, resumed: false));
 
-    public static void Resume(JourneyPlan plan) => clib.Services.Svc.Automation.Start(new AutoJourney(plan, resumed: true));
+    // A journey that cannot be picked up is over, so its plan does not wait for the next login.
+    public static void Resume(JourneyPlan plan)
+    {
+        if (!TaskStarter.TryStart(() => new AutoJourney(plan, resumed: true)))
+        {
+            Plugin.Instance.Configuration.ClearPendingJourney();
+        }
+    }
+
+    // The player's stop ends the journey for good: a later login must not pick its plan up again, and Lifestream's
+    // world change is stopped only when this journey started it. True when Lifestream was told to stop.
+    public static bool EndStopped(AutoJourney journey)
+    {
+        Plugin.Instance.Configuration.ClearPendingJourney();
+        return TravelOwnership.AbortIfOwnedBy(journey, "the journey was stopped");
+    }
 
     protected override async Task Execute()
     {

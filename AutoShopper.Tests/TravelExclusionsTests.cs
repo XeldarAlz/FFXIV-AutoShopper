@@ -22,6 +22,22 @@ public sealed class TravelExclusionsTests
     }
 
     [Fact]
+    public void ATripHeldUpByAPartyADutyOrAWindowNeverCountsAgainstTheWorld()
+    {
+        var exclusions = new TravelExclusions();
+
+        for (var attempt = 0; attempt < TravelExclusions.AttemptsPerWorld + 2; attempt++)
+        {
+            Assert.Equal(ExclusionStep.Retry, exclusions.Record(Beta, TravelFailure.Blocked, PrimaryDataCenter));
+        }
+
+        Assert.False(exclusions.IsExcluded(Beta));
+        Assert.Equal(0, exclusions.Failures(Beta.WorldId));
+        Assert.True(exclusions.ExcludedWorldIds.IsEmpty);
+        Assert.False(exclusions.TravelHalted);
+    }
+
+    [Fact]
     public void ARefusedOrCongestedWorldIsLeftOutAtOnce()
     {
         var exclusions = new TravelExclusions();

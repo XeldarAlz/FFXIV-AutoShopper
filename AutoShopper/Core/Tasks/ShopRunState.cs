@@ -138,8 +138,8 @@ internal sealed class ShopRunState : IDisposable
     public static ShopRunState Fresh(MarketServices market, IRunJournal journal, bool dryRun, string listName)
         => new(market, journal, Guid.NewGuid(), dryRun) { ListName = listName };
 
-    // A run the journal says was interrupted: its authorization, its confirmed purchases and its exclusions come back;
-    // its plan is made again from fresh prices.
+    // A run the journal says was interrupted: its authorization, its confirmed purchases, its exclusions and the
+    // revisits it made come back; its plan is made again from fresh prices.
     public static ShopRunState FromJournal(MarketServices market, IRunJournal journal, JournalProgress progress)
     {
         var authorization = progress.Authorization!;
@@ -150,6 +150,7 @@ internal sealed class ShopRunState : IDisposable
             Tally = RunTally.Restore(authorization.Demands, progress.ConfirmedPurchases()),
             AttemptCount = progress.AttemptCount,
             FailedAttemptCount = progress.FailedAttemptCount,
+            Revisits = progress.Revisits,
         };
         for (var index = 0; index < progress.ExcludedListingKeys.Length; index++)
         {
@@ -444,6 +445,7 @@ internal sealed class ShopRunState : IDisposable
             ExcludedWorldIds = Exclusions.ExcludedWorldIds,
             AttemptCount = AttemptCount,
             FailedAttemptCount = FailedAttemptCount,
+            Revisits = Revisits,
         });
         if (!written)
         {

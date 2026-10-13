@@ -73,7 +73,9 @@ internal sealed partial class AutoShopController
         var homeKnown = Worlds.TryHome(out var home);
         var currentKnown = Worlds.TryCurrent(out var current);
         var away = homeKnown && currentKnown && home.Id != current.Id;
-        var wayHomeAllowed = !away || WayHomeAllowed(home, current, configuration.AllowJapaneseDataCenters);
+        // Travel never leaves the region the character stands in, so a home world outside it cannot be reached.
+        var sameRegion = !away || Worlds.SameRegion(home, current);
+        var wayHomeAllowed = !away || (sameRegion && WayHomeAllowed(home, current, configuration.AllowJapaneseDataCenters));
         var choice = AfterRunPolicy.Decide(new AfterRunFacts
         {
             CompletedByStopCondition = ending.CompletedByStopCondition,
@@ -92,8 +94,12 @@ internal sealed partial class AutoShopController
             return choice;
         }
 
-        SetReturnHome(ending, ReturnHomeFor(configuration.ReturnHomeAfterRun, choice.WayHome, homeKnown && currentKnown, away, wayHomeAllowed));
-        if (configuration.ReturnHomeAfterRun && away && !wayHomeAllowed)
+        SetReturnHome(ending, ReturnHomeFor(configuration.ReturnHomeAfterRun, choice.WayHome, homeKnown && currentKnown, away, wayHomeAllowed, sameRegion));
+        if (configuration.ReturnHomeAfterRun && away && !sameRegion)
+        {
+            ECommons.DalamudServices.Svc.Chat.PrintError($"{AshopConstants.LogPrefix} {Loc.T(L.Route.ChatHomeOtherRegion, current.Name)}");
+        }
+        else if (configuration.ReturnHomeAfterRun && away && !wayHomeAllowed)
         {
             ECommons.DalamudServices.Svc.Chat.Print($"{AshopConstants.LogPrefix} {Loc.T(L.Route.ChatHomeSkippedJapan, current.Name)}");
         }
@@ -106,7 +112,7 @@ internal sealed partial class AutoShopController
         return choice;
     }
 
-    private static ReturnHomeResult ReturnHomeFor(bool wanted, bool travelling, bool worldsKnown, bool away, bool allowed)
+    private static ReturnHomeResult ReturnHomeFor(bool wanted, bool travelling, bool worldsKnown, bool away, bool allowed, bool sameRegion)
     {
         if (!wanted)
         {
@@ -128,7 +134,7 @@ internal sealed partial class AutoShopController
             return ReturnHomeResult.AlreadyHome;
         }
 
-        return allowed ? ReturnHomeResult.Failed : ReturnHomeResult.Skipped;
+        return allowed || !sameRegion ? ReturnHomeResult.Failed : ReturnHomeResult.Skipped;
     }
 
     private static string ActionName(AfterRunAction action) => action switch
@@ -159,23 +165,37 @@ internal sealed partial class AutoShopController
         Plugin.Instance.History.Update();
     }
 
+    // A way home that did not run to its own end, a fault for one, says nothing of where the character stands, so the
+    // after-run action is not taken after it.
     private void RunChain(bool wayHome, AfterRunAction? action)
     {
         if (wayHome)
         {
             Diag(action is { } then ? $"Run completed; taking the way home, then after-run action {then}." : "Run completed; taking the way home.");
             var ending = session;
-            var trip = new AutoWayHome(shopRun);
-            RunTask(trip, () =>
+            AutoWayHome? trip = null;
+            var started = RunTask(() => trip = new AutoWayHome(shopRun), () =>
             {
+                var ended = trip!.Result != ReturnHomeResult.Underway;
+                var result = ended ? trip.Result : ReturnHomeResult.Failed;
                 Diag($"The way home finished ({trip.Result}).");
                 if (ending is not null)
                 {
-                    SetReturnHome(ending, trip.Result);
+                    SetReturnHome(ending, result);
                 }
 
-                RunChain(wayHome: false, action);
+                RunChain(wayHome: false, ended ? action : null);
             });
+            if (!started)
+            {
+                if (ending is not null)
+                {
+                    SetReturnHome(ending, ReturnHomeResult.Failed);
+                }
+
+                ClearRun();
+            }
+
             return;
         }
 
@@ -188,16 +208,31 @@ internal sealed partial class AutoShopController
         ClearRun();
     }
 
+    // The action is the run's character's alone: after a transfer home another character may stand in its place.
     private void RunAfterAction(AfterRunAction action)
     {
+        var contentId = shopRun?.Authorization?.CharacterContentId ?? 0;
+        if (contentId == 0 || contentId != ECommons.DalamudServices.Svc.PlayerState.ContentId)
+        {
+            Diag($"After-run action {action} skipped: the character logged in is not the one the run belongs to.");
+            ClearRun();
+            return;
+        }
+
         Diag($"Starting after-run action {action}.");
-        AutoCommon task = action == AfterRunAction.ReturnToInn ? new AutoReturnToInn() : new AutoAfterRun(action);
-        RunTask(task, () =>
+        var started = RunTask(() => AfterRunTask(action, contentId), () =>
         {
             Diag($"After-run action {action} finished.");
             ClearRun();
         });
+        if (!started)
+        {
+            ClearRun();
+        }
     }
+
+    private static AutoCommon AfterRunTask(AfterRunAction action, ulong contentId)
+        => action == AfterRunAction.ReturnToInn ? new AutoReturnToInn() : new AutoAfterRun(action, contentId);
 
     // Idempotent through Recorded, so an explicit Stop and a finished task can both call it.
     private void FinalizeRun(ShopSession? ending)

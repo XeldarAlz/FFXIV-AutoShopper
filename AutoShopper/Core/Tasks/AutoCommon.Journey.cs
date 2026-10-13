@@ -46,6 +46,9 @@ public abstract partial class AutoCommon
     // When the hop under way was asked for, so a congestion message from an earlier trip is not taken for this one.
     private long hopRequestedAtMs;
 
+    // The start of the journey this task is on, which names its pending journey in the configuration.
+    internal DateTime JourneyStartedAtUtc { get; private set; }
+
     protected Task<JourneyOutcome> TravelHome()
     {
         if (Worlds.TryHome(out var home))
@@ -62,6 +65,7 @@ public abstract partial class AutoCommon
     // A data center transfer gives up at the earlier of its own budget and giveUpAtUtc, when one is given.
     protected async Task<JourneyOutcome> TravelToWorld(JourneyPlan plan, bool resumed = false, DateTime? giveUpAtUtc = null)
     {
+        JourneyStartedAtUtc = plan.StartedAtUtc;
         JourneyOutcome outcome;
         try
         {
@@ -231,14 +235,16 @@ public abstract partial class AutoCommon
 
         if (crossDataCenter)
         {
-            // Written before the request, because Lifestream logs the character out to make the transfer.
+            // Written before the request, because Lifestream logs the character out to make the transfer, and bound to
+            // the character, so a login of another one never picks it up.
+            var pending = plan with { CharacterContentId = Svc.PlayerState.ContentId };
             if (ContinuationFor(plan, target) is { } continuation)
             {
-                Plugin.Instance.Configuration.SetPendingJourney(plan, continuation);
+                Plugin.Instance.Configuration.SetPendingJourney(pending, continuation);
             }
             else
             {
-                Plugin.Instance.Configuration.SetPendingJourney(plan);
+                Plugin.Instance.Configuration.SetPendingJourney(pending);
             }
         }
 
@@ -246,14 +252,15 @@ public abstract partial class AutoCommon
         Diag($"{label}: asking Lifestream for a {kind} to {target.Name}{(plan.Gateway > 0 ? $" through gateway {plan.Gateway}" : string.Empty)} ({ConditionTag()})");
         hopRequestedAtMs = Environment.TickCount64;
         lifestream.TeleportAndChangeWorld(target.Name, crossDataCenter, plan.Gateway);
+        // Lifestream was idle right before the request, so busy at once, or by the next frame, is this task's own
+        // operation; busy only later may be work someone else started meanwhile.
+        if (lifestream.IsBusy() || await BusyNextFrame())
+        {
+            TravelOwnership.Claim(TravelOwner);
+        }
+
         if (await WaitUntilTimed(() => HopStarted(target.Id), HopStartWindowMs, $"{label}-hop-start", JourneyPollFrames))
         {
-            // Lifestream was idle right before the request, so busy now is this task's own operation.
-            if (lifestream.IsBusy())
-            {
-                TravelOwnership.Claim(TravelOwner);
-            }
-
             return JourneyOutcome.Arrived;
         }
 
@@ -277,9 +284,15 @@ public abstract partial class AutoCommon
     }
 
     // The game refuses a data center transfer to a party member, so a party is left first rather than ending the
-    // journey; anything else the relog would tear down refuses the transfer. False has already said why.
+    // journey; anything else the relog would tear down refuses the transfer, and is checked before the party is left,
+    // so a transfer that cannot go anyway never costs the player their party. False has already said why.
     private async Task<bool> PrepareDataCenterTransfer(WorldInfo target, string label)
     {
+        if (TransferGuard.Blocker(partyBlocks: false) is { } early)
+        {
+            return RefuseTransfer(target, label, early);
+        }
+
         if (PartyOps.InParty())
         {
             Diag($"{label}: in a party before the data center transfer to {target.Name}; leaving it, since the game refuses the transfer otherwise");
@@ -290,14 +303,20 @@ public abstract partial class AutoCommon
             }
         }
 
-        if (TransferGuard.Blocker() is not { } reason)
-        {
-            return true;
-        }
+        return TransferGuard.Blocker() is not { } reason || RefuseTransfer(target, label, reason);
+    }
 
+    private bool RefuseTransfer(WorldInfo target, string label, string reason)
+    {
         Warn($"{label}: the data center transfer to {target.Name} was not started: {reason}");
         Svc.Chat.PrintError($"{AshopConstants.LogPrefix} The trip to {target.Name} on {target.DataCenterName} was not started: {reason}.");
         return false;
+    }
+
+    private async Task<bool> BusyNextFrame()
+    {
+        await NextFrame(1);
+        return LifestreamIPC.Instance.IsBusy();
     }
 
     private static bool HopStarted(uint targetWorldId)
@@ -337,8 +356,10 @@ public abstract partial class AutoCommon
                 return TurnedAway(target, kind, label);
             }
 
+            // Logged in comes before the character exists and the zone has loaded; Lifestream's idle clock starts then.
             var busy = lifestream.IsBusy();
-            if (busy || !loggedIn)
+            var settling = player is null || Svc.Condition[ConditionFlag.BetweenAreas] || Svc.Condition[ConditionFlag.BetweenAreas51];
+            if (busy || !loggedIn || settling)
             {
                 idleSinceMs = now;
             }
@@ -386,18 +407,13 @@ public abstract partial class AutoCommon
         return JourneyOutcome.Congested;
     }
 
-    // Lifestream is told to stop, so a transfer still in its queue does not carry the character off after the journey.
+    // Lifestream is told to stop when the transfer is this task's own, so it does not carry the character off after
+    // the journey; work someone else started is left alone.
     private JourneyOutcome AbandonTransfer(WorldInfo target, string label)
     {
-        var lifestream = LifestreamIPC.Instance;
-        var busy = lifestream.IsBusy();
-        Warn($"{label}: the journey to {target.Name} is past its deadline and the data center transfer is still underway; abandoning it (logged in {Svc.ClientState.IsLoggedIn}, Lifestream busy {busy})");
+        Warn($"{label}: the journey to {target.Name} is past its deadline and the data center transfer is still underway; abandoning it (logged in {Svc.ClientState.IsLoggedIn}, Lifestream busy {LifestreamIPC.Instance.IsBusy()})");
         Svc.Chat.PrintError($"{AshopConstants.LogPrefix} The trip to {target.Name} ran past its deadline before it finished; the trip is abandoned.");
-        if (busy)
-        {
-            lifestream.Abort();
-        }
-
+        TravelOwnership.AbortIfOwnedBy(TravelOwner, $"{label}: the trip to {target.Name} ran past its deadline");
         return JourneyOutcome.Overdue;
     }
 

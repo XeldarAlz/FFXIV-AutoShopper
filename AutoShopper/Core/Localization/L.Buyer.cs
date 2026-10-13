@@ -25,6 +25,7 @@ internal static partial class L
         public static readonly LocString ChatStopping = new("buyer.chat.stopping", "Stopping once the purchase in flight is answered.");
         public static readonly LocString ChatUncertain = new("buyer.chat.uncertain", "A purchase got no clear answer. Buying stays off until you say on the Shop page whether it went through.");
         public static readonly LocString ChatInterrupted = new("buyer.chat.interrupted", "The run was interrupted. The Shop page offers to resume it.");
+        public static readonly LocString ChatTaskFailed = new("buyer.chat.taskFailed", "A task could not be started. The log has the details.");
 
         public static readonly LocString RefusePrices = new("buyer.refuse.prices", "fresh prices could not be fetched");
         public static readonly LocString RefusePlan = new("buyer.refuse.plan", "the plan could not be made");

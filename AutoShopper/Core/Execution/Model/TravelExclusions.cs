@@ -16,7 +16,8 @@ internal readonly record struct WorldTravelRecord(uint WorldId, int Failures, Tr
 // one when trying again cannot help: Lifestream refused the route, or the game reported the world congested. A data
 // center transfer that never starts means data center travel is off in Lifestream, so every world outside the data
 // center the character stands on is left out with it. Lifestream busy with someone else's work blocks every world
-// alike, so after BusyLimit such trips in a row the run stops travelling instead of trying world after world.
+// alike, so after BusyLimit such trips in a row the run stops travelling instead of trying world after world. A trip
+// held up by a party, a duty, a trade or a window says nothing about the world, so it is never recorded against one.
 internal sealed class TravelExclusions
 {
     public const int AttemptsPerWorld = 2;
@@ -43,7 +44,7 @@ internal sealed class TravelExclusions
 
     public ExclusionStep Record(in PlanWorld target, TravelFailure failure, uint currentDataCenterId)
     {
-        if (failure == TravelFailure.None)
+        if (failure is TravelFailure.None or TravelFailure.Blocked)
         {
             return ExclusionStep.Retry;
         }

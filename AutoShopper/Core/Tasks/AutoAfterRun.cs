@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace AutoShopper.Core.Tasks;
 
-public sealed class AutoAfterRun(AfterRunAction action) : AutoCommon
+// The action belongs to the run's character; another one logged in by then, after a transfer for one, is left alone.
+public sealed class AutoAfterRun(AfterRunAction action, ulong characterContentId) : AutoCommon
 {
     private const int ReadyWaitMs = 20_000;
     private const int ConfirmationWaitMs = 6_000;
@@ -33,6 +34,11 @@ public sealed class AutoAfterRun(AfterRunAction action) : AutoCommon
             return;
         }
 
+        if (!OwnCharacter())
+        {
+            return;
+        }
+
         switch (action)
         {
             case AfterRunAction.Logout:
@@ -50,7 +56,7 @@ public sealed class AutoAfterRun(AfterRunAction action) : AutoCommon
         for (var attempt = 1; attempt <= LogoutAttempts; attempt++)
         {
             await DelayMs(PreCommandSettleMs);
-            if (CancelToken.IsCancellationRequested)
+            if (CancelToken.IsCancellationRequested || !OwnCharacter())
             {
                 return;
             }
@@ -79,13 +85,25 @@ public sealed class AutoAfterRun(AfterRunAction action) : AutoCommon
     {
         Status = "Closing the game";
         await DelayMs(PreCommandSettleMs);
-        if (CancelToken.IsCancellationRequested)
+        if (CancelToken.IsCancellationRequested || !OwnCharacter())
         {
             return;
         }
 
         Diag($"After-run: closing the game with {CloseGameCommand}.");
         Chat.ExecuteCommand(CloseGameCommand);
+    }
+
+    private bool OwnCharacter()
+    {
+        var contentId = Svc.PlayerState.ContentId;
+        if (characterContentId != 0 && contentId == characterContentId)
+        {
+            return true;
+        }
+
+        Warn($"After-run {action} skipped: the character logged in is not the one the run belongs to.");
+        return false;
     }
 
     private static bool IsSafeToFinish()

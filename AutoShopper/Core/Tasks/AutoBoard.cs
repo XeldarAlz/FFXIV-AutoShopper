@@ -49,7 +49,7 @@ internal sealed class AutoBoard(MarketCity city) : AutoCommon
         }
 
         MarketDebugCommands.Print($"Board: heading for a market board in {MarketBoardCatalog.Of(city).Name}.");
-        automation.Start(new AutoBoard(city));
+        TaskStarter.TryStart(() => new AutoBoard(city));
     }
 
     protected override async Task Execute()
