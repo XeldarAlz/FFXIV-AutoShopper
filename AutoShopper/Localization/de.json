@@ -817,5 +817,6 @@
   "export.checklistAsMarkdown": "Als Markdown kopieren",
   "export.checklistCopied": "Checkliste in die Zwischenablage kopiert",
   "lists.import.problem.ambiguous": "Könnte eine Dezimalzahl sein: nur Ziffern verwenden",
-  "plan.reason.capped": "Begrenzt: Eine Welt hat nur ihre 100 günstigsten Angebote geliefert, am Marktbrett kann es mehr geben"
+  "plan.reason.capped": "Begrenzt: Eine Welt hat nur ihre 100 günstigsten Angebote geliefert, am Marktbrett kann es mehr geben",
+  "lists.problem.mergedOverLimit": "Die Zeilen dieses Gegenstands ergeben zusammen mehr als 999.999"
 }

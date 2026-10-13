@@ -817,5 +817,6 @@
   "export.checklistAsMarkdown": "复制为 Markdown",
   "export.checklistCopied": "核对表已复制到剪贴板",
   "lists.import.problem.ambiguous": "可能是小数：请只使用数字",
-  "plan.reason.capped": "已达上限：某个服务器只提供了最便宜的 100 个挂单，市场布告板上可能还有更多"
+  "plan.reason.capped": "已达上限：某个服务器只提供了最便宜的 100 个挂单，市场布告板上可能还有更多",
+  "lists.problem.mergedOverLimit": "该物品的各行合计超过 999,999"
 }

@@ -70,6 +70,7 @@ internal static partial class L
         public static readonly LocString ProblemExcess = new("lists.problem.excess", "Extra must be 0 to 999,999");
         public static readonly LocString ProblemQuality = new("lists.problem.quality", "No HQ version exists");
         public static readonly LocString ProblemDuplicate = new("lists.problem.duplicate", "Counts together with another line for this item");
+        public static readonly LocString ProblemMergedOverLimit = new("lists.problem.mergedOverLimit", "This item's lines add up to more than 999,999");
 
         public static readonly LocString Import = new("lists.import", "Import");
         public static readonly LocString ImportTitle = new("lists.import.title", "Import a list");

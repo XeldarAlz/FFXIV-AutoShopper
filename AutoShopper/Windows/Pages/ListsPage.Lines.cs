@@ -455,6 +455,11 @@ internal sealed partial class ListsPage
             return Loc.T(L.Lists.ProblemQuality);
         }
 
+        if ((problems & LineProblems.MergedOverLimit) != 0)
+        {
+            return Loc.T(L.Lists.ProblemMergedOverLimit);
+        }
+
         return (problems & LineProblems.Duplicate) != 0 ? Loc.T(L.Lists.ProblemDuplicate) : null;
     }
 
@@ -462,9 +467,9 @@ internal sealed partial class ListsPage
     private static string NameTooltip(string name, uint itemId, LineProblems problems)
     {
         var text = string.Concat(name, "\n#", itemId.ToString(CultureInfo.InvariantCulture));
-        if ((problems & LineProblems.Duplicate) != 0)
+        if ((problems & (LineProblems.Duplicate | LineProblems.MergedOverLimit)) != 0)
         {
-            text = string.Concat(text, "\n", Loc.T(L.Lists.MergeNote));
+            text = string.Concat(text,"\n", Loc.T(L.Lists.MergeNote));
         }
 
         return text;
