@@ -359,5 +359,7 @@ internal static partial class L
     {
         public static readonly LocString CommandHelp = new("plugin.commandHelp", "Toggle the Auto Shopper window. /ashop config | stats | deps | log | changelog | about | add <item name or id> [quantity] (add an item to the selected list) | pause (pause or resume the run) | target (dump the current target's BaseId) | look <item name or id> (log the listings at the market board in reach) | mbstatus (market board checks) | board [city] (go to a market board and open it, board stop cancels) | start (start a run of the selected list) | stop (stop the run) | goto <territory> <x> <y> <z>, goto <world> [aetheryte] [i<n>] or goto home (travel helpers, goto stop cancels).");
         public static readonly LocString CommandHelpAlias = new("plugin.commandHelpAlias", "Alias for /ashop.");
+        public static readonly LocString ConfigReset = new("plugin.configReset", "Your settings could not be read, so Auto Shopper started with default settings. The old file is kept as {0}.");
+        public static readonly LocString ConfigResetUnsaved = new("plugin.configResetUnsaved", "Your settings could not be read, so Auto Shopper started with default settings. The old file could not be kept; the log has the details.");
     }
 }

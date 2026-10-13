@@ -248,6 +248,8 @@
   "settings.general.pauseTypingHelp": "While a text box of the game has focus, like the chat line, a run starts no new move until you close it. A move already under way carries on.",
   "plugin.commandHelp": "Toggle the Auto Shopper window. /ashop config | stats | deps | log | changelog | about | add <item name or id> [quantity] (add an item to the selected list) | pause (pause or resume the run) | target (dump the current target's BaseId) | look <item name or id> (log the listings at the market board in reach) | mbstatus (market board checks) | board [city] (go to a market board and open it, board stop cancels) | start (start a run of the selected list) | stop (stop the run) | goto <territory> <x> <y> <z>, goto <world> [aetheryte] [i<n>] or goto home (travel helpers, goto stop cancels).",
   "plugin.commandHelpAlias": "Alias for /ashop.",
+  "plugin.configReset": "Your settings could not be read, so Auto Shopper started with default settings. The old file is kept as {0}.",
+  "plugin.configResetUnsaved": "Your settings could not be read, so Auto Shopper started with default settings. The old file could not be kept; the log has the details.",
   "session.autoResume": "Auto-resume on fault",
   "session.autoResumeHelp": "If a run hits an unexpected error and stops, restart it automatically (up to 3 times in 5 minutes) instead of ending it. Turn it off if you would rather have errors end the run.",
   "safety.add": "Add",

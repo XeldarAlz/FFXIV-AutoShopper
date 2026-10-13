@@ -248,6 +248,8 @@
   "settings.general.pauseTypingHelp": "Enquanto uma caixa de texto do jogo estiver em foco, como a linha do chat, uma rodada não começa nenhum movimento novo até você fechá-la. Um movimento em andamento continua.",
   "plugin.commandHelp": "Abre ou fecha a janela do Auto Shopper. /ashop config | stats | deps | log | changelog | about | add <nome ou ID do item> [quantidade] (adicionar um item à lista escolhida) | pause (pausar ou retomar a rodada) | target (mostrar o BaseId do alvo atual) | look <nome ou ID do item> (registrar os anúncios do quadro do mercado ao alcance) | mbstatus (verificações do quadro do mercado) | board [cidade] (ir até um quadro do mercado e abri-lo, board stop cancela) | start (iniciar uma rodada da lista escolhida) | stop (parar a rodada) | goto <zona> <x> <y> <z>, goto <mundo> [éterite] [i<n>] ou goto home (ajudas de viagem, goto stop cancela).",
   "plugin.commandHelpAlias": "Atalho para /ashop.",
+  "plugin.configReset": "Não foi possível ler suas configurações, então o Auto Shopper iniciou com as configurações padrão. O arquivo antigo foi guardado como {0}.",
+  "plugin.configResetUnsaved": "Não foi possível ler suas configurações, então o Auto Shopper iniciou com as configurações padrão. Não foi possível guardar o arquivo antigo; o log tem os detalhes.",
   "session.autoResume": "Retomar automaticamente após falha",
   "session.autoResumeHelp": "Se uma rodada encontrar um erro inesperado e parar, reinicia automaticamente (até 3 vezes em 5 minutos) em vez de encerrá-la. Desligue se preferir que os erros encerrem a rodada.",
   "safety.add": "Adicionar",

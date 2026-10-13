@@ -248,6 +248,8 @@
   "settings.general.pauseTypingHelp": "Sohbet satırı gibi oyunun bir metin kutusu odaktayken bir tur, siz kapatana kadar yeni bir harekete başlamaz. Süren bir hareket devam eder.",
   "plugin.commandHelp": "Auto Shopper penceresini açar/kapatır. /ashop config | stats | deps | log | changelog | about | add <eşya adı ya da ID> [adet] (seçili listeye eşya ekle) | pause (turu duraklat ya da sürdür) | target (mevcut hedefin BaseId'sini yazdır) | look <eşya adı ya da ID> (yakındaki pazar panosunun ilanlarını günlüğe yaz) | mbstatus (pazar panosu denetimleri) | board [şehir] (bir pazar panosuna git ve aç, board stop iptal eder) | start (seçili listeyle bir tur başlat) | stop (turu durdur) | goto <bölge> <x> <y> <z>, goto <dünya> [aetheryte] [i<n>] ya da goto home (seyahat yardımcıları, goto stop iptal eder).",
   "plugin.commandHelpAlias": "/ashop için kısayol.",
+  "plugin.configReset": "Ayarlarınız okunamadı, bu yüzden Auto Shopper varsayılan ayarlarla başladı. Eski dosya {0} olarak saklandı.",
+  "plugin.configResetUnsaved": "Ayarlarınız okunamadı, bu yüzden Auto Shopper varsayılan ayarlarla başladı. Eski dosya saklanamadı; ayrıntılar kayıtta.",
   "session.autoResume": "Hatadan sonra otomatik devam et",
   "session.autoResumeHelp": "Bir tur beklenmedik bir hatayla durursa, onu bitirmek yerine otomatik yeniden başlatır (5 dakikada en fazla 3 kez). Hataların turu bitirmesini tercih ederseniz kapatın.",
   "safety.add": "Ekle",

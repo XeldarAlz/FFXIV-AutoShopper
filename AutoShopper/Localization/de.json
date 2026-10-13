@@ -248,6 +248,8 @@
   "settings.general.pauseTypingHelp": "Solange ein Textfeld des Spiels den Fokus hat, etwa die Chatzeile, beginnt ein Lauf keine neue Bewegung, bis du es schließt. Eine laufende Bewegung geht weiter.",
   "plugin.commandHelp": "Öffnet oder schließt das Auto-Shopper-Fenster. /ashop config | stats | deps | log | changelog | about | add <Gegenstandsname oder ID> [Menge] (Gegenstand zur gewählten Liste hinzufügen) | pause (Lauf pausieren oder fortsetzen) | target (BaseId des aktuellen Ziels ausgeben) | look <Gegenstandsname oder ID> (Angebote am Marktbrett in Reichweite ins Log schreiben) | mbstatus (Prüfungen des Marktbretts) | board [Stadt] (zu einem Marktbrett gehen und es öffnen, board stop bricht ab) | start (einen Lauf der gewählten Liste starten) | stop (den Lauf stoppen) | goto <Gebiet> <x> <y> <z>, goto <Welt> [Ätheryt] [i<n>] oder goto home (Reisehelfer, goto stop bricht ab).",
   "plugin.commandHelpAlias": "Alias für /ashop.",
+  "plugin.configReset": "Deine Einstellungen konnten nicht gelesen werden, daher startet Auto Shopper mit den Standardeinstellungen. Die alte Datei liegt unter {0}.",
+  "plugin.configResetUnsaved": "Deine Einstellungen konnten nicht gelesen werden, daher startet Auto Shopper mit den Standardeinstellungen. Die alte Datei konnte nicht aufbewahrt werden; das Protokoll enthält die Details.",
   "session.autoResume": "Nach Fehler automatisch fortsetzen",
   "session.autoResumeHelp": "Stößt ein Lauf auf einen unerwarteten Fehler und stoppt, wird er automatisch neu gestartet (bis zu 3-mal in 5 Minuten), statt ihn zu beenden. Schalte es aus, wenn Fehler den Lauf lieber beenden sollen.",
   "safety.add": "Hinzufügen",

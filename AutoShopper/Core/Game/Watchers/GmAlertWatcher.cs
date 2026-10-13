@@ -2,6 +2,7 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin.Services;
 using ECommons.Automation;
 using ECommons.DalamudServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AutoShopper.Core.Game.Watchers;
@@ -21,6 +22,9 @@ internal sealed class GmAlertWatcher : IDisposable
     private const int BeepDurationMaxMs = 5000;
     private const string KillGameCommand = "/xlkill";
 
+    // The burst playing now; a new one cancels it, so bursts never pile up on the thread pool. Framework thread only.
+    private static CancellationTokenSource? beeping;
+
     private bool fired;
     private long nextScanAtMs;
 
@@ -32,17 +36,22 @@ internal sealed class GmAlertWatcher : IDisposable
     public void Dispose()
     {
         Svc.Framework.Update -= OnUpdate;
+        StopBeeps();
     }
 
-    // Console.Beep blocks its thread for the whole tone, so the burst plays on the thread pool.
+    // Console.Beep blocks its thread for the whole tone, so the burst plays on the thread pool; a new burst replaces
+    // the one still playing, which stops after its current tone.
     public static void PlayBeeps(int count, int frequencyHz, int durationMs)
     {
         var beeps = Math.Clamp(count, 1, BeepCountMax);
         var frequency = Math.Clamp(frequencyHz, BeepFrequencyMinHz, BeepFrequencyMaxHz);
         var duration = Math.Clamp(durationMs, 1, BeepDurationMaxMs);
+        StopBeeps();
+        beeping = new CancellationTokenSource();
+        var token = beeping.Token;
         _ = Task.Run(() =>
         {
-            for (var beepIndex = 0; beepIndex < beeps; beepIndex++)
+            for (var beepIndex = 0; beepIndex < beeps && !token.IsCancellationRequested; beepIndex++)
             {
                 try
                 {
@@ -55,6 +64,18 @@ internal sealed class GmAlertWatcher : IDisposable
                 }
             }
         });
+    }
+
+    private static void StopBeeps()
+    {
+        if (beeping is not { } playing)
+        {
+            return;
+        }
+
+        beeping = null;
+        playing.Cancel();
+        playing.Dispose();
     }
 
     private void OnUpdate(IFramework _)

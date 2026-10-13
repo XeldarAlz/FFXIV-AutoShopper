@@ -43,6 +43,7 @@ public sealed partial class Configuration : IPluginConfiguration
         var changed = RepairShoppingSettings();
         changed |= RepairMarketSettings();
         changed |= RepairRunSettings();
+        changed |= RepairSafetySettings();
         if (Version >= CurrentVersion)
         {
             return changed;

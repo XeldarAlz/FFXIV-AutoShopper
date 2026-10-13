@@ -248,6 +248,8 @@
   "settings.general.pauseTypingHelp": "当游戏的文本框（例如聊天输入栏）获得焦点时，运行在你关闭它之前不会开始新的移动。已在进行的移动会继续。",
   "plugin.commandHelp": "打开或关闭 Auto Shopper 窗口。/ashop config | stats | deps | log | changelog | about | add <物品名称或ID> [数量]（向所选清单添加物品）| pause（暂停或继续运行）| target（输出当前目标的BaseId）| look <物品名称或ID>（将附近市场布告板上的挂单写入日志）| mbstatus（市场布告板检查）| board [城市]（前往市场布告板并打开，board stop 取消）| start（用所选清单开始运行）| stop（停止运行）| goto <区域> <x> <y> <z>、goto <世界> [以太之光] [i<n>] 或 goto home（旅行辅助，goto stop 取消）。",
   "plugin.commandHelpAlias": "/ashop 的别名。",
+  "plugin.configReset": "无法读取你的设置，因此 Auto Shopper 以默认设置启动。旧文件已保存为 {0}。",
+  "plugin.configResetUnsaved": "无法读取你的设置，因此 Auto Shopper 以默认设置启动。旧文件无法保存，详情见日志。",
   "session.autoResume": "故障后自动恢复",
   "session.autoResumeHelp": "如果运行遇到意外错误而停止，自动重启（5分钟内最多3次）而不是结束。如果你希望错误直接结束运行，请关闭。",
   "safety.add": "添加",

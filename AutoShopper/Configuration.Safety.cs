@@ -11,4 +11,16 @@ public sealed partial class Configuration
     public int GmAlertBeepFrequencyHz { get; set; } = 900;
     public bool GmAlertKillGame { get; set; } = false;
     public List<string> GmAlertCommands { get; set; } = [];
+
+    // A hand-edited file can carry a null command list or empty commands; both are put right once on load.
+    private bool RepairSafetySettings()
+    {
+        if (GmAlertCommands is null)
+        {
+            GmAlertCommands = [];
+            return true;
+        }
+
+        return GmAlertCommands.RemoveAll(string.IsNullOrWhiteSpace) > 0;
+    }
 }

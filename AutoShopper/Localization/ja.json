@@ -248,6 +248,8 @@
   "settings.general.pauseTypingHelp": "チャット欄など、ゲームのテキスト入力欄にフォーカスがある間は、閉じるまで新しい移動を始めません。すでに始まった移動は続きます。",
   "plugin.commandHelp": "Auto Shopper のウィンドウを開閉します。/ashop config | stats | deps | log | changelog | about | add <アイテム名またはID> [個数]（選択中のリストにアイテムを追加）| pause（実行の一時停止／再開）| target（現在のターゲットのBaseIdを出力）| look <アイテム名またはID>（近くのマーケットボードの出品をログに記録）| mbstatus（マーケットボードの確認項目）| board [都市]（マーケットボードへ行って開く、board stop で中止）| start（選択中のリストで実行を開始）| stop（実行を停止）| goto <エリア> <x> <y> <z>、goto <ワールド> [エーテライト] [i<n>]、goto home（移動ヘルパー、goto stop で中止）。",
   "plugin.commandHelpAlias": "/ashop の別名です。",
+  "plugin.configReset": "設定を読み込めなかったため、Auto Shopper は既定の設定で起動しました。以前のファイルは {0} として保存されています。",
+  "plugin.configResetUnsaved": "設定を読み込めなかったため、Auto Shopper は既定の設定で起動しました。以前のファイルは保存できませんでした。詳細はログにあります。",
   "session.autoResume": "エラー後に自動再開",
   "session.autoResumeHelp": "実行が予期しないエラーで停止した場合、終了せずに自動で再開します（5分間に最大3回）。エラーで実行を終了させたい場合はオフにしてください。",
   "safety.add": "追加",

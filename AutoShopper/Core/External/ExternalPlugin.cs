@@ -17,9 +17,15 @@ public sealed record ExternalPluginInfo(
     // Alternate InternalNames (community forks with the same IPC surface).
     string[]? Aliases = null);
 
+// Dalamud copies its installed plugin list under a lock on every read, and the windows ask several times a frame, so
+// the answer is read once a second at most. Framework thread only.
 public static class ExternalPlugins
 {
+    private const long RefreshIntervalMs = 1_000;
+
     private static readonly ExternalPlugin[] all = [ExternalPlugin.Vnavmesh, ExternalPlugin.Lifestream];
+    private static readonly bool[] loaded = new bool[all.Length];
+    private static long refreshedAtMs = long.MinValue;
 
     public static readonly IReadOnlyDictionary<ExternalPlugin, ExternalPluginInfo> Catalog
         = new Dictionary<ExternalPlugin, ExternalPluginInfo>
@@ -42,7 +48,20 @@ public static class ExternalPlugins
 
     public static bool IsInstalled(ExternalPlugin plugin)
     {
-        var info = Catalog[plugin];
+        Refresh();
+        return loaded[(int)plugin];
+    }
+
+    private static void Refresh()
+    {
+        var now = Environment.TickCount64;
+        if (refreshedAtMs != long.MinValue && now - refreshedAtMs < RefreshIntervalMs)
+        {
+            return;
+        }
+
+        refreshedAtMs = now;
+        Array.Clear(loaded);
         foreach (var installed in Svc.PluginInterface.InstalledPlugins)
         {
             if (!installed.IsLoaded)
@@ -50,19 +69,18 @@ public static class ExternalPlugins
                 continue;
             }
 
-            if (installed.InternalName == info.InternalName)
+            for (var index = 0; index < all.Length; index++)
             {
-                return true;
-            }
-
-            if (info.Aliases is not null && Array.IndexOf(info.Aliases, installed.InternalName) >= 0)
-            {
-                return true;
+                if (Matches(Catalog[all[index]], installed.InternalName))
+                {
+                    loaded[(int)all[index]] = true;
+                }
             }
         }
-
-        return false;
     }
+
+    private static bool Matches(ExternalPluginInfo info, string internalName)
+        => internalName == info.InternalName || (info.Aliases is not null && Array.IndexOf(info.Aliases, internalName) >= 0);
 
     public static bool AllRequiredInstalled()
     {

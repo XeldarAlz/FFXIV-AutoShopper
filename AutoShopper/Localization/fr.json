@@ -248,6 +248,8 @@
   "settings.general.pauseTypingHelp": "Tant qu'un champ de texte du jeu a le focus, comme la ligne de discussion, une tournée ne lance aucun nouveau déplacement avant que vous le fermiez. Un déplacement en cours continue.",
   "plugin.commandHelp": "Ouvre ou ferme la fenêtre Auto Shopper. /ashop config | stats | deps | log | changelog | about | add <nom ou ID de l'objet> [quantité] (ajouter un objet à la liste choisie) | pause (mettre en pause ou reprendre la tournée) | target (afficher le BaseId de la cible actuelle) | look <nom ou ID de l'objet> (journaliser les annonces du tableau des ventes à portée) | mbstatus (vérifications du tableau des ventes) | board [ville] (aller à un tableau des ventes et l'ouvrir, board stop annule) | start (lancer une tournée de la liste choisie) | stop (arrêter la tournée) | goto <zone> <x> <y> <z>, goto <monde> [éthérite] [i<n>] ou goto home (aides au voyage, goto stop annule).",
   "plugin.commandHelpAlias": "Alias de /ashop.",
+  "plugin.configReset": "Vos réglages n'ont pas pu être lus, Auto Shopper a donc démarré avec les réglages par défaut. L'ancien fichier est conservé sous {0}.",
+  "plugin.configResetUnsaved": "Vos réglages n'ont pas pu être lus, Auto Shopper a donc démarré avec les réglages par défaut. L'ancien fichier n'a pas pu être conservé ; le journal contient les détails.",
   "session.autoResume": "Reprise automatique après erreur",
   "session.autoResumeHelp": "Si une tournée rencontre une erreur inattendue et s'arrête, la relance automatiquement (jusqu'à 3 fois en 5 minutes) au lieu de la terminer. Désactivez-le si vous préférez que les erreurs mettent fin à la tournée.",
   "safety.add": "Ajouter",

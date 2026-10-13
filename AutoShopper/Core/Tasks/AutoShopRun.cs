@@ -116,6 +116,7 @@ internal sealed partial class AutoShopRun(ShopRunState run, ShopSession session)
     }
 
     // Polls work started on the thread pool once a frame, so everything after it runs on the framework thread again.
+    // The linked source is disposed once the work is over, which a cancelled run learns of only later.
     private async Task<T?> OffThread<T>(Func<CancellationToken, T> work, string label)
         where T : class
     {
@@ -131,9 +132,14 @@ internal sealed partial class AutoShopRun(ShopRunState run, ShopSession session)
         }
         finally
         {
-            if (!task.IsCompleted)
+            if (task.IsCompleted)
+            {
+                cancellation.Dispose();
+            }
+            else
             {
                 cancellation.Cancel();
+                _ = task.ContinueWith(static (_, source) => ((CancellationTokenSource)source!).Dispose(), cancellation, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
             }
         }
 

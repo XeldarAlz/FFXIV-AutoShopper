@@ -69,57 +69,89 @@ public sealed class Plugin : IDalamudPlugin
     private readonly CommandInfo primaryCommand;
     private readonly CommandInfo aliasCommand;
 
+    // The settings file could not be read at load; said once in chat when the character is in game, with where the old
+    // file was kept, null when it could not be.
+    private bool configurationReset;
+    private string? configurationBackupPath;
+    // Set by a logout while a journey was pending, so only the login that ends that transfer picks the journey up.
+    private bool journeyLogoutSeen;
+
+    // A step that fails undoes the ones before it, since Dalamud never disposes a plugin whose constructor threw.
     public Plugin()
     {
         Instance = this;
-
-        ECommonsMain.Init(PluginInterface, this);
-        CLibMain.Init(PluginInterface, this, CLibModule.Automation);
-        TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
-
-        Configuration = PluginInterface.GetPluginConfig() as Configuration ?? Configuration.CreateFresh();
-        if (Configuration.Migrate())
+        var completed = new Stack<Action>();
+        try
         {
-            Configuration.Save();
+            ECommonsMain.Init(PluginInterface, this);
+            completed.Push(ECommonsMain.Dispose);
+            CLibMain.Init(PluginInterface, this, CLibModule.Automation);
+            completed.Push(CLibMain.Dispose);
+
+            Configuration = LoadConfiguration();
+            DropStaleContinuation();
+            DropStalePendingJourney();
+
+            History = new RunHistory();
+            Controller = new AutoShopController();
+            Items = new ItemCatalog();
+            Recipes = new RecipeExpander();
+            Inventory = new InventoryReader();
+            completed.Push(Inventory.Dispose);
+            Lists = new ShoppingListStore(Configuration, Items, Inventory);
+            Prices = new PriceService(typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "0");
+            completed.Push(Prices.Dispose);
+            Preview = new PlanPreview(Configuration, Lists, Inventory, Prices);
+            completed.Push(Preview.Dispose);
+            Market = new MarketServices(Configuration);
+            completed.Push(Market.Dispose);
+            Ledger = new ShopLedger(PluginInterface.ConfigDirectory.FullName);
+            Congestion = new CongestionWatcher();
+            completed.Push(Congestion.Dispose);
+            Summaries = new RunSummaries(PluginInterface.ConfigDirectory.FullName, Items);
+            RotateLedger();
+            dutyWatcher = new DutyWatcher();
+            completed.Push(dutyWatcher.Dispose);
+            gmAlertWatcher = new GmAlertWatcher();
+            completed.Push(gmAlertWatcher.Dispose);
+
+            InitializeLocalization();
+            Fonts.Initialize(PluginInterface.UiBuilder, PluginDirectory);
+            completed.Push(Fonts.Dispose);
+            appWindow = new AppWindow(this);
+            completed.Push(appWindow.Dispose);
+            WindowSystem.AddWindow(appWindow);
+            completed.Push(WindowSystem.RemoveAllWindows);
+
+            primaryCommand = new CommandInfo(OnCommand) { HelpMessage = Loc.T(L.Plugin.CommandHelp) };
+            aliasCommand = new CommandInfo(OnCommand) { HelpMessage = Loc.T(L.Plugin.CommandHelpAlias) };
+            CommandManager.AddHandler(AshopConstants.PrimaryCommand, primaryCommand);
+            completed.Push(() => CommandManager.RemoveHandler(AshopConstants.PrimaryCommand));
+            CommandManager.AddHandler(AshopConstants.AliasCommand, aliasCommand);
+            completed.Push(() => CommandManager.RemoveHandler(AshopConstants.AliasCommand));
+
+            PluginInterface.UiBuilder.Draw += OnDraw;
+            completed.Push(() => PluginInterface.UiBuilder.Draw -= OnDraw);
+            PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
+            completed.Push(() => PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfigUi);
+            PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
+            completed.Push(() => PluginInterface.UiBuilder.OpenMainUi -= ToggleMainUi);
+
+            Svc.ClientState.Login += OnLogin;
+            completed.Push(() => Svc.ClientState.Login -= OnLogin);
+            Svc.ClientState.Logout += OnLogout;
+            completed.Push(() => Svc.ClientState.Logout -= OnLogout);
+            if (Svc.ClientState.IsLoggedIn)
+            {
+                _ = Svc.Framework.RunOnFrameworkThread(OnLoadedInGame);
+            }
+
+            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
         }
-
-        DropStaleContinuation();
-
-        History = new RunHistory();
-        Controller = new AutoShopController();
-        Items = new ItemCatalog();
-        Recipes = new RecipeExpander();
-        Inventory = new InventoryReader();
-        Lists = new ShoppingListStore(Configuration, Items, Inventory);
-        Prices = new PriceService(typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "0");
-        Preview = new PlanPreview(Configuration, Lists, Inventory, Prices);
-        Market = new MarketServices(Configuration);
-        Ledger = new ShopLedger(PluginInterface.ConfigDirectory.FullName);
-        Congestion = new CongestionWatcher();
-        Summaries = new RunSummaries(PluginInterface.ConfigDirectory.FullName, Items);
-        RotateLedger();
-        dutyWatcher = new DutyWatcher();
-        gmAlertWatcher = new GmAlertWatcher();
-
-        InitializeLocalization();
-        Fonts.Initialize(PluginInterface.UiBuilder, PluginDirectory);
-        appWindow = new AppWindow(this);
-        WindowSystem.AddWindow(appWindow);
-
-        primaryCommand = new CommandInfo(OnCommand) { HelpMessage = Loc.T(L.Plugin.CommandHelp) };
-        aliasCommand = new CommandInfo(OnCommand) { HelpMessage = Loc.T(L.Plugin.CommandHelpAlias) };
-        CommandManager.AddHandler(AshopConstants.PrimaryCommand, primaryCommand);
-        CommandManager.AddHandler(AshopConstants.AliasCommand, aliasCommand);
-
-        PluginInterface.UiBuilder.Draw += OnDraw;
-        PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
-        PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
-
-        Svc.ClientState.Login += OnLogin;
-        Svc.ClientState.Logout += OnLogout;
-        if (Svc.ClientState.IsLoggedIn)
+        catch
         {
-            OnLogin();
+            Undo(completed);
+            throw;
         }
     }
 
@@ -306,7 +338,98 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnLogout(int type, int code)
     {
+        journeyLogoutSeen = Configuration.PendingJourney is not null;
         Controller.OnLogout();
+    }
+
+    private static void Undo(Stack<Action> completed)
+    {
+        while (completed.Count > 0)
+        {
+            var step = completed.Pop();
+            try
+            {
+                step();
+            }
+            catch (Exception)
+            {
+                // Loading has already failed; the error Dalamud reports is the one that stopped it.
+            }
+        }
+    }
+
+    // A settings file that cannot be read must not keep the plugin from loading: it is copied next to itself under a
+    // dated name, the plugin starts from the defaults, and the chat says so once the character is in game.
+    private Configuration LoadConfiguration()
+    {
+        Configuration? loaded = null;
+        var unreadable = false;
+        try
+        {
+            loaded = PluginInterface.GetPluginConfig() as Configuration;
+            unreadable = loaded is null && PluginInterface.ConfigFile.Exists;
+        }
+        catch (Exception exception)
+        {
+            RunLog.Error(exception, "The settings file could not be read");
+            unreadable = true;
+        }
+
+        if (unreadable)
+        {
+            configurationReset = true;
+            configurationBackupPath = BackUpUnreadableConfiguration();
+        }
+
+        var configuration = loaded ?? Configuration.CreateFresh();
+        if (configuration.Migrate())
+        {
+            configuration.Save();
+        }
+
+        return configuration;
+    }
+
+    private static string? BackUpUnreadableConfiguration()
+    {
+        var file = PluginInterface.ConfigFile;
+        var backup = Path.Combine(file.DirectoryName ?? string.Empty, $"{Path.GetFileNameWithoutExtension(file.Name)}.unreadable-{DateTime.Now:yyyyMMdd-HHmmss}{file.Extension}");
+        try
+        {
+            File.Copy(file.FullName, backup, overwrite: false);
+            RunLog.Warning($"The unreadable settings file was kept as {backup}; starting from default settings.");
+            return backup;
+        }
+        catch (Exception exception)
+        {
+            RunLog.Error(exception, $"The unreadable settings file could not be kept as {backup}; starting from default settings");
+            return null;
+        }
+    }
+
+    private void ShowConfigurationNotice()
+    {
+        if (!configurationReset)
+        {
+            return;
+        }
+
+        configurationReset = false;
+        var notice = configurationBackupPath is { } backup ? Loc.T(L.Plugin.ConfigReset, backup) : Loc.T(L.Plugin.ConfigResetUnsaved);
+        Svc.Chat.PrintError($"{AshopConstants.LogPrefix} {notice}");
+    }
+
+    // A pending journey at load belongs to a transfer this plugin did not live through, and travel never starts again
+    // on its own after a reload.
+    private void DropStalePendingJourney()
+    {
+        if (Configuration.PendingJourney is not { } stale)
+        {
+            return;
+        }
+
+        RunLog.Info($"Dropping the pending journey to {stale.World}: the plugin did not live through its transfer.");
+        Configuration.ClearPendingJourney();
     }
 
     // A continuation outlives its run only when the plugin did not: such a run waits for the player's Resume.
@@ -337,10 +460,28 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
+    // A purchase still held by the watcher with no run waiting on it has no one left to answer to.
     private void OnLogin()
     {
         Controller.OnLogin();
-        ResumePendingJourney();
+        if (Controller.ShopRun is not { InFlight: not null })
+        {
+            Market.Watcher.AbandonAny();
+        }
+
+        if (journeyLogoutSeen)
+        {
+            journeyLogoutSeen = false;
+            ResumePendingJourney();
+        }
+
+        OnLoadedInGame();
+    }
+
+    // Loaded while already in game: the window may open and a notice is said, but nothing travels or resumes.
+    private void OnLoadedInGame()
+    {
+        ShowConfigurationNotice();
         if (!Configuration.AutoShowOnLogin)
         {
             return;
@@ -350,11 +491,19 @@ public sealed class Plugin : IDalamudPlugin
     }
 
     // A data center transfer logs the character out; when the task did not live through that, the journey it wrote
-    // first is picked up here. A task that did live through it keeps the journey for itself.
+    // first is picked up at the login that ends the transfer, and only for the character it belongs to. A task that
+    // did live through it keeps the journey for itself.
     private void ResumePendingJourney()
     {
         if (Configuration.PendingJourney is not { } plan)
         {
+            return;
+        }
+
+        if (plan.CharacterContentId == 0 || plan.CharacterContentId != Svc.PlayerState.ContentId)
+        {
+            RunLog.Info($"Dropping the pending journey to {plan.World}: the character logged in is not the one it belongs to.");
+            Configuration.ClearPendingJourney();
             return;
         }
 
