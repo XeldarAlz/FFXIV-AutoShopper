@@ -90,10 +90,11 @@ internal sealed class UniversalisClient : IDisposable
                 break;
             }
 
+            // The throttle refuses every start while a wait this long lasts, so the other requests fail at once too.
             if (!RetryPolicy.TryGetDelay(outcome.RetryAfter, attempt, jitter(), out var wait))
             {
                 throttle.PauseFor(wait);
-                return ChunkPrices.FailedWith(chunk, PriceFailure.RateLimited);
+                return ChunkPrices.FailedWith(chunk, failure);
             }
 
             if (outcome.RateLimited)
@@ -124,6 +125,11 @@ internal sealed class UniversalisClient : IDisposable
     private async Task<Attempt> AttemptAsync(string path, PriceChunk chunk, CancellationToken cancellationToken)
     {
         using var lease = await throttle.EnterAsync(cancellationToken).ConfigureAwait(false);
+        if (!lease.Granted)
+        {
+            return Attempt.Done(ChunkPrices.FailedWith(chunk, PriceFailure.ServerPaused));
+        }
+
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(RequestTimeout);
         try

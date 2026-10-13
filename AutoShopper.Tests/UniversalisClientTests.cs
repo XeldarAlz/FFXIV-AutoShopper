@@ -45,16 +45,131 @@ public sealed class UniversalisClientTests
     }
 
     [Fact]
-    public async Task NotFoundMeansNotMarketableOrUnknownScopeWithoutRetry()
+    public async Task NotFoundForASingleItemMeansNotTrackedWithoutRetry()
+    {
+        var handler = new ScriptedHandler(_ => Respond(HttpStatusCode.NotFound));
+        using var client = NewClient(handler, new ManualClock());
+
+        var result = await client.FetchAsync(Chunk(PriceQueryKind.DataCenter, "Aether", AetherWorlds, FireShard), CancellationToken.None);
+
+        Assert.Equal(PriceFailure.NotFound, result.Failure);
+        Assert.True(result.Answered);
+        Assert.Single(handler.Requests);
+        Assert.Equal(PriceCoverage.NotFound, UniversalisTranslatorTests.Item(result, FireShard).Coverage);
+    }
+
+    [Fact]
+    public async Task NotFoundForSeveralItemsIsAFailedRequestWithoutRetry()
     {
         var handler = new ScriptedHandler(_ => Respond(HttpStatusCode.NotFound));
         using var client = NewClient(handler, new ManualClock());
 
         var result = await client.FetchAsync(AetherChunk(), CancellationToken.None);
 
-        Assert.Equal(PriceFailure.NotFound, result.Failure);
+        Assert.False(result.Answered);
         Assert.Single(handler.Requests);
-        Assert.Equal(PriceCoverage.NotFound, UniversalisTranslatorTests.Item(result, FireShard).Coverage);
+        Assert.Equal(PriceCoverage.RequestFailed, UniversalisTranslatorTests.Item(result, FireShard).Coverage);
+        Assert.Equal(PriceCoverage.RequestFailed, UniversalisTranslatorTests.Item(result, HighQualityItem).Coverage);
+    }
+
+    [Fact]
+    public async Task ALongServerPauseFailsTheOtherRequestsAtOnceInsteadOfHoldingTheFetch()
+    {
+        var clock = new ManualClock();
+        var handler = new ScriptedHandler(
+            _ => Respond(HttpStatusCode.TooManyRequests, retryAfterSeconds: 3600),
+            _ => Respond(HttpStatusCode.OK, Read("dc-multi-trimmed.json")));
+        using var client = NewClient(handler, clock);
+
+        var first = await client.FetchAsync(AetherChunk(), CancellationToken.None);
+        var second = await client.FetchAsync(AetherChunk(), CancellationToken.None);
+
+        Assert.Equal(PriceFailure.RateLimited, first.Failure);
+        Assert.Equal(PriceFailure.ServerPaused, second.Failure);
+        Assert.False(second.Answered);
+        Assert.Single(handler.Requests);
+        Assert.DoesNotContain(clock.Delays, wait => wait > RequestThrottle.MaximumPause);
+    }
+
+    [Fact]
+    public async Task AFetchUnderALongServerPausePublishesWhatItHasPromptly()
+    {
+        var clock = new ManualClock();
+        var handler = new ScriptedHandler(_ => Respond(HttpStatusCode.TooManyRequests, retryAfterSeconds: 3600));
+        using var client = NewClient(handler, clock);
+        await client.FetchAsync(AetherChunk(), CancellationToken.None);
+        var chunks = ImmutableArray.Create(AetherChunk(), AetherChunk(), AetherChunk());
+
+        var results = await client.FetchAllAsync(chunks, null, CancellationToken.None);
+
+        Assert.Equal(3, results.Length);
+        Assert.All(results, result => Assert.Equal(PriceFailure.ServerPaused, result.Failure));
+        Assert.Single(handler.Requests);
+        Assert.Empty(clock.Delays);
+    }
+
+    [Fact]
+    public async Task ServiceUnavailableWithALongRetryAfterIsLabelledAnHttpError()
+    {
+        var handler = new ScriptedHandler(_ => Respond(HttpStatusCode.ServiceUnavailable, retryAfterSeconds: 3600));
+        using var client = NewClient(handler, new ManualClock());
+
+        var result = await client.FetchAsync(AetherChunk(), CancellationToken.None);
+
+        Assert.Equal(PriceFailure.HttpError, result.Failure);
+        Assert.Single(handler.Requests);
+    }
+
+    [Fact]
+    public async Task AShortServerPauseIsStillHeld()
+    {
+        var clock = new ManualClock();
+        var handler = new ScriptedHandler(
+            _ => Respond(HttpStatusCode.TooManyRequests, retryAfterSeconds: 20),
+            _ => Respond(HttpStatusCode.OK, Read("dc-multi-trimmed.json")));
+        using var client = NewClient(handler, clock);
+
+        var result = await client.FetchAsync(AetherChunk(), CancellationToken.None);
+
+        Assert.False(result.Failed);
+        Assert.Equal(2, handler.Requests.Count);
+        Assert.Contains(TimeSpan.FromSeconds(20), clock.Delays);
+    }
+
+    [Fact]
+    public async Task ThrottleRefusesStartsUntilALongPauseEndsThenGrantsAgain()
+    {
+        var clock = new ManualClock();
+        using var throttle = new RequestThrottle(RequestThrottle.DefaultConcurrency, RequestThrottle.DefaultInterval, clock, clock.Delay);
+
+        throttle.PauseFor(TimeSpan.FromMinutes(10));
+        using (var refused = await throttle.EnterAsync(CancellationToken.None))
+        {
+            Assert.False(refused.Granted);
+        }
+
+        await clock.Delay(TimeSpan.FromMinutes(10), CancellationToken.None);
+        using (var granted = await throttle.EnterAsync(CancellationToken.None))
+        {
+            Assert.True(granted.Granted);
+        }
+
+        Assert.Equal([TimeSpan.FromMinutes(10)], clock.Delays);
+    }
+
+    [Fact]
+    public async Task ARefusedStartGivesItsSlotBack()
+    {
+        var clock = new ManualClock();
+        using var throttle = new RequestThrottle(1, RequestThrottle.DefaultInterval, clock, clock.Delay);
+        throttle.PauseFor(TimeSpan.FromMinutes(10));
+        using var stuck = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            using var lease = await throttle.EnterAsync(stuck.Token);
+            Assert.False(lease.Granted);
+        }
     }
 
     [Fact]

@@ -21,8 +21,7 @@ internal static class PriceSnapshotBuilder
         for (var chunkIndex = 0; chunkIndex < chunks.Count; chunkIndex++)
         {
             var chunk = chunks[chunkIndex];
-            // A 404 is an answer: the item or scope is unknown to Universalis, which the item's coverage records.
-            var answered = !chunk.Failed || chunk.Failure == PriceFailure.NotFound;
+            var answered = chunk.Answered;
             if (!answered)
             {
                 failed++;
