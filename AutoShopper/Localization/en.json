@@ -172,6 +172,7 @@
   "changelog.r1100.3": "Settings, General lists the plugins you answered, with Revoke and Allow; Revoke also stops a run the plugin has under way",
   "changelog.r1101.1": "Fixed every market search being refused as mismatched, which left runs standing at the board and buying nothing",
   "changelog.r1101.2": "When a search copy is refused, the Console names the listing field that differed",
+  "changelog.r1102.1": "The market board windows are closed when a run ends on its own, so the character is free to move at once, also for a plugin that started the run",
   "changelog.r1001.1": "Fixed the aethernet ride to a market board giving up at the shard while the zone was still loading",
   "changelog.r1001.2": "Fixed the walk to a market board ending a few metres out of reach, as at Ul'dah's Sapphire Avenue Exchange",
   "changelog.r1000.1": "Shopping lists: Any, HQ or NQ, buy an amount or top up to a target, with a max price per unit including the 5% fee",

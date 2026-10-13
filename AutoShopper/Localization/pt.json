@@ -172,6 +172,7 @@
   "changelog.r1100.3": "Configurações, Geral lista os plugins que você respondeu, com Revogar e Permitir; Revogar também para a rodada que o plugin tiver em andamento",
   "changelog.r1101.1": "Corrigido: todas as buscas no mercado eram recusadas por divergência, deixando as execuções paradas no quadro sem comprar nada",
   "changelog.r1101.2": "Quando uma cópia de busca é recusada, o Console informa o campo do anúncio que divergiu",
+  "changelog.r1102.1": "As janelas do quadro do mercado são fechadas quando uma rodada termina sozinha, deixando o personagem livre na hora, inclusive para um plugin que iniciou a rodada",
   "changelog.r1001.1": "Corrigido: a viagem por aethernet até o quadro do mercado desistia na chegada, enquanto a zona ainda carregava",
   "changelog.r1001.2": "Corrigido: a caminhada até o quadro do mercado terminava a alguns metros fora do alcance, como em Ul'dah",
   "changelog.r1000.1": "Listas de compras: Qualquer, HQ ou NQ, comprar uma quantidade ou completar até uma meta, com máximo por unidade incluindo a taxa de 5%",

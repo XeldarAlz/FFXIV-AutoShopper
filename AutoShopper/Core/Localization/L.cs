@@ -255,6 +255,11 @@ internal static partial class L
         public static readonly LocString New = new("changelog.new", "New");
         public static readonly LocPlural Changes = new("changelog.changes", "{0} change", "{0} changes");
 
+        public static readonly LocString[] Release1102 =
+        [
+            new("changelog.r1102.1", "The market board windows are closed when a run ends on its own, so the character is free to move at once, also for a plugin that started the run"),
+        ];
+
         public static readonly LocString[] Release1101 =
         [
             new("changelog.r1101.1", "Fixed every market search being refused as mismatched, which left runs standing at the board and buying nothing"),

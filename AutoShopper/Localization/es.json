@@ -172,6 +172,7 @@
   "changelog.r1100.3": "Ajustes, General muestra los plugins a los que respondiste, con Revocar y Permitir; Revocar también detiene la ronda que el plugin tenga en curso",
   "changelog.r1101.1": "Corregido: todas las búsquedas en el mercado se rechazaban por discrepancia, así que las ejecuciones se quedaban en el tablón sin comprar nada",
   "changelog.r1101.2": "Cuando se rechaza una copia de búsqueda, la Consola indica el campo del anuncio que difería",
+  "changelog.r1102.1": "Las ventanas del tablón del mercado se cierran cuando una ronda termina por sí sola, así que el personaje queda libre de inmediato, también para un plugin que inició la ronda",
   "changelog.r1001.1": "Corregido: el viaje por aethernet hasta el tablón del mercado se cancelaba al llegar, mientras la zona seguía cargando",
   "changelog.r1001.2": "Corregido: la caminata hasta el tablón del mercado terminaba a unos metros fuera del alcance, como en Ul'dah",
   "changelog.r1000.1": "Listas de compra: Cualquiera, HQ o NQ, comprar una cantidad o completar hasta un objetivo, con un máximo por unidad que incluye la tasa del 5 %",
