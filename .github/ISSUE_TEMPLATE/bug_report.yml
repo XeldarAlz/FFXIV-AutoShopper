@@ -41,6 +41,7 @@ body:
       label: Plugin version
       description: Shown in `/xlplugins` next to "Auto Shopper".
       options:
+        - 1.1.0.1
         - 1.1.0.0
         - 1.0.0.1
         - 1.0.0.0
