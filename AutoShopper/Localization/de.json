@@ -852,6 +852,7 @@
   "api.reason.consent": "erlaube {0} zuerst auf der Seite Einkauf von Auto Shopper",
   "api.reason.denied": "{0} ist abgelehnt; erlaube es in Auto Shopper unter Einstellungen, Allgemein",
   "api.reason.quotesWaiting": "dieses Plugin hat bereits {0} Preisanfragen, die darauf warten, beim Preisabruf an die Reihe zu kommen",
+  "api.reason.unloading": "Auto Shopper wird gerade entladen",
   "api.consent.title": "{0} möchte über Auto Shopper einkaufen.",
   "api.consent.body": "Es schickt für jeden Lauf eine eigene Einkaufsliste und ein Ausgabelimit. Dein Probelauf, deine Welten, deine Gil-Reserve und die Kaufprüfungen gelten weiter, und du kannst das unter Einstellungen, Allgemein widerrufen.",
   "api.consent.facts": "Interner Name: {0}. Dieser Lauf möchte bis zu {1} ausgeben. Die Läufe eines Plugins halten sich an das Limit, das es schickt, statt an dein Ausgabelimit pro Lauf.",

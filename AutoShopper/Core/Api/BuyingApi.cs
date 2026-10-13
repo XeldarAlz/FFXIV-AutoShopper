@@ -24,6 +24,7 @@ internal sealed class BuyingApi : IDisposable
     private readonly ICallGateProvider<string, string> startRun;
     private readonly ICallGateProvider<string, string> runStatus;
     private readonly ICallGateProvider<string, bool> stopRun;
+    private volatile bool disposed;
 
     public BuyingApi(Plugin plugin)
     {
@@ -39,7 +40,14 @@ internal sealed class BuyingApi : IDisposable
         startRun = pluginInterface.GetIpcProvider<string, string>(StartRunGate);
         runStatus = pluginInterface.GetIpcProvider<string, string>(RunStatusGate);
         stopRun = pluginInterface.GetIpcProvider<string, bool>(StopRunGate);
+    }
 
+    public CallerConsents Consents { get; }
+
+    public ApiQuotes Quotes { get; }
+
+    public void Register()
+    {
         apiVersion.RegisterFunc(ApiVersion);
         dryRun.RegisterFunc(DryRun);
         quoteStart.RegisterFunc(QuoteStart);
@@ -48,10 +56,6 @@ internal sealed class BuyingApi : IDisposable
         runStatus.RegisterFunc(RunStatus);
         stopRun.RegisterFunc(StopRun);
     }
-
-    public CallerConsents Consents { get; }
-
-    public ApiQuotes Quotes { get; }
 
     public void Allow(string caller, string displayName)
     {
@@ -99,6 +103,7 @@ internal sealed class BuyingApi : IDisposable
 
     public void Dispose()
     {
+        disposed = true;
         apiVersion.UnregisterFunc();
         dryRun.UnregisterFunc();
         quoteStart.UnregisterFunc();
@@ -111,35 +116,35 @@ internal sealed class BuyingApi : IDisposable
 
     private static int ApiVersion() => ApiContract.Version;
 
-    private bool DryRun() => OnFramework(() => plugin.Configuration.DryRun);
+    private bool DryRun() => OnFramework(() => plugin.Configuration.DryRun, static () => true);
 
     private string QuoteStart(string json)
     {
         var check = ApiRequests.ReadQuote(json, out var request);
-        var response = OnFramework(() => StartQuote(check, request));
+        var response = OnFramework(() => StartQuote(check, request), static () => QuoteStartResponse.Refuse(ApiRefusal.Busy, Loc.T(L.Api.QuoteRefused, Loc.T(L.Api.ReasonUnloading))));
         return ApiJson.Write(response, ApiJsonContext.Default.QuoteStartResponse);
     }
 
     private string QuoteResult(string quoteId)
     {
-        var response = ApiIds.TryParse(quoteId, out var id) ? OnFramework(() => Quotes.Result(id)) : QuoteResultResponse.Unknown(quoteId);
+        var response = ApiIds.TryParse(quoteId, out var id) ? OnFramework(() => Quotes.Result(id), () => QuoteResultResponse.Unknown(quoteId)) : QuoteResultResponse.Unknown(quoteId);
         return ApiJson.Write(response, ApiJsonContext.Default.QuoteResultResponse);
     }
 
     private string StartRun(string json)
     {
         var check = ApiRequests.ReadRun(json, out var request);
-        var response = OnFramework(() => BeginRun(check, request));
+        var response = OnFramework(() => BeginRun(check, request), static () => StartRunResponse.Refuse(ApiRefusal.Busy, Refused(Loc.T(L.Api.ReasonUnloading))));
         return ApiJson.Write(response, ApiJsonContext.Default.StartRunResponse);
     }
 
     private string RunStatus(string runId)
     {
-        var response = ApiIds.TryParse(runId, out var id) ? OnFramework(() => plugin.Controller.ExternalStatus(id)) : RunStatusResponse.Unknown(runId);
+        var response = ApiIds.TryParse(runId, out var id) ? OnFramework(() => plugin.Controller.ExternalStatus(id), () => RunStatusResponse.Unknown(runId)) : RunStatusResponse.Unknown(runId);
         return ApiJson.Write(response, ApiJsonContext.Default.RunStatusResponse);
     }
 
-    private bool StopRun(string runId) => ApiIds.TryParse(runId, out var id) && OnFramework(() => plugin.Controller.StopExternal(id));
+    private bool StopRun(string runId) => ApiIds.TryParse(runId, out var id) && OnFramework(() => plugin.Controller.StopExternal(id), static () => false);
 
     private QuoteStartResponse StartQuote(RequestCheck check, QuoteRequest? request)
     {
@@ -196,6 +201,18 @@ internal sealed class BuyingApi : IDisposable
 
     private static string Refused(string reason) => Loc.T(L.Buyer.ChatRefused, reason);
 
-    private static T OnFramework<T>(Func<T> work)
-        => Svc.Framework.IsInFrameworkUpdateThread ? work() : Svc.Framework.RunOnFrameworkThread(work).GetAwaiter().GetResult();
+    private T OnFramework<T>(Func<T> work, Func<T> unloading)
+    {
+        if (disposed)
+        {
+            return unloading();
+        }
+
+        if (Svc.Framework.IsInFrameworkUpdateThread)
+        {
+            return work();
+        }
+
+        return Svc.Framework.RunOnFrameworkThread(() => disposed ? unloading() : work()).GetAwaiter().GetResult();
+    }
 }

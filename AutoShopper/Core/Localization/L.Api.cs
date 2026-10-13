@@ -21,6 +21,7 @@ internal static partial class L
         public static readonly LocString ReasonInvalid = new("api.reason.invalid", "the request is not valid ({0})");
         public static readonly LocString ReasonConsent = new("api.reason.consent", "allow {0} on Auto Shopper's Shop page first");
         public static readonly LocString ReasonDenied = new("api.reason.denied", "{0} is denied; allow it in Auto Shopper's Settings, General");
+        public static readonly LocString ReasonUnloading = new("api.reason.unloading", "Auto Shopper is unloading");
         public static readonly LocString ReasonQuotesWaiting = new("api.reason.quotesWaiting", "this plugin already has {0} quotes waiting for their turn at the price fetch");
     }
 }

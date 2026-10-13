@@ -852,6 +852,7 @@
   "api.reason.consent": "autorisez d'abord {0} sur la page Achats d'Auto Shopper",
   "api.reason.denied": "{0} est refusé ; autorisez-le dans Réglages, Général d'Auto Shopper",
   "api.reason.quotesWaiting": "ce plugin a déjà {0} estimations qui attendent leur tour pour récupérer les prix",
+  "api.reason.unloading": "Auto Shopper est en cours de déchargement",
   "api.consent.title": "{0} veut acheter via Auto Shopper.",
   "api.consent.body": "Il envoie sa propre liste de courses et une limite de dépense pour chaque tournée. Votre simulation, vos mondes, vos gils à garder et les vérifications d'achat s'appliquent toujours, et vous pouvez révoquer cela dans Réglages, Général.",
   "api.consent.facts": "Nom interne : {0}. Cette tournée demande à dépenser jusqu'à {1}. Les tournées d'un plugin respectent la limite qu'il envoie, à la place de votre limite de dépense par tournée.",

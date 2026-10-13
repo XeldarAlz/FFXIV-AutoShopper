@@ -852,6 +852,7 @@
   "api.reason.consent": "请先在 Auto Shopper 的购物页面允许 {0}",
   "api.reason.denied": "{0} 已被拒绝；请在 Auto Shopper 的设置、常规中允许它",
   "api.reason.quotesWaiting": "此插件已有 {0} 个报价在排队等待获取价格",
+  "api.reason.unloading": "Auto Shopper 正在卸载",
   "api.consent.title": "{0} 想通过 Auto Shopper 购买。",
   "api.consent.body": "它会为每次运行发送自己的购物清单和花费上限。你的试运行、服务器、保留金币和购买检查依然适用，你可以在设置、常规中撤销。",
   "api.consent.facts": "内部名称：{0}。此次运行请求最多花费 {1}。插件的运行遵守它发送的上限，而不是你的每次运行花费上限。",

@@ -151,6 +151,9 @@ public sealed class Plugin : IDalamudPlugin
             }
 
             TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+            completed.Push(() => TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException);
+
+            Api.Register();
         }
         catch
         {

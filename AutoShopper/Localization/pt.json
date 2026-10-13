@@ -852,6 +852,7 @@
   "api.reason.consent": "permita {0} primeiro na página Compras do Auto Shopper",
   "api.reason.denied": "{0} está negado; permita-o em Configurações, Geral do Auto Shopper",
   "api.reason.quotesWaiting": "este plugin já tem {0} cotações esperando a vez de buscar preços",
+  "api.reason.unloading": "o Auto Shopper está sendo descarregado",
   "api.consent.title": "{0} quer comprar pelo Auto Shopper.",
   "api.consent.body": "Ele envia a própria lista de compras e um limite de gasto para cada rodada. Sua simulação, seus mundos, o gil a manter e as verificações de compra continuam valendo, e você pode revogar isso em Configurações, Geral.",
   "api.consent.facts": "Nome interno: {0}. Esta rodada pede para gastar até {1}. As rodadas de um plugin seguem o limite que ele envia, no lugar do seu limite de gasto por rodada.",

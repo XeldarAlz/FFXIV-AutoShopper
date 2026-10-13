@@ -4,7 +4,8 @@ Lets another Dalamud plugin price items and run a bounded Auto Shopper shopping 
 
 ## Transport
 
-- Dalamud IPC call gates, registered by Auto Shopper with `GetIpcProvider` and unregistered on dispose.
+- Dalamud IPC call gates, registered by Auto Shopper with `GetIpcProvider` as the last step of its load, once everything they reach is set up, and unregistered first when it unloads.
+- A call that is still waiting for the framework thread when Auto Shopper unloads is answered without reaching the unloaded plugin: `DryRun` answers true (an unknown state counts as dry), `QuoteStart` and `StartRun` are refused with `Busy` ("Auto Shopper is unloading"), `QuoteResult` and `RunStatus` answer unknown, and `StopRun` answers false.
 - Every payload is a JSON string (System.Text.Json, camelCase property names, enums as strings). No custom type crosses plugin load contexts and no `Task` is returned across IPC: long work is started and then polled.
 - Every request and response carries `"schema": 1`. Auto Shopper reads a request's top-level `schema` before anything else: when it is missing or anything but the number 1, the request is refused with `UnsupportedSchema` whatever the rest of it looks like, so a later schema that changes the shape of a request still gets that answer. Text that is not one well-formed JSON object is refused with `InvalidRequest` (field `json`).
 - Calls may arrive on any thread. Auto Shopper reads and checks the request on the calling thread, then moves the work onto the framework thread before touching its controller, ledger or configuration, and answers from managed snapshots. A call made off the framework thread waits for the next framework tick.
@@ -69,7 +70,7 @@ or
 { "schema": 1, "accepted": false, "quoteId": null, "refusal": "InvalidRequest", "message": "localized text" }
 ```
 
-- Refusal codes: `UnsupportedSchema`, `InvalidRequest`, `LoggedOut` (no character is logged in, so there is no world scope to price), `Busy` (the caller already has 2 quotes waiting for their turn).
+- Refusal codes: `UnsupportedSchema`, `InvalidRequest`, `LoggedOut` (no character is logged in, so there is no world scope to price), `Busy` (the caller already has 2 quotes waiting for their turn, or Auto Shopper is unloading).
 - `message` reads "Cannot price these items: <reason>." in Auto Shopper's language. For `InvalidRequest` the reason names the field at fault, for example `items[2].quantity`, `items[1].itemId` (zero or a duplicate), `items`, `caller` or `json` (the text is not a request).
 
 ## QuoteResult response
@@ -132,7 +133,7 @@ or
 { "schema": 1, "accepted": true, "runId": "4e1a...", "refusal": null, "message": null }
 ```
 
-Refusal codes: `UnsupportedSchema`, `InvalidRequest`, `ConsentRequired`, `ConsentDenied`, `Busy` (any run, UI or API, is active or has not finished ending, or any other Auto Shopper task such as a travel helper is running), and Auto Shopper's readiness names that apply: `SetupNeeded`, `LoggedOut`, `JournalDamaged`, `NeedsReconciliation`, `InterruptedRun`, `ReadingUnavailable`, `BuyingUnavailable`. `message` is the localized reason Auto Shopper would print: "Cannot start: <reason>."
+Refusal codes: `UnsupportedSchema`, `InvalidRequest`, `ConsentRequired`, `ConsentDenied`, `Busy` (any run, UI or API, is active or has not finished ending, or any other Auto Shopper task such as a travel helper is running, or Auto Shopper is unloading), and Auto Shopper's readiness names that apply: `SetupNeeded`, `LoggedOut`, `JournalDamaged`, `NeedsReconciliation`, `InterruptedRun`, `ReadingUnavailable`, `BuyingUnavailable`. `message` is the localized reason Auto Shopper would print: "Cannot start: <reason>."
 
 - Checks run in this order: schema and request shape, consent, busy, readiness.
 - `InvalidRequest` names the field at fault in its message, as for quotes (`lines[0].quality`, `maxSpend`, `callerRunId` and so on). Once Auto Shopper's item data has loaded, a line naming an item the market board does not sell (`lines[n].itemId`), or `HighQuality` for an item that has no HQ (`lines[n].quality`), is refused as `InvalidRequest` too. When the item data has not loaded yet, the run is accepted and checks those lines in its preflight.
