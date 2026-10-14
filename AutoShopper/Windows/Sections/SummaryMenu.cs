@@ -47,7 +47,6 @@ internal static class SummaryMenu
     public static string Reason(SummaryStatus status) => status switch
     {
         SummaryStatus.NotRecorded => Loc.T(L.Exports.SummaryNotRecorded),
-        SummaryStatus.DryRunGone => Loc.T(L.Exports.SummaryDryRunGone),
         SummaryStatus.JournalGone => Loc.T(L.Exports.SummaryJournalGone),
         SummaryStatus.ReadFailed => Loc.T(L.Exports.SummaryReadFailed),
         _ => Loc.T(L.Exports.SummaryHelp),

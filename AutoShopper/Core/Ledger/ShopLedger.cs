@@ -9,7 +9,7 @@ internal enum LedgerAnswer : byte
     WriteFailed = 2,
 }
 
-// The journal file of real runs and what it says about them: attempts nobody knows the outcome of, damage, and a run
+// The journal file of runs and what it says about them: attempts nobody knows the outcome of, damage, and a run
 // that was interrupted. The review is read again only after something wrote to the journal. Framework thread only.
 internal sealed class ShopLedger
 {

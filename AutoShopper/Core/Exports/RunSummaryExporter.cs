@@ -38,7 +38,7 @@ internal static class RunSummaryExporter
         AppendShortfalls(builder, summary.Unresolved);
         AppendAttempts(builder, "Rejected", summary.Rejected);
         AppendAttempts(builder, "Unknown result, reconcile before buying more", summary.Unknown);
-        AppendAttempts(builder, summary.DryRun ? "Dry run, would buy" : "Not sent", summary.NotSent);
+        AppendAttempts(builder, "Not sent", summary.NotSent);
         if (summary.Diagnostics is { } diagnostics)
         {
             AppendDiagnostics(builder, diagnostics);
@@ -50,8 +50,7 @@ internal static class RunSummaryExporter
     private static void AppendHeader(StringBuilder builder, RunSummary summary)
     {
         builder.Append("Auto Shopper run summary").Append(ExportText.NewLine);
-        builder.Append("Run ").Append(summary.RunId);
-        builder.Append(summary.DryRun ? ", DRY RUN: no purchase was sent" : ", live run").Append(ExportText.NewLine);
+        builder.Append("Run ").Append(summary.RunId).Append(ExportText.NewLine);
         builder.Append("Started: ");
         AppendMoment(builder, summary.StartedAtUtc, "unknown").Append(ExportText.NewLine);
         builder.Append("Ended: ");
@@ -242,7 +241,6 @@ internal static class RunSummaryExporter
         return reason switch
         {
             ShortfallReason.AwaitingReconciliation => "a purchase result is unknown",
-            ShortfallReason.DryRun => "dry run, nothing was bought",
             ShortfallReason.PurchasesFailed => "purchases were rejected or not sent",
             _ => "no purchase was made",
         };

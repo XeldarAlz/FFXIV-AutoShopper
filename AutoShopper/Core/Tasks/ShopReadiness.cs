@@ -88,7 +88,7 @@ internal static class ShopReadiness
             return Readiness.ReadingUnavailable;
         }
 
-        if (!configuration.DryRun && !compatibility.ExecutionAvailable)
+        if (!compatibility.ExecutionAvailable)
         {
             return Readiness.BuyingUnavailable;
         }

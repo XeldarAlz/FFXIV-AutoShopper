@@ -7,20 +7,18 @@ using System.Numerics;
 
 namespace AutoShopper.Windows.Sections;
 
-// One line under the headline: whether listings can be read and bought on this game version, and a badge while
-// dry run is on.
+// One line under the headline: whether listings can be read and bought on this game version.
 internal static class MarketStatusLine
 {
     private const float DotRadius = 3.5f;
     private const float DotGap = 10f;
     private const float LabelGap = 8f;
-    private const float BadgeGap = 10f;
     private const long ReadingFlag = 1;
     private const long BuyingFlag = 2;
 
     private static CachedText statusText;
 
-    public static void Draw(MarketCompatibilityReport compatibility, bool dryRun)
+    public static void Draw(MarketCompatibilityReport compatibility)
     {
         var scale = ImGuiHelpers.GlobalScale;
         var origin = ImGui.GetCursorScreenPos();
@@ -45,15 +43,9 @@ internal static class MarketStatusLine
 
             var key = (reading ? ReadingFlag : 0) | (buying ? BuyingFlag : 0);
             var text = statusText.Get(key, static _ => Describe(Plugin.Instance.Market.Compatibility));
-            var badgeLabel = Loc.T(L.Market.DryRunBadge);
-            var badgeWidth = dryRun ? TextDraw.Measure(badgeLabel).X + 2f * BadgeGap * scale : 0f;
-            var shown = TextDraw.Truncate(text, MathF.Max(0f, origin.X + width - x - badgeWidth));
+            var shown = TextDraw.Truncate(text, MathF.Max(0f, origin.X + width - x));
             TextDraw.At(shown, new Vector2(x, midY - lineHeight * 0.5f), buying ? Styling.TextDim : Styling.AccentAmberSoft);
             var textEnd = x + TextDraw.Measure(shown).X;
-            if (dryRun)
-            {
-                Badge.DrawLeft(drawList, badgeLabel, Styling.AccentBlue, textEnd + BadgeGap * scale, midY);
-            }
 
             if (!buying && Hit.HoveringRect(new Vector2(origin.X, origin.Y), new Vector2(textEnd, origin.Y + lineHeight)))
             {

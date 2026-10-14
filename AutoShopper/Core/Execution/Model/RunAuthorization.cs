@@ -48,9 +48,6 @@ internal sealed class RunAuthorization
 
     public int? WorldRevisits { get; init; }
 
-    // A dry run is authorized in memory only, so one read back from the journal file is always a real run.
-    public bool DryRun { get; init; }
-
     public RunCaller? Caller { get; init; }
 
     public static AuthorizationProblem TryCreate(
@@ -66,7 +63,6 @@ internal sealed class RunAuthorization
         out RunAuthorization? authorization,
         int? maxStops = null,
         int? worldRevisits = null,
-        bool dryRun = false,
         RunCaller? caller = null)
     {
         authorization = null;
@@ -93,7 +89,6 @@ internal sealed class RunAuthorization
             CreatedAtUtc = createdAtUtc,
             MaxStops = maxStops is { } stops ? Math.Max(0, stops) : null,
             WorldRevisits = worldRevisits is { } revisits ? Math.Max(0, revisits) : null,
-            DryRun = dryRun,
             Caller = caller,
         };
         return AuthorizationProblem.None;
@@ -120,7 +115,6 @@ internal sealed class RunAuthorization
             out authorization,
             recorded.MaxStops,
             recorded.WorldRevisits,
-            recorded.DryRun,
             recorded.Caller);
     }
 
@@ -147,7 +141,6 @@ internal sealed class RunAuthorization
             AuthorizedAtUtc = CreatedAtUtc,
             MaxStops = MaxStops,
             WorldRevisits = WorldRevisits,
-            DryRun = DryRun,
             Caller = Caller,
         };
     }

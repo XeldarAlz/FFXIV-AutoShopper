@@ -156,7 +156,6 @@ public sealed class ApiJsonTests
             RunId = ApiIds.Format(Id),
             Known = true,
             CallerRunId = "0d7f",
-            DryRun = true,
             Phase = RunPhase.Shopping,
             State = RunState.Searching,
             Status = "Searching Darksteel Ore on Ultros",
@@ -177,7 +176,7 @@ public sealed class ApiJsonTests
         var json = ApiJson.Write(response, ApiJsonContext.Default.RunStatusResponse);
 
         Assert.Equal(
-            ["schema", "runId", "known", "callerRunId", "dryRun", "phase", "state", "status", "revision", "paused", "pauseReason", "terminal",
+            ["schema", "runId", "known", "callerRunId", "phase", "state", "status", "revision", "paused", "pauseReason", "terminal",
                 "outcome", "needsPlayer", "confirmedSpend", "reservedSpend", "lines", "issues", "returnHome", "refusal"],
             Names(json));
         Assert.Equal(["itemId", "quality", "requested", "acquired", "missing"], Names(json, "lines"));

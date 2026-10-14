@@ -88,20 +88,16 @@ internal sealed partial class AutoShopRun(ShopRunState run, ShopSession session)
         var final = run.HasUnknownOutcome ? RunState.NeedsReconciliation : end.State;
         NoteMissingUnits();
         run.Finish(final, end.Reason, DateTime.UtcNow);
-        if (!run.DryRun)
-        {
-            Owner.Ledger.Invalidate();
-        }
-
+        Owner.Ledger.Invalidate();
         run.ApplyTo(session);
         var outcome = ShopRunState.OutcomeOf(final);
         session.Outcome = outcome;
         session.CompletedByStopCondition = final is RunState.Completed or RunState.CompletedPartial;
-        RunLog.Info($"Run: ended {final} ({end.Reason}); {session.Units} unit(s) for {session.Spent} gil{(run.DryRun ? " in a dry run" : string.Empty)}.");
+        RunLog.Info($"Run: ended {final} ({end.Reason}); {session.Units} unit(s) for {session.Spent} gil.");
         var label = OutcomeLabel(outcome);
         var spent = Loc.Gil(session.Spent);
         var units = session.Units.ToString("N0", Loc.Culture);
-        Print(run.DryRun ? Loc.T(L.Buyer.ChatEndedDry, label, spent, units) : Loc.T(L.Buyer.ChatEnded, label, spent, units));
+        Print(Loc.T(L.Buyer.ChatEnded, label, spent, units));
         if (final == RunState.NeedsReconciliation)
         {
             PrintError(Loc.T(L.Buyer.ChatUncertain));

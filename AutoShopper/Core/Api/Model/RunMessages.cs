@@ -67,8 +67,6 @@ internal sealed record RunStatusResponse
 
     public string? CallerRunId { get; init; }
 
-    public bool DryRun { get; init; }
-
     public RunPhase Phase { get; init; }
 
     public RunState State { get; init; }

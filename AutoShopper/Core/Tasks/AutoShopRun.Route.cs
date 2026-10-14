@@ -204,18 +204,12 @@ internal sealed partial class AutoShopRun
         _ => Loc.T(L.Route.ReasonNotOurs),
     };
 
-    // A real run keeps its journal for the Resume card; a dry run's journal lives in memory, so it ends here instead.
+    // The run keeps its journal for the Resume card.
     private RunEnd? LeaveForResume()
     {
         var reason = resumeReason.Length > 0 ? resumeReason : Loc.T(L.Route.ReasonLoggedOut);
         RunLog.Info($"Run: run {run.RunId} stops where it stands and waits for the player: {reason}.");
         run.ClearTravel();
-        if (run.DryRun)
-        {
-            PrintError(Loc.T(L.Route.ChatDryStopped, reason));
-            return new RunEnd(RunState.Stopped, reason);
-        }
-
         run.Checkpoint(DateTime.UtcNow);
         session.Interrupted = true;
         Owner.Ledger.Invalidate();

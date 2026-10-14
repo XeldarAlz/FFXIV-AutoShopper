@@ -78,14 +78,14 @@ public sealed class ExternalRunTests
     }
 
     [Fact]
-    public void StatusLinesCountConfirmedAndWouldBuyUnits()
+    public void StatusLinesCountConfirmedUnits()
     {
         var external = ExternalRun.From(Request(), Now);
         var ore = PlanDemand.ForPurchase(Ore, DemandQuality.NormalQuality, 3, 3, 700);
         var cloth = PlanDemand.ForPurchase(Cloth, DemandQuality.HighQuality, 2);
         var tally = new RunTally([ore, cloth]);
         tally.RecordConfirmed(ore.Key, "game:1", 5, 3_000);
-        tally.RecordWouldBuy(cloth.Key, "game:2", 1, 900);
+        tally.RecordConfirmed(cloth.Key, "game:2", 1, 900);
 
         var lines = external.StatusLines(tally);
 

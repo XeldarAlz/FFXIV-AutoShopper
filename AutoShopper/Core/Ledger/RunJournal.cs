@@ -10,7 +10,7 @@ namespace AutoShopper.Core.Ledger;
 // Append-only JSON lines, one JournalEvent per line in the core's "Kind" shape. An append is on the disk before it
 // returns true, so a caller that sends a purchase only after a true append never sends one the journal does not know.
 // One owner appends, reads and rotates; the class is not thread safe.
-internal sealed class RunJournal : IRunJournal
+internal sealed class RunJournal
 {
     public const string FileName = "AutoShopper.Journal.jsonl";
 

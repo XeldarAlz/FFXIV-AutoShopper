@@ -12,8 +12,7 @@ internal static class ReadyState
 
     public readonly record struct Info(Kind Kind, Vector4 Accent, Vector4 AccentSoft, FontAwesomeIcon Icon, string Title, string Detail);
 
-    // Packs the readiness, the dry run switch and the list revision into one cache key for the detail line.
-    private const long ReadinessStride = 2;
+    // Packs the readiness and the list revision into one cache key for the detail line.
     private const long RevisionStride = 64;
 
     private static int cachedFrame = -1;
@@ -61,9 +60,8 @@ internal static class ReadyState
         }
 
         var plugin = Plugin.Instance;
-        var dryRun = plugin.Configuration.DryRun;
-        var key = plugin.Lists.Revision * RevisionStride + (long)readiness * ReadinessStride + (dryRun ? 1 : 0);
-        var text = detailText.Get(key, static packed => Detail((Readiness)(packed % RevisionStride / ReadinessStride), packed % ReadinessStride == 1));
+        var key = plugin.Lists.Revision * RevisionStride + (long)readiness;
+        var text = detailText.Get(key, static packed => Detail((Readiness)(packed % RevisionStride)));
         if (readiness == Readiness.Ready)
         {
             return new Info(Kind.Ready, Styling.AccentMint, Styling.AccentMintSoft, FontAwesomeIcon.ShoppingCart, Loc.T(L.Shop.TitleReady), text);
@@ -77,7 +75,7 @@ internal static class ReadyState
         return new Info(Kind.Blocked, Styling.AccentNebula, Styling.AccentGlowSoft, FontAwesomeIcon.ShoppingCart, Loc.T(L.Shop.TitleBlocked), text);
     }
 
-    private static string Detail(Readiness readiness, bool dryRun)
+    private static string Detail(Readiness readiness)
     {
         if (readiness != Readiness.Ready)
         {
@@ -85,7 +83,7 @@ internal static class ReadyState
         }
 
         var listName = Plugin.Instance.Lists.Selected?.Name ?? string.Empty;
-        return dryRun ? Loc.T(L.Shop.DetailReadyDry, listName) : Loc.T(L.Shop.DetailReady, listName);
+        return Loc.T(L.Shop.DetailReady, listName);
     }
 
     public static string ShortLabel(Kind kind) => kind switch

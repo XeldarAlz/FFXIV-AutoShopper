@@ -7,35 +7,13 @@ public sealed class AfterRunPolicyTests
     [Theory]
     [InlineData(AfterRunAction.Logout)]
     [InlineData(AfterRunAction.CloseGame)]
-    public void ADryRunSkipsLoggingOutAndClosingTheGameButStillGoesHome(AfterRunAction action)
-    {
-        var choice = AfterRunPolicy.Decide(Facts(action) with { DryRun = true });
-
-        Assert.True(choice.WayHome);
-        Assert.Null(choice.Action);
-        Assert.True(choice.ActionSkippedForDryRun);
-    }
-
-    [Theory]
-    [InlineData(AfterRunAction.Logout)]
-    [InlineData(AfterRunAction.CloseGame)]
     [InlineData(AfterRunAction.ReturnToInn)]
-    public void ARealRunTakesItsAfterRunAction(AfterRunAction action)
+    public void ARunTakesItsAfterRunAction(AfterRunAction action)
     {
         var choice = AfterRunPolicy.Decide(Facts(action));
 
         Assert.True(choice.WayHome);
         Assert.Equal(action, choice.Action);
-        Assert.False(choice.ActionSkippedForDryRun);
-    }
-
-    [Fact]
-    public void ADryRunStillReturnsToTheInn()
-    {
-        var choice = AfterRunPolicy.Decide(Facts(AfterRunAction.ReturnToInn) with { DryRun = true });
-
-        Assert.Equal(AfterRunAction.ReturnToInn, choice.Action);
-        Assert.False(choice.ActionSkippedForDryRun);
     }
 
     [Fact]
@@ -61,7 +39,6 @@ public sealed class AfterRunPolicyTests
         var choice = AfterRunPolicy.Decide(Facts(AfterRunAction.Logout) with { DidWork = false });
 
         Assert.Null(choice.Action);
-        Assert.False(choice.ActionSkippedForDryRun);
         Assert.True(choice.HasWork);
     }
 
@@ -71,7 +48,6 @@ public sealed class AfterRunPolicyTests
         EndedWithFault = false,
         LoggedIn = true,
         DidWork = true,
-        DryRun = false,
         ReturnHome = true,
         AwayFromHome = true,
         WayHomeAllowed = true,

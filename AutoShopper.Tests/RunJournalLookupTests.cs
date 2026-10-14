@@ -119,7 +119,7 @@ public sealed class RunJournalLookupTests : IDisposable
         Assert.Equal(JournalLookupStatus.Found, lookup.Status);
         Assert.Contains(ExportFixtures.CharacterName, File.ReadAllText(journal.FilePath), StringComparison.Ordinal);
 
-        var summary = RunSummaryBuilder.Build(ExportFixtures.RunId, lookup.Entries, false, ExportFixtures.Names());
+        var summary = RunSummaryBuilder.Build(ExportFixtures.RunId, lookup.Entries, ExportFixtures.Names());
         var text = RunSummaryExporter.ToText(summary);
         var json = RunSummaryExporter.ToJson(summary);
 

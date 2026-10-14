@@ -5,12 +5,8 @@ internal static partial class L
     internal static class Market
     {
         public static readonly LocString Tab = new("market.tab", "Market board");
-        public static readonly LocString TabSub = new("market.tabSub", "Dry runs, the board a run heads for, and how fast it searches and buys.");
+        public static readonly LocString TabSub = new("market.tabSub", "The board a run heads for, and how fast it searches and buys.");
 
-        public static readonly LocString Buying = new("market.buying", "Buying");
-        public static readonly LocString DryRun = new("market.dryRun", "Dry run");
-        public static readonly LocString DryRunHelp = new("market.dryRunHelp", "The whole run goes ahead, searches and checks included, but no purchase is ever sent: each one is logged as \"would buy\" with its price. Leave it on until you have watched a dry run and checked its numbers against the board.");
-        public static readonly LocString DryRunOff = new("market.dryRunOff", "Dry run is off: a run spends real gil, up to your run spend cap.");
 
         public static readonly LocString Board = new("market.board", "Market board");
         public static readonly LocString City = new("market.city", "Preferred city");
@@ -30,6 +26,5 @@ internal static partial class L
         public static readonly LocString StatusBuying = new("market.status.buying", "buying available");
         public static readonly LocString StatusBuyingOff = new("market.status.buyingOff", "buying off ({0} failed)");
         public static readonly LocString StatusOffHelp = new("market.status.offHelp", "This game version does not match what the plugin expects, so that part of the market board stays off until an update. /ashop mbstatus lists every check.");
-        public static readonly LocString DryRunBadge = new("market.dryRunBadge", "DRY RUN");
     }
 }

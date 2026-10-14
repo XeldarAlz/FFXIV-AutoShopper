@@ -19,7 +19,6 @@ public sealed class RunRecord
     public string ListName { get; set; } = "";
 
     public string? Caller { get; set; }
-    public bool DryRun { get; set; }
     public long Spent { get; set; }
     public int Units { get; set; }
     public int Purchases { get; set; }

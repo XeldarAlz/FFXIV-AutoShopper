@@ -13,8 +13,6 @@ internal readonly record struct PurchaseSendResult(PurchaseSendStatus Status, Pu
 {
     public static PurchaseSendResult Sent(long payable) => new(PurchaseSendStatus.Sent, PurchaseRefusal.None, ListingField.None, payable);
 
-    public static PurchaseSendResult DryRunWouldBuy(long payable) => new(PurchaseSendStatus.DryRunWouldBuy, PurchaseRefusal.None, ListingField.None, payable);
-
     public static PurchaseSendResult NotSent(PurchaseRefusal refusal, ListingField difference = ListingField.None)
         => new(PurchaseSendStatus.NotSent, refusal, difference, 0);
 }
@@ -30,9 +28,9 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
 
     public long NextAllowedAtMs { get; private set; }
 
-    public PurchaseSendResult Send(in PurchaseAttempt attempt, bool dryRun)
+    public PurchaseSendResult Send(in PurchaseAttempt attempt)
     {
-        var result = TrySend(attempt, dryRun);
+        var result = TrySend(attempt);
         if (result.Status == PurchaseSendStatus.NotSent)
         {
             var difference = result.Difference == ListingField.None ? string.Empty : $", first difference {result.Difference}";
@@ -42,7 +40,7 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
         return result;
     }
 
-    private PurchaseSendResult TrySend(in PurchaseAttempt attempt, bool dryRun)
+    private PurchaseSendResult TrySend(in PurchaseAttempt attempt)
     {
         var listing = attempt.Listing;
         if (attempt.AttemptId == Guid.Empty
@@ -53,7 +51,7 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
             return PurchaseSendResult.NotSent(PurchaseRefusal.InvalidAttempt);
         }
 
-        var precondition = CheckPreconditions(listing, dryRun);
+        var precondition = CheckPreconditions(listing);
         if (precondition != PurchaseRefusal.None)
         {
             return PurchaseSendResult.NotSent(precondition);
@@ -88,14 +86,6 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
             return PurchaseSendResult.NotSent(PurchaseRefusal.ListingKindRefused);
         }
 
-        // A dry run on a game version whose purchase addresses did not resolve stops short of staging the purchase.
-        if (dryRun && !compatibility.ExecutionAvailable)
-        {
-            NextAllowedAtMs = PacedFrom(Environment.TickCount64);
-            RunLog.Info($"Market: dry run, would buy {guarded} for {payable} gil (purchase {attempt.AttemptId}); buying is off, so the purchase was not staged.");
-            return PurchaseSendResult.DryRunWouldBuy(payable);
-        }
-
         if (!proxy->SetLastPurchasedItem(live))
         {
             return PurchaseSendResult.NotSent(PurchaseRefusal.SetLastPurchasedFailed);
@@ -109,12 +99,6 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
 
         var now = Environment.TickCount64;
         NextAllowedAtMs = PacedFrom(now);
-        if (dryRun)
-        {
-            RunLog.Info($"Market: dry run, would buy {guarded} for {payable} gil (purchase {attempt.AttemptId}).");
-            return PurchaseSendResult.DryRunWouldBuy(payable);
-        }
-
         watcher.Arm(new PurchaseExpectation(attempt.AttemptId, guarded, payable), now, configuration.ResultTimeoutMs);
         var sent = proxy->SendPurchaseRequestPacket();
         RunLog.Info($"Market: purchase {attempt.AttemptId} sent: returned {sent}, request event seen {watcher.RequestObserved}.");
@@ -129,10 +113,9 @@ internal sealed unsafe class PurchaseSender(ListingRequestTracker tracker, Purch
         return PurchaseSendResult.Sent(payable);
     }
 
-    // A dry run needs only the listings to be readable; a real purchase needs every market address and hook.
-    private PurchaseRefusal CheckPreconditions(in ObservedListing listing, bool dryRun)
+    private PurchaseRefusal CheckPreconditions(in ObservedListing listing)
     {
-        if (!compatibility.ReadingAvailable || (!dryRun && !compatibility.ExecutionAvailable))
+        if (!compatibility.ReadingAvailable || !compatibility.ExecutionAvailable)
         {
             return PurchaseRefusal.ExecutionUnavailable;
         }

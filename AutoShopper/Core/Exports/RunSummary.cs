@@ -10,7 +10,6 @@ internal enum ShortfallReason : byte
     NotAttempted = 0,
     PurchasesFailed = 1,
     AwaitingReconciliation = 2,
-    DryRun = 3,
 }
 
 internal readonly record struct SummaryAttempt(
@@ -84,8 +83,6 @@ internal sealed record RunSummary
     public required DateTime? EndedAtUtc { get; init; }
 
     public required RunState Outcome { get; init; }
-
-    public required bool DryRun { get; init; }
 
     public required SummarySpend Spend { get; init; }
 

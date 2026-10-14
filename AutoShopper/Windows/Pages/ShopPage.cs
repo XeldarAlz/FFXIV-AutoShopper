@@ -61,7 +61,7 @@ internal sealed class ShopPage
         }
 
         Styling.VSpace(MarketStatusGap);
-        MarketStatusLine.Draw(plugin.Market.Compatibility, plugin.Configuration.DryRun);
+        MarketStatusLine.Draw(plugin.Market.Compatibility);
         Styling.VSpace(20f);
         LedgerCards.Draw(plugin);
         ConsentCard.Draw(plugin);

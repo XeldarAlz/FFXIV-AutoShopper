@@ -76,7 +76,6 @@ internal sealed class RunView
     public static RunView Build(ShopRunState run, bool withNames)
     {
         var spend = run.Spend;
-        var spent = run.DryRun ? run.Tally.WouldBuySpend : run.Tally.ConfirmedSpend;
         return new RunView
         {
             Run = run,
@@ -84,8 +83,8 @@ internal sealed class RunView
             TallyRevision = run.Tally.Revision,
             Language = Loc.Current,
             WithNames = withNames,
-            SpentLabel = Loc.T(run.DryRun ? L.Run.TileWouldSpend : L.Run.TileSpent),
-            SpentValue = Loc.Gil(spent),
+            SpentLabel = Loc.T(L.Run.TileSpent),
+            SpentValue = Loc.Gil(run.Tally.ConfirmedSpend),
             SpentSub = spend.Reserved > 0 ? Loc.T(L.Run.TileReserved, Loc.Gil(spend.Reserved)) : null,
             BudgetValue = run.IsAuthorized ? Loc.Gil(spend.Remaining) : "-",
             BudgetSub = run.LastGil >= 0 ? Loc.T(L.Run.TilePurse, Loc.Gil(run.LastGil)) : null,

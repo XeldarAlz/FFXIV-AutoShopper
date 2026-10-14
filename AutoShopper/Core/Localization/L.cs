@@ -46,7 +46,6 @@ internal static partial class L
         public static readonly LocString DetailSetupNeeded = new("shop.detail.setupNeeded", "Install the required plugins before your first shopping run.");
         public static readonly LocString TitleReady = new("shop.title.ready", "Ready to shop");
         public static readonly LocString DetailReady = new("shop.detail.ready", "Start buys the plan for {0}.");
-        public static readonly LocString DetailReadyDry = new("shop.detail.readyDry", "Start runs a dry run of {0}: nothing is bought.");
         public static readonly LocString TitleBlocked = new("shop.title.blocked", "Not ready yet");
         public static readonly LocString DetailBlocked = new("shop.detail.blocked", "To start, {0}.");
         public static readonly LocString TitleStopping = new("shop.title.stopping", "Stopping");
@@ -88,23 +87,14 @@ internal static partial class L
         public static readonly LocString ReasonListErrors = new("shop.reason.listErrors", "fix the lines the list marks");
         public static readonly LocString ReasonNoCap = new("shop.reason.noCap", "set a run spend cap in Settings, Shopping");
         public static readonly LocString ReasonReadingOff = new("shop.reason.readingOff", "wait for an update: the market board cannot be read on this game version");
-        public static readonly LocString ReasonBuyingOff = new("shop.reason.buyingOff", "turn on dry run: buying is off on this game version");
+        public static readonly LocString ReasonBuyingOff = new("shop.reason.buyingOff", "buying is off on this game version");
         public static readonly LocString ReasonBusy = new("shop.reason.busy", "stop the task that is running");
         public static readonly LocString StartSub = new("shop.startSub", "buy your shopping list");
-        public static readonly LocString StartSubDry = new("shop.startSubDry", "dry run: nothing is bought");
         public static readonly LocString StateRunning = new("shop.state.running", "running");
         public static readonly LocString StatePaused = new("shop.state.paused", "paused");
         public static readonly LocString StateStopping = new("shop.state.stopping", "stopping");
         public static readonly LocString StopSub = new("shop.stopSub", "{0} · {1}");
 
-        public static readonly LocString DryRunOn = new("shop.dryRun.on", "On");
-        public static readonly LocString DryRunOff = new("shop.dryRun.off", "Off: spends real gil");
-        public static readonly LocString DryRunOnHelp = new("shop.dryRun.onHelp", "Dry run is on: a run does everything except buy. Click to turn it off; you are asked first.");
-        public static readonly LocString DryRunOffHelp = new("shop.dryRun.offHelp", "Dry run is off: Start spends real gil, up to your run spend cap. Click to turn dry run back on.");
-        public static readonly LocString DryRunConfirmTitle = new("shop.dryRun.confirmTitle", "Turn dry run off?");
-        public static readonly LocString DryRunConfirmBody = new("shop.dryRun.confirmBody", "Every run after this spends real gil, up to your run spend cap.");
-        public static readonly LocString DryRunConfirmYes = new("shop.dryRun.confirmYes", "Spend real gil");
-        public static readonly LocString DryRunConfirmNo = new("shop.dryRun.confirmNo", "Keep dry run");
     }
 
     internal static class Travel
@@ -140,7 +130,6 @@ internal static partial class L
         public static readonly LocString PhaseShopping = new("run.phase.shopping", "Shopping");
         public static readonly LocString PhaseStopping = new("run.phase.stopping", "Stopping");
         public static readonly LocString TileSpent = new("run.tile.spent", "Spent");
-        public static readonly LocString TileWouldSpend = new("run.tile.wouldSpend", "Would spend");
         public static readonly LocString TileReserved = new("run.tile.reserved", "{0} reserved");
         public static readonly LocString TileBudgetLeft = new("run.tile.budgetLeft", "Budget left");
         public static readonly LocString TilePurse = new("run.tile.purse", "{0} in your purse");
@@ -182,9 +171,7 @@ internal static partial class L
         public static readonly LocString OutcomeStopped = new("history.outcome.stopped", "Stopped");
         public static readonly LocString OutcomeFailed = new("history.outcome.failed", "Error");
         public static readonly LocString OutcomeNeedsReconciliation = new("history.outcome.needsReconciliation", "Needs check");
-        public static readonly LocString DryRun = new("history.dryRun", "Dry run");
         public static readonly LocString Spent = new("history.spent", "{0} spent");
-        public static readonly LocString WouldSpend = new("history.wouldSpend", "{0} would be spent");
         public static readonly LocPlural Units = new("history.units", "{0} unit", "{0} units");
         public static readonly LocString TooltipList = new("history.tooltip.list", "List: {0}");
         public static readonly LocString TooltipVia = new("history.tooltip.via", "Via {0}");
@@ -255,6 +242,13 @@ internal static partial class L
         public static readonly LocString New = new("changelog.new", "New");
         public static readonly LocPlural Changes = new("changelog.changes", "{0} change", "{0} changes");
 
+        public static readonly LocString[] Release1200 =
+        [
+            new("changelog.r1200.1", "Dry run is gone: Start always buys for real, up to your run spend cap, so check the cap before your next run"),
+            new("changelog.r1200.2", "History drops the rows of past dry runs, which bought nothing"),
+            new("changelog.r1200.3", "For plugins: the Buying API's AutoShopper.Api.DryRun call and the dryRun field of RunStatus are removed"),
+        ];
+
         public static readonly LocString[] Release1102 =
         [
             new("changelog.r1102.1", "The market board windows are closed when a run ends on its own, so the character is free to move at once, also for a plugin that started the run"),
@@ -269,7 +263,7 @@ internal static partial class L
         public static readonly LocString[] Release1100 =
         [
             new("changelog.r1100.1", "Other plugins can price items and start runs of their own lists through the new Buying API, once you allow them on the Shop page"),
-            new("changelog.r1100.2", "Their runs keep your dry run, worlds, gil reserve and purchase checks, and History names the plugin that started a run"),
+            new("changelog.r1100.2", "Their runs keep your worlds, gil reserve and purchase checks, and History names the plugin that started a run"),
             new("changelog.r1100.3", "Settings, General lists the plugins you answered, with Revoke and Allow; Revoke also stops a run the plugin has under way"),
         ];
 
@@ -290,7 +284,6 @@ internal static partial class L
             new("changelog.r1000.7", "Checks every purchase against your caps, gil reserve and bag space, one at a time, and never buys from your own retainers, mannequins or sets"),
             new("changelog.r1000.8", "Writes each purchase to a journal before sending it, confirms it by the server's answer and your gil and bags, and asks you when unsure"),
             new("changelog.r1000.9", "Pause, resume and stop, a way home and an after-run action, and History with copyable summaries free of names and ids"),
-            new("changelog.r1000.10", "Dry run is on until you switch it off: a run does everything except buy, and the switch next to Start asks first"),
         ];
     }
 

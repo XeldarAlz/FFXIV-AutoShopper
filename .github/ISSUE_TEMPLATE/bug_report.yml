@@ -72,18 +72,6 @@ body:
       placeholder: "Started on Gilgamesh (Aether); failed while buying on Zalera (Crystal)"
 
   - type: dropdown
-    id: dry-run
-    attributes:
-      label: Was dry run on?
-      description: The Dry run switch next to Start on the Shop page, also under Settings, Market board. A dry run never sends a purchase.
-      options:
-        - Yes, it was a dry run
-        - No, it spent real gil
-        - Not sure
-    validations:
-      required: true
-
-  - type: dropdown
     id: stage
     attributes:
       label: Where in the run did it fail?

@@ -10,8 +10,6 @@ internal readonly record struct AfterRunFacts
 
     public required bool DidWork { get; init; }
 
-    public required bool DryRun { get; init; }
-
     public required bool ReturnHome { get; init; }
 
     // The home world is known and the character stands on another one.
@@ -23,15 +21,15 @@ internal readonly record struct AfterRunFacts
     public required AfterRunAction Action { get; init; }
 }
 
-internal readonly record struct AfterRunChoice(bool WayHome, AfterRunAction? Action, bool ActionSkippedForDryRun)
+internal readonly record struct AfterRunChoice(bool WayHome, AfterRunAction? Action)
 {
-    public static readonly AfterRunChoice Nothing = new(false, null, false);
+    public static readonly AfterRunChoice Nothing = new(false, null);
 
     public bool HasWork => WayHome || Action is not null;
 }
 
 // What follows a run that ended on its own: the way home, then the after-run action. A Stop, a fault or a logout runs
-// neither. A dry run still goes home when asked, but never logs out or closes the game, since nothing was bought.
+// neither.
 internal static class AfterRunPolicy
 {
     public static AfterRunChoice Decide(in AfterRunFacts facts)
@@ -44,14 +42,9 @@ internal static class AfterRunPolicy
         var wayHome = facts.ReturnHome && facts.AwayFromHome && facts.WayHomeAllowed;
         if (facts.Action == AfterRunAction.StayLoggedIn || !facts.DidWork)
         {
-            return new AfterRunChoice(wayHome, null, false);
+            return new AfterRunChoice(wayHome, null);
         }
 
-        if (facts.DryRun && facts.Action is AfterRunAction.Logout or AfterRunAction.CloseGame)
-        {
-            return new AfterRunChoice(wayHome, null, true);
-        }
-
-        return new AfterRunChoice(wayHome, facts.Action, false);
+        return new AfterRunChoice(wayHome, facts.Action);
     }
 }

@@ -2,7 +2,6 @@ using AutoShopper.Core.Api.Model;
 using AutoShopper.Core.Execution.Model;
 using AutoShopper.Core.External;
 using AutoShopper.Core.Ipc;
-using AutoShopper.Core.Ledger;
 using AutoShopper.Core.Localization;
 using AutoShopper.Core.Stats;
 using AutoShopper.Core.Travel;
@@ -56,7 +55,6 @@ internal sealed partial class AutoShopController
     private static void Diag(string message)
         => RunLog.Info(message);
 
-    // A dry run writes its journal to memory, so nothing it did can count as spending after a restart.
     public void Start()
     {
         if (Running)
@@ -98,14 +96,6 @@ internal sealed partial class AutoShopController
             return;
         }
 
-        // A run read back from the journal buys for real, so it never resumes while Dry run says nothing is bought.
-        if (plugin.Configuration.DryRun || interrupted.Authorization.DryRun)
-        {
-            Diag($"Resume of run {interrupted.RunId} refused: Dry run is on (setting {plugin.Configuration.DryRun}, recorded {interrupted.Authorization.DryRun}).");
-            ECommons.DalamudServices.Svc.Chat.PrintError($"{AshopConstants.LogPrefix} {Loc.T(L.Resume.DryRunOn)}");
-            return;
-        }
-
         BeginShopRun(ShopRunState.FromJournal(plugin.Market, plugin.Ledger.Journal, interrupted), "resume of an interrupted run");
     }
 
@@ -123,8 +113,7 @@ internal sealed partial class AutoShopController
     // A logout, a character change or an unload stops the run where it stands and leaves its journal as it is, so
     // the Shop page offers to resume it later; it never resumes on its own. Lifestream's travel is left alone: a
     // transfer under way is picked up as a bare journey at the next login. A run that already ended only loses what
-    // was left of its way home and after-run action. A dry run's journal lives in memory and cannot be resumed, so
-    // it ends here as stopped and keeps its history row.
+    // was left of its way home and after-run action.
     public void Interrupt()
     {
         if (shopRun is not { } run)
@@ -154,18 +143,9 @@ internal sealed partial class AutoShopController
             SetReturnHome(ending, ReturnHomeResult.Failed);
         }
 
-        var dryEnded = false;
         if (ending is not null && !finished)
         {
-            dryEnded = run.DryRun;
-            if (dryEnded)
-            {
-                EndShopRun(ending, RunState.Stopped, "the dry run was interrupted");
-            }
-            else
-            {
-                ending.Interrupted = true;
-            }
+            ending.Interrupted = true;
         }
 
         FinalizeRun(ending);
@@ -177,14 +157,8 @@ internal sealed partial class AutoShopController
             return;
         }
 
-        if (dryEnded)
-        {
-            Diag($"Dry run {run.RunId} interrupted; it ends as stopped, since a dry run cannot be resumed.");
-            return;
-        }
-
         Diag($"Run {run.RunId} interrupted; its journal is kept for a resume.");
-        if (run.IsAuthorized && !run.DryRun)
+        if (run.IsAuthorized)
         {
             ECommons.DalamudServices.Svc.Chat.Print($"{AshopConstants.LogPrefix} {Loc.T(L.Buyer.ChatInterrupted)}");
         }
@@ -357,7 +331,7 @@ internal sealed partial class AutoShopController
         LaunchRun(newSession);
     }
 
-    // A run task that cannot be built is undone the way a logout undoes a run: an authorized real run stays in the
+    // A run task that cannot be built is undone the way a logout undoes a run: an authorized run stays in the
     // journal for the Resume card, anything else is cleared.
     private void LaunchRun(ShopSession owningSession)
     {
@@ -383,10 +357,8 @@ internal sealed partial class AutoShopController
     private ShopRunState BeginFresh(string listName, ExternalRun? external)
     {
         var plugin = Plugin.Instance;
-        var dryRun = plugin.Configuration.DryRun;
-        IRunJournal journal = dryRun ? new MemoryJournal() : plugin.Ledger.Journal;
-        var state = ShopRunState.Fresh(plugin.Market, journal, dryRun, listName, external);
-        BeginShopRun(state, dryRun ? "dry run" : "run");
+        var state = ShopRunState.Fresh(plugin.Market, plugin.Ledger.Journal, listName, external);
+        BeginShopRun(state, "run");
         return state;
     }
 
@@ -394,7 +366,6 @@ internal sealed partial class AutoShopController
     {
         stopping = false;
         shopRun = state;
-        Plugin.Instance.Summaries.Track(state);
         var newSession = new ShopSession();
         state.ApplyTo(newSession);
         BeginRun(newSession, owner => new AutoShopRun(state, owner), plan);
@@ -438,10 +409,7 @@ internal sealed partial class AutoShopController
             ending.Outcome ??= outcome;
         }
 
-        if (!run.DryRun)
-        {
-            Plugin.Instance.Ledger.Invalidate();
-        }
+        Plugin.Instance.Ledger.Invalidate();
     }
 
     private static RunPhase PhaseOf(RunState state) => state switch

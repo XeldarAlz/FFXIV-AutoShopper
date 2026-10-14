@@ -19,13 +19,12 @@ internal static class RunSummaryBuilder
     private const int RandomSaltBytes = 16;
 
     // For a journal read back later: the run's progress is replayed from the same entries the details come from.
-    public static RunSummary Build(Guid runId, IReadOnlyList<JournalEvent?> entries, bool dryRun, IExportNames names, RunSummaryOptions options = default)
-        => Build(JournalReplayer.Replay(entries, runId), entries, dryRun, names, options);
+    public static RunSummary Build(Guid runId, IReadOnlyList<JournalEvent?> entries, IExportNames names, RunSummaryOptions options = default)
+        => Build(JournalReplayer.Replay(entries, runId), entries, names, options);
 
     public static RunSummary Build(
         JournalProgress progress,
         IReadOnlyList<JournalEvent?> entries,
-        bool dryRun,
         IExportNames names,
         RunSummaryOptions options = default)
     {
@@ -69,11 +68,10 @@ internal static class RunSummaryBuilder
             StartedAtUtc = authorization?.CreatedAtUtc ?? startedAtUtc,
             EndedAtUtc = endedAtUtc,
             Outcome = progress.RecoveredState,
-            DryRun = dryRun,
             Spend = new SummarySpend(progress.ConfirmedSpend, cap, progress.ReservedSpend, Remaining(cap, progress.ConfirmedSpend, progress.ReservedSpend)),
             Purchases = purchases.ToImmutable(),
             Excess = CollectExcess(progress.Demands, names),
-            Unresolved = CollectShortfalls(progress.Demands, dryRun, names),
+            Unresolved = CollectShortfalls(progress.Demands, names),
             Rejected = rejected.ToImmutable(),
             Unknown = unknown.ToImmutable(),
             NotSent = notSent.ToImmutable(),
@@ -168,7 +166,7 @@ internal static class RunSummaryBuilder
         return excess.ToImmutable();
     }
 
-    private static ImmutableArray<SummaryShortfall> CollectShortfalls(ImmutableArray<DemandProgress> demands, bool dryRun, IExportNames names)
+    private static ImmutableArray<SummaryShortfall> CollectShortfalls(ImmutableArray<DemandProgress> demands, IExportNames names)
     {
         var shortfalls = ImmutableArray.CreateBuilder<SummaryShortfall>();
         for (var index = 0; index < demands.Length; index++)
@@ -189,22 +187,17 @@ internal static class RunSummaryBuilder
                 progress.ConfirmedQuantity,
                 missing,
                 progress.UnknownQuantity,
-                ShortfallReasonFor(progress, dryRun)));
+                ShortfallReasonFor(progress)));
         }
 
         return shortfalls.ToImmutable();
     }
 
-    private static ShortfallReason ShortfallReasonFor(DemandProgress progress, bool dryRun)
+    private static ShortfallReason ShortfallReasonFor(DemandProgress progress)
     {
         if (progress.UnknownQuantity > 0)
         {
             return ShortfallReason.AwaitingReconciliation;
-        }
-
-        if (dryRun)
-        {
-            return ShortfallReason.DryRun;
         }
 
         return progress.FailedAttempts > 0 ? ShortfallReason.PurchasesFailed : ShortfallReason.NotAttempted;

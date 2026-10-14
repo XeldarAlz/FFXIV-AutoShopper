@@ -9,7 +9,6 @@ namespace AutoShopper.Core.Api;
 internal sealed class BuyingApi : IDisposable
 {
     private const string ApiVersionGate = "AutoShopper.Api.ApiVersion";
-    private const string DryRunGate = "AutoShopper.Api.DryRun";
     private const string QuoteStartGate = "AutoShopper.Api.QuoteStart";
     private const string QuoteResultGate = "AutoShopper.Api.QuoteResult";
     private const string StartRunGate = "AutoShopper.Api.StartRun";
@@ -18,7 +17,6 @@ internal sealed class BuyingApi : IDisposable
 
     private readonly Plugin plugin;
     private readonly ICallGateProvider<int> apiVersion;
-    private readonly ICallGateProvider<bool> dryRun;
     private readonly ICallGateProvider<string, string> quoteStart;
     private readonly ICallGateProvider<string, string> quoteResult;
     private readonly ICallGateProvider<string, string> startRun;
@@ -34,7 +32,6 @@ internal sealed class BuyingApi : IDisposable
 
         var pluginInterface = Plugin.PluginInterface;
         apiVersion = pluginInterface.GetIpcProvider<int>(ApiVersionGate);
-        dryRun = pluginInterface.GetIpcProvider<bool>(DryRunGate);
         quoteStart = pluginInterface.GetIpcProvider<string, string>(QuoteStartGate);
         quoteResult = pluginInterface.GetIpcProvider<string, string>(QuoteResultGate);
         startRun = pluginInterface.GetIpcProvider<string, string>(StartRunGate);
@@ -49,7 +46,6 @@ internal sealed class BuyingApi : IDisposable
     public void Register()
     {
         apiVersion.RegisterFunc(ApiVersion);
-        dryRun.RegisterFunc(DryRun);
         quoteStart.RegisterFunc(QuoteStart);
         quoteResult.RegisterFunc(QuoteResult);
         startRun.RegisterFunc(StartRun);
@@ -105,7 +101,6 @@ internal sealed class BuyingApi : IDisposable
     {
         disposed = true;
         apiVersion.UnregisterFunc();
-        dryRun.UnregisterFunc();
         quoteStart.UnregisterFunc();
         quoteResult.UnregisterFunc();
         startRun.UnregisterFunc();
@@ -115,8 +110,6 @@ internal sealed class BuyingApi : IDisposable
     }
 
     private static int ApiVersion() => ApiContract.Version;
-
-    private bool DryRun() => OnFramework(() => plugin.Configuration.DryRun, static () => true);
 
     private string QuoteStart(string json)
     {

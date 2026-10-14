@@ -20,29 +20,25 @@ public sealed class RunTallyTests
         Assert.Equal(6, tally.Acquired(OreDemand.Key));
         Assert.Equal(4, tally.Outstanding(OreDemand.Key).RequiredQuantity);
         Assert.Equal(6_300, tally.ConfirmedSpend);
-        Assert.Equal(0, tally.WouldBuySpend);
         Assert.Equal(6, tally.ConfirmedUnits);
         Assert.False(tally.IsSatisfied(OreDemand.Key));
         Assert.Equal(1, tally.Purchases);
     }
 
     [Fact]
-    public void DryRunWouldBuyReducesWhatIsLeftButNeverCountsAsSpending()
+    public void PurchasesCoveringEveryLineSatisfyTheTally()
     {
         var tally = NewTally();
 
-        Assert.True(tally.RecordWouldBuy(OreDemand.Key, "game:1", 10, 10_500));
-        Assert.True(tally.RecordWouldBuy(ClothDemand.Key, "game:2", 4, 400));
+        Assert.True(tally.RecordConfirmed(OreDemand.Key, "game:1", 10, 10_500));
+        Assert.True(tally.RecordConfirmed(ClothDemand.Key, "game:2", 4, 400));
 
         Assert.True(tally.AllSatisfied);
-        Assert.Equal(0, tally.ConfirmedSpend);
-        Assert.Equal(0, tally.ConfirmedUnits);
-        Assert.Equal(10_900, tally.WouldBuySpend);
-        Assert.Equal(14, tally.WouldBuyUnits);
+        Assert.Equal(10_900, tally.ConfirmedSpend);
+        Assert.Equal(14, tally.ConfirmedUnits);
         var line = tally.LineAt(0);
         Assert.Equal(OreDemand.Key, line.Demand.Key);
-        Assert.Equal(0, line.Confirmed);
-        Assert.Equal(10, line.WouldBuy);
+        Assert.Equal(10, line.Acquired);
         Assert.True(line.Satisfied);
     }
 
@@ -53,7 +49,6 @@ public sealed class RunTallyTests
 
         Assert.True(tally.RecordConfirmed(OreDemand.Key, "game:1", 5, 5_050));
         Assert.False(tally.RecordConfirmed(OreDemand.Key, "game:1", 5, 5_050));
-        Assert.False(tally.RecordWouldBuy(OreDemand.Key, "game:1", 5, 5_050));
 
         Assert.Equal(5, tally.Acquired(OreDemand.Key));
         Assert.Equal(5_050, tally.ConfirmedSpend);
@@ -82,7 +77,6 @@ public sealed class RunTallyTests
         Assert.True(tally.IsSatisfied(ClothDemand.Key));
         Assert.Equal(5_450, tally.ConfirmedSpend);
         Assert.Equal(5, tally.LineAt(0).Missing);
-        Assert.Equal(5, tally.AcquiredOfItem(Ore));
     }
 
     [Fact]
@@ -90,7 +84,7 @@ public sealed class RunTallyTests
     {
         var tally = NewTally();
         tally.RecordConfirmed(OreDemand.Key, "game:1", 5, 5_050);
-        tally.RecordWouldBuy(OreDemand.Key, "game:2", 2, 2_100);
+        tally.RecordConfirmed(OreDemand.Key, "game:2", 2, 2_100);
 
         var acquisitions = tally.Acquisitions();
 
@@ -105,8 +99,8 @@ public sealed class RunTallyTests
         var tally = NewTally();
         var before = tally.Revision;
 
-        tally.RecordWouldBuy(OreDemand.Key, "game:1", 5, 5_050);
-        tally.RecordWouldBuy(OreDemand.Key, "game:1", 5, 5_050);
+        tally.RecordConfirmed(OreDemand.Key, "game:1", 5, 5_050);
+        tally.RecordConfirmed(OreDemand.Key, "game:1", 5, 5_050);
 
         Assert.Equal(before + 1, tally.Revision);
     }

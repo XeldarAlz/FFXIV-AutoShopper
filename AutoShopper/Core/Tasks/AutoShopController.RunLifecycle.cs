@@ -84,13 +84,12 @@ internal sealed partial class AutoShopController
             EndedWithFault = ending.EndedWithFault,
             LoggedIn = ECommons.DalamudServices.Svc.ClientState.IsLoggedIn,
             DidWork = ending.DidWork,
-            DryRun = ending.DryRun,
             ReturnHome = returnHome,
             AwayFromHome = away,
             WayHomeAllowed = wayHomeAllowed,
             Action = afterRun,
         });
-        Diag($"After the run: way home {choice.WayHome}, after-run action {(choice.Action?.ToString() ?? "none")}{(choice.ActionSkippedForDryRun ? $" ({afterRun} skipped for a dry run)" : string.Empty)}; stop condition {ending.CompletedByStopCondition}, fault {ending.EndedWithFault}, away from home {away}.");
+        Diag($"After the run: way home {choice.WayHome}, after-run action {(choice.Action?.ToString() ?? "none")}; stop condition {ending.CompletedByStopCondition}, fault {ending.EndedWithFault}, away from home {away}.");
         if (!ending.CompletedByStopCondition || ending.EndedWithFault)
         {
             return choice;
@@ -104,11 +103,6 @@ internal sealed partial class AutoShopController
         else if (returnHome && away && !wayHomeAllowed)
         {
             ECommons.DalamudServices.Svc.Chat.Print($"{AshopConstants.LogPrefix} {Loc.T(L.Route.ChatHomeSkippedJapan, current.Name)}");
-        }
-
-        if (choice.ActionSkippedForDryRun)
-        {
-            ECommons.DalamudServices.Svc.Chat.Print($"{AshopConstants.LogPrefix} {Loc.T(L.Route.ChatAfterRunDry, ActionName(afterRun))}");
         }
 
         return choice;
@@ -138,14 +132,6 @@ internal sealed partial class AutoShopController
 
         return allowed || !sameRegion ? ReturnHomeResult.Failed : ReturnHomeResult.Skipped;
     }
-
-    private static string ActionName(AfterRunAction action) => action switch
-    {
-        AfterRunAction.Logout => Loc.T(L.Travel.AfterLogoutName),
-        AfterRunAction.CloseGame => Loc.T(L.Travel.AfterCloseName),
-        AfterRunAction.ReturnToInn => Loc.T(L.Travel.AfterInnName),
-        _ => Loc.T(L.Travel.AfterStayName),
-    };
 
     // Travel between Japanese data centers stays off with the setting, the way home included.
     private static bool WayHomeAllowed(in WorldInfo home, in WorldInfo current, bool allowJapanese)
@@ -274,7 +260,6 @@ internal sealed partial class AutoShopController
                 ListName = ending.ListName,
                 Caller = ending.Caller.Length > 0 ? ending.Caller : null,
                 RunId = ending.RunId == Guid.Empty ? null : ending.RunId,
-                DryRun = ending.DryRun,
                 Spent = ending.Spent,
                 Units = ending.Units,
                 Purchases = ending.Purchases,
@@ -282,7 +267,7 @@ internal sealed partial class AutoShopController
             };
             Plugin.Instance.History.Append(record);
             ending.Record = record;
-            Diag($"Run recorded to history ({outcome}{(record.DryRun ? ", dry run" : string.Empty)}): {record.Duration} on {record.WorldName} ({record.DataCenterName}), {record.Units} unit(s) for {record.Spent} gil{(record.CrossedDataCenter ? ", across data centers" : string.Empty)}.");
+            Diag($"Run recorded to history ({outcome}): {record.Duration} on {record.WorldName} ({record.DataCenterName}), {record.Units} unit(s) for {record.Spent} gil{(record.CrossedDataCenter ? ", across data centers" : string.Empty)}.");
         }
         catch (Exception exception)
         {

@@ -64,22 +64,15 @@ internal sealed partial class AutoShopRun
 
         run.SetState(RunState.Submitting);
         var quantityText = live.Quantity.ToString("N0", Loc.Culture);
-        Status = run.DryRun ? Loc.T(L.Buyer.StatusWouldBuy, quantityText, name) : Loc.T(L.Buyer.StatusBuying, quantityText, name);
+        Status = Loc.T(L.Buyer.StatusBuying, quantityText, name);
         var attempt = new PurchaseAttempt(attemptId, live, payable);
-        var result = market.Sender.Send(attempt, run.DryRun);
-        switch (result.Status)
+        var result = market.Sender.Send(attempt);
+        if (result.Status == PurchaseSendStatus.NotSent)
         {
-            case PurchaseSendStatus.NotSent:
-                RecordSubmission(attemptId, sent: false);
-                run.Spend.Release(attemptId);
-                run.CountFailedAttempt();
-                return RunReactions.ForRefusal(result.Refusal);
-            case PurchaseSendStatus.DryRunWouldBuy:
-                RecordSubmission(attemptId, sent: false);
-                run.Spend.Confirm(attemptId, payable);
-                run.Tally.RecordWouldBuy(choice.Demand, live.ToListingKey(), live.Quantity, payable);
-                RunLog.Info($"Run: dry run, would buy {live.Quantity} x {name} ({itemId}{(live.IsHq ? " HQ" : string.Empty)}) from listing {live.ListingId} for {payable} gil ({live.UnitPrice} each + {live.TotalTax} fee).");
-                return RunResponse.Of(RunReaction.Continue);
+            RecordSubmission(attemptId, sent: false);
+            run.Spend.Release(attemptId);
+            run.CountFailedAttempt();
+            return RunReactions.ForRefusal(result.Refusal);
         }
 
         RecordSubmission(attemptId, sent: true);
@@ -146,9 +139,7 @@ internal sealed partial class AutoShopRun
     {
         var compatibility = Owner.Market.Compatibility;
         var found = Owner.Items.TryGet(itemId, out var item);
-        var tally = run.Tally;
-        var owned = inventory.Owned + (run.DryRun ? tally.AcquiredOfItem(itemId) : 0);
-        var gil = run.DryRun ? Math.Max(0, inventory.Gil - tally.WouldBuySpend) : inventory.Gil;
+        var owned = inventory.Owned;
         return new GuardInput
         {
             Authorization = run.Authorization!,
@@ -157,13 +148,13 @@ internal sealed partial class AutoShopRun
             CharacterContentId = Svc.PlayerState.ContentId,
             CurrentWorldId = Svc.PlayerState.CurrentWorld.RowId,
             SearchGeneration = Owner.Market.Tracker.Generation,
-            ExecutionAvailable = inventory.Available && (run.DryRun ? compatibility.ReadingAvailable : compatibility.ExecutionAvailable),
+            ExecutionAvailable = inventory.Available && compatibility.ExecutionAvailable,
             Demand = choice.Demand,
             Selected = StopSelection.Normalized(choice.Listing),
             Current = StopSelection.Normalized(live),
-            ConfirmedQuantity = tally.Acquired(choice.Demand),
+            ConfirmedQuantity = run.Tally.Acquired(choice.Demand),
             Spend = run.Spend.Snapshot(),
-            CurrentGil = gil,
+            CurrentGil = inventory.Gil,
             FreeInventorySlots = inventory.FreeSlots,
             ItemStackSize = found ? item.StackSize : 1,
             IsCrystal = found && item.IsCrystal,
@@ -181,7 +172,6 @@ internal sealed partial class AutoShopRun
         return TravelBudget.Commitment(stopsAhead, run.ReturnsHome(Owner.Configuration) && (stopsAhead > 0 || awayFromHome));
     }
 
-    // A dry run counts what it would have spent as gone, as its purchases do.
     private bool TripAffordable()
     {
         var inventory = InventoryReader.ReadLive(0);
@@ -190,8 +180,7 @@ internal sealed partial class AutoShopRun
             return true;
         }
 
-        var gil = run.DryRun ? Math.Max(0, inventory.Gil - run.Tally.WouldBuySpend) : inventory.Gil;
-        return TravelBudget.Affords(gil, run.Authorization!.GilReserve, TravelBudget.TeleportEstimateGil);
+        return TravelBudget.Affords(inventory.Gil, run.Authorization!.GilReserve, TravelBudget.TeleportEstimateGil);
     }
 
     private IntentRecorded IntentFor(Guid attemptId, in ListingChoice choice, in ObservedListing live, long payable, in LiveInventory inventory) => new()

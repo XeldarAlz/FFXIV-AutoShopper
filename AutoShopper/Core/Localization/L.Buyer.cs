@@ -11,17 +11,14 @@ internal static partial class L
         public static readonly LocString StatusChoosing = new("buyer.status.choosing", "Choosing listings of {0}");
         public static readonly LocString StatusGuarding = new("buyer.status.guarding", "Checking a listing of {0}");
         public static readonly LocString StatusBuying = new("buyer.status.buying", "Buying {0} x {1}");
-        public static readonly LocString StatusWouldBuy = new("buyer.status.wouldBuy", "Dry run: would buy {0} x {1}");
         public static readonly LocString StatusAwaiting = new("buyer.status.awaiting", "Waiting for the answer on {0} x {1}");
         public static readonly LocString StatusBackOff = new("buyer.status.backOff", "The board asked to wait; searching again shortly");
         public static readonly LocString StatusSettling = new("buyer.status.settling", "Waiting for the answer on the purchase in flight");
 
         public static readonly LocString ChatStarted = new("buyer.chat.started", "Run started for {0}: spending up to {1}.");
-        public static readonly LocString ChatStartedDry = new("buyer.chat.startedDry", "Dry run started for {0}: nothing is bought.");
         public static readonly LocString ChatResumed = new("buyer.chat.resumed", "Resuming the interrupted run.");
         public static readonly LocString ChatRefused = new("buyer.chat.refused", "Cannot start: {0}.");
         public static readonly LocString ChatEnded = new("buyer.chat.ended", "Run ended ({0}): {1} spent on {2} units.");
-        public static readonly LocString ChatEndedDry = new("buyer.chat.endedDry", "Dry run ended ({0}): it would have spent {1} on {2} units.");
         public static readonly LocString ChatStopping = new("buyer.chat.stopping", "Stopping once the purchase in flight is answered.");
         public static readonly LocString ChatUncertain = new("buyer.chat.uncertain", "A purchase got no clear answer. Buying stays off until you say on the Shop page whether it went through.");
         public static readonly LocString ChatInterrupted = new("buyer.chat.interrupted", "The run was interrupted. The Shop page offers to resume it.");
@@ -81,7 +78,6 @@ internal static partial class L
         public static readonly LocString ResumeRun = new("resume.resume", "Resume real buying");
         public static readonly LocString Discard = new("resume.discard", "Discard");
         public static readonly LocString OtherCharacter = new("resume.otherCharacter", "This run belongs to another character. Log in with that character to resume it, or discard it.");
-        public static readonly LocString DryRunOn = new("resume.dryRunOn", "Dry run is on, but Resume carries this run on with real purchases. Turn Dry run off in Settings to resume it, or discard it.");
     }
 
     internal static class Journal

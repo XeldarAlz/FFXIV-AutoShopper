@@ -1,7 +1,6 @@
 using AutoShopper.Core.Localization;
 using AutoShopper.Core.Tasks;
 using AutoShopper.Windows.Components;
-using AutoShopper.Windows.Sections;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility;
 using System.Numerics;
@@ -32,7 +31,7 @@ internal static class ActionDock
         }
         else
         {
-            DrawStart(plugin, innerWidth);
+            DrawStart(innerWidth);
         }
 
         ImGui.SetCursorScreenPos(origin);
@@ -61,26 +60,12 @@ internal static class ActionDock
         }
     }
 
-    private static void DrawStart(Plugin plugin, float innerWidth)
+    private static void DrawStart(float innerWidth)
     {
-        var scale = ImGuiHelpers.GlobalScale;
-        var configuration = plugin.Configuration;
-        var height = Layout.HeroButtonHeight * scale;
-        if (DryRunControl.Confirming)
-        {
-            DryRunControl.DrawConfirmation(configuration, innerWidth, height);
-            return;
-        }
-
-        var gap = ButtonGap * scale;
-        var tileWidth = DryRunControl.TileWidth(innerWidth);
         var readiness = ShopLauncher.Assess();
-        if (StartButton.Draw(ShopLauncher.Sublabel(), readiness == Readiness.Ready, ShopLauncher.Reason(readiness), innerWidth - tileWidth - gap))
+        if (StartButton.Draw(ShopLauncher.Sublabel(), readiness == Readiness.Ready, ShopLauncher.Reason(readiness), innerWidth))
         {
             ShopLauncher.Start();
         }
-
-        ImGui.SameLine(0f, gap);
-        DryRunControl.DrawTile(configuration, tileWidth, height);
     }
 }

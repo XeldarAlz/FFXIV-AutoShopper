@@ -80,7 +80,6 @@ public sealed class RunAuthorizationTests
 
         Assert.Equal(4, restored!.MaxStops);
         Assert.Equal(2, restored.WorldRevisits);
-        Assert.False(restored.DryRun);
     }
 
     [Fact]
@@ -92,18 +91,6 @@ public sealed class RunAuthorizationTests
 
         Assert.Null(restored!.MaxStops);
         Assert.Null(restored.WorldRevisits);
-    }
-
-    [Fact]
-    public void ADryRunIsRecordedAsOne()
-    {
-        RunAuthorization.TryCreate(RunId, Character, HomeWorld, [OreDemand], [HomeWorld], MaxSpend, Reserve, 1, Now, out var authorization, dryRun: true);
-
-        var recorded = authorization!.ToJournalEvent(1, Now);
-
-        Assert.True(recorded.DryRun);
-        Assert.Equal(AuthorizationProblem.None, RunAuthorization.TryRestore(recorded, out var restored));
-        Assert.True(restored!.DryRun);
     }
 
     [Fact]

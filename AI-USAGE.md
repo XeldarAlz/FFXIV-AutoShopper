@@ -31,7 +31,7 @@ The human gates, in order, none of them skippable:
 
 1. **The spec comes first.** What to build, and the constraints it has to respect, are written before any agent runs.
 2. **The diff is read.** Output is reviewed before it lands, not after users find the problem.
-3. **It is tested in the game.** On a real client, running at least one dry run end to end, plus a real purchase of one cheap item under a small spend cap when the change touches buying, or the journey alone with `/ashop goto` when the change is to travel. A clean `dotnet build` and a green `dotnet test` do not replace it.
+3. **It is tested in the game.** On a real client, running at least one short, cheap list end to end under a small spend cap, or the journey alone with `/ashop goto` when the change is to travel. A clean `dotnet build` and a green `dotnet test` do not replace it.
 4. **Ownership transfers.** Every merged line is the maintainer's to defend, explain, and fix. "The AI did it" is not an answer to why something is written the way it is.
 5. **Feedback is taken on its merits.** AI-assisted work invites sharper review, from users and from any reviewer, and that scrutiny is earned rather than unfair. The answer to a review comment is a fix or a reason, never a defense of the tooling.
 
@@ -39,7 +39,7 @@ The human gates, in order, none of them skippable:
 
 Nothing in this doc lowers a standard. Code produced with AI assistance is held to exactly the bar every other change meets: the CONTRIBUTING.md checklist, the .editorconfig style, one concern per pull request, and `[ASHOP]` log lines that make every step of a run auditable. A reviewer cannot tell which lines came from where, and that is the point.
 
-The one thing AI use does change is where the verification effort goes. AI gets Dalamud and FFXIVClientStructs APIs wrong often enough that any call into either is suspect until it has run in game. The IPC calls into vnavmesh and Lifestream, the helpers listed in `/ashop deps`, deserve the same suspicion: a call that compiles says nothing about whether the other plugin still answers it the same way. The market board reading and the purchase path deserve the most: `/ashop mbstatus` checks them against the running game, and dry run stays on by default so a run can be watched before it spends anything.
+The one thing AI use does change is where the verification effort goes. AI gets Dalamud and FFXIVClientStructs APIs wrong often enough that any call into either is suspect until it has run in game. The IPC calls into vnavmesh and Lifestream, the helpers listed in `/ashop deps`, deserve the same suspicion: a call that compiles says nothing about whether the other plugin still answers it the same way. The market board reading and the purchase path deserve the most: `/ashop mbstatus` checks them against the running game, and a test run under a small spend cap keeps what a mistake can cost small.
 
 ## If you contribute
 

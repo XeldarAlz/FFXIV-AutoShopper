@@ -48,8 +48,6 @@ internal sealed record RunAuthorized : JournalEvent
 
     public int? WorldRevisits { get; init; }
 
-    public bool DryRun { get; init; }
-
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public RunCaller? Caller { get; init; }
 

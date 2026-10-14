@@ -25,7 +25,7 @@ internal static class ShopLauncher
 
     public static void Start() => Plugin.Instance.Controller.Start();
 
-    public static string Sublabel() => Loc.T(Plugin.Instance.Configuration.DryRun ? L.Shop.StartSubDry : L.Shop.StartSub);
+    public static string Sublabel() => Loc.T(L.Shop.StartSub);
 
     public static string Reason(Readiness readiness) => ShopReadiness.Reason(readiness);
 }

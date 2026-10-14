@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.IO;
 
 namespace AutoShopper.Core.Stats;
@@ -9,6 +10,7 @@ internal sealed class RunHistory
 {
     private const int MaxRecords = 500;
     private const string FileName = "run-history.json";
+    private const string LegacyDryRunField = "DryRun";
 
     public RunHistory()
     {
@@ -63,16 +65,39 @@ internal sealed class RunHistory
                 return;
             }
 
-            var records = JsonConvert.DeserializeObject<List<RunRecord>>(File.ReadAllText(path));
-            if (records is not null)
+            if (JToken.Parse(File.ReadAllText(path)) is not JArray rows)
             {
-                Records = records;
+                return;
+            }
+
+            var dropped = DropDryRuns(rows);
+            Records = rows.ToObject<List<RunRecord>>() ?? [];
+            if (dropped > 0)
+            {
+                RunLog.Info($"RunHistory: dropped {dropped} dry run row(s), which bought nothing.");
+                Save();
             }
         }
         catch (Exception exception)
         {
             RunLog.Warning(exception, "RunHistory load failed; starting empty");
         }
+    }
+
+    // Rows written while dry runs existed would otherwise read as real spending.
+    private static int DropDryRuns(JArray rows)
+    {
+        var dropped = 0;
+        for (var index = rows.Count - 1; index >= 0; index--)
+        {
+            if (rows[index] is JObject row && row.Value<bool?>(LegacyDryRunField) == true)
+            {
+                rows.RemoveAt(index);
+                dropped++;
+            }
+        }
+
+        return dropped;
     }
 
     private void RecomputeLifetime()

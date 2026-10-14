@@ -84,7 +84,6 @@ internal sealed partial class AutoShopController
         RunId = ApiIds.Format(run.RunId),
         Known = true,
         CallerRunId = external.CallerRunId,
-        DryRun = run.DryRun,
         Phase = Phase,
         State = run.State,
         Status = Status,
@@ -108,7 +107,7 @@ internal sealed partial class AutoShopController
         }
 
         var outcome = ending.Interrupted ? RunOutcome.Stopped : ending.Outcome ?? (ending.EndedWithFault ? RunOutcome.Failed : RunOutcome.Stopped);
-        var resumable = ending.Interrupted && run.IsAuthorized && !run.DryRun;
+        var resumable = ending.Interrupted && run.IsAuthorized;
         var result = StatusOf(run, external).AsTerminal(
             run.FinalState ?? run.State,
             run.Refusal is null ? AutoShopRun.OutcomeLabel(outcome) : run.RefusalReason,

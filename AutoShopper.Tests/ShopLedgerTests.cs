@@ -157,34 +157,4 @@ public sealed class ShopLedgerTests
         Assert.False(ledger.BlocksBuying);
         Assert.Empty(ledger.Review.Runs);
     }
-
-    [Fact]
-    public void DryRunJournalStaysInMemory()
-    {
-        using var directory = new TemporaryDirectory();
-        var ledger = new ShopLedger(directory.Path);
-        var memory = new MemoryJournal();
-        var writer = new JournalWriter(memory).Authorize().Intent(FirstAttempt);
-        writer.Append(new PurchaseSubmitted { Sequence = memory.NextSequence, RunId = RunId, AtUtc = Now, AttemptId = FirstAttempt, Sent = false });
-
-        Assert.Equal(3, memory.Count);
-        Assert.False(File.Exists(ledger.Journal.FilePath));
-        Assert.False(ledger.BlocksBuying);
-        Assert.Empty(ledger.Review.Runs);
-        var review = JournalReview.Build(memory.Read().Entries);
-        Assert.False(review.NeedsReconciliation);
-        Assert.Equal(AttemptStatus.NotSent, Assert.Single(Assert.Single(review.Runs).Attempts).Status);
-    }
-
-    [Fact]
-    public void MemoryJournalRefusesMalformedEvents()
-    {
-        var memory = new MemoryJournal();
-
-        var appended = memory.TryAppend(new RunEnded { Sequence = 0, RunId = RunId, AtUtc = Now, FinalState = RunState.Stopped });
-
-        Assert.False(appended);
-        Assert.NotNull(memory.LastError);
-        Assert.Equal(0, memory.Count);
-    }
 }

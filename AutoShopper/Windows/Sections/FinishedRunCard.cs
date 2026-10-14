@@ -105,7 +105,7 @@ internal static class FinishedRunCard
         var scale = ImGuiHelpers.GlobalScale;
         var lineHeight = ImGui.GetTextLineHeight();
         var top = midY - (lineHeight * 2f + 6f * scale) * 0.5f;
-        var title = Loc.T(record.DryRun ? L.Exports.FinishedTitleDry : L.Exports.FinishedTitle);
+        var title = Loc.T(L.Exports.FinishedTitle);
         var titleShown = TextDraw.Truncate(title, width);
         TextDraw.At(titleShown, new Vector2(x, top), Styling.TextStrong);
         var badgeX = x + TextDraw.Measure(titleShown).X + ButtonGap * scale;
@@ -133,7 +133,7 @@ internal static class FinishedRunCard
             return detail;
         }
 
-        var spent = Loc.T(record.DryRun ? L.History.WouldSpend : L.History.Spent, Formatting.Gil(record.Spent));
+        var spent = Loc.T(L.History.Spent, Formatting.Gil(record.Spent));
         return string.Concat(detail, TextDraw.Separator, spent, TextDraw.Separator, Loc.Plural(L.History.Units, record.Units));
     }
 }

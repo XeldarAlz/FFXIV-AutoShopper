@@ -5,23 +5,18 @@ using AutoShopper.Core.Shared;
 
 namespace AutoShopper.Core.Execution.Model;
 
-internal readonly record struct TallyLine(PlanDemand Demand, int Confirmed, int WouldBuy, long Spent)
+internal readonly record struct TallyLine(PlanDemand Demand, int Acquired, long Spent)
 {
-    public int Acquired => Confirmed + WouldBuy;
-
     public int Missing => Math.Max(0, Demand.RequiredQuantity - Acquired);
 
     public bool Satisfied => Acquired >= Demand.RequiredQuantity;
 }
 
-// Progress of one run against its frozen demand. A confirmed purchase and a dry run's "would buy" both reduce what is
-// left to buy, so a dry run walks the same choices a real run would, but only confirmed purchases count as spending.
-// A listing counts once, however often its confirmation arrives.
+// Progress of one run against its frozen demand. A listing counts once, however often its confirmation arrives.
 internal sealed class RunTally
 {
     private readonly PlanDemand[] demands;
     private readonly int[] confirmed;
-    private readonly int[] wouldBuy;
     private readonly long[] spent;
     private readonly List<ConfirmedPurchase> acquisitions = [];
     private readonly HashSet<string> countedListings = new(StringComparer.Ordinal);
@@ -30,7 +25,6 @@ internal sealed class RunTally
     {
         this.demands = demands.IsDefault ? [] : demands.AsSpan().ToArray();
         confirmed = new int[this.demands.Length];
-        wouldBuy = new int[this.demands.Length];
         spent = new long[this.demands.Length];
     }
 
@@ -41,11 +35,7 @@ internal sealed class RunTally
 
     public long ConfirmedSpend { get; private set; }
 
-    public long WouldBuySpend { get; private set; }
-
     public int ConfirmedUnits { get; private set; }
-
-    public int WouldBuyUnits { get; private set; }
 
     public int Purchases { get; private set; }
 
@@ -55,7 +45,7 @@ internal sealed class RunTally
         {
             for (var index = 0; index < demands.Length; index++)
             {
-                if (confirmed[index] + wouldBuy[index] < demands[index].RequiredQuantity)
+                if (confirmed[index] < demands[index].RequiredQuantity)
                 {
                     return false;
                 }
@@ -82,51 +72,27 @@ internal sealed class RunTally
         return tally;
     }
 
-    public TallyLine LineAt(int index) => new(demands[index], confirmed[index], wouldBuy[index], spent[index]);
+    public TallyLine LineAt(int index) => new(demands[index], confirmed[index], spent[index]);
 
     public int Acquired(DemandKey key)
     {
         var index = IndexOf(key);
-        return index < 0 ? 0 : confirmed[index] + wouldBuy[index];
+        return index < 0 ? 0 : confirmed[index];
     }
 
     public bool IsSatisfied(DemandKey key)
     {
         var index = IndexOf(key);
-        return index < 0 || confirmed[index] + wouldBuy[index] >= demands[index].RequiredQuantity;
+        return index < 0 || confirmed[index] >= demands[index].RequiredQuantity;
     }
 
     public PlanDemand Outstanding(DemandKey key)
     {
         var index = IndexOf(key);
-        return index < 0 ? default : demands[index].ReducedBy(confirmed[index] + wouldBuy[index]);
-    }
-
-    public int AcquiredOfItem(uint itemId)
-    {
-        var total = 0;
-        for (var index = 0; index < demands.Length; index++)
-        {
-            if (demands[index].ItemId == itemId)
-            {
-                total += confirmed[index] + wouldBuy[index];
-            }
-        }
-
-        return total;
+        return index < 0 ? default : demands[index].ReducedBy(confirmed[index]);
     }
 
     public bool RecordConfirmed(DemandKey key, string listingKey, int quantity, long payable)
-        => Record(key, listingKey, quantity, payable, dryRun: false);
-
-    public bool RecordWouldBuy(DemandKey key, string listingKey, int quantity, long payable)
-        => Record(key, listingKey, quantity, payable, dryRun: true);
-
-    // Every acquisition so far, confirmed and "would buy" alike, as the planner reads them when it plans what is left.
-    public ImmutableArray<ConfirmedPurchase> Acquisitions()
-        => acquisitions.Count == 0 ? ImmutableArray<ConfirmedPurchase>.Empty : ImmutableCollectionsMarshal.AsImmutableArray(acquisitions.ToArray());
-
-    private bool Record(DemandKey key, string listingKey, int quantity, long payable, bool dryRun)
     {
         var index = IndexOf(key);
         if (index < 0 || quantity <= 0 || payable < 0)
@@ -139,25 +105,19 @@ internal sealed class RunTally
             return false;
         }
 
-        if (dryRun)
-        {
-            wouldBuy[index] += quantity;
-            WouldBuyUnits += quantity;
-            WouldBuySpend = Gil.TryAdd(WouldBuySpend, payable, out var wouldSpend) ? wouldSpend : long.MaxValue;
-        }
-        else
-        {
-            confirmed[index] += quantity;
-            ConfirmedUnits += quantity;
-            ConfirmedSpend = Gil.TryAdd(ConfirmedSpend, payable, out var confirmedSpend) ? confirmedSpend : long.MaxValue;
-        }
-
+        confirmed[index] += quantity;
+        ConfirmedUnits += quantity;
+        ConfirmedSpend = Gil.TryAdd(ConfirmedSpend, payable, out var confirmedSpend) ? confirmedSpend : long.MaxValue;
         spent[index] = Gil.TryAdd(spent[index], payable, out var lineSpend) ? lineSpend : long.MaxValue;
         acquisitions.Add(new ConfirmedPurchase(key, listingKey, quantity, payable));
         Purchases++;
         Revision++;
         return true;
     }
+
+    // Every acquisition so far, as the planner reads them when it plans what is left.
+    public ImmutableArray<ConfirmedPurchase> Acquisitions()
+        => acquisitions.Count == 0 ? ImmutableArray<ConfirmedPurchase>.Empty : ImmutableCollectionsMarshal.AsImmutableArray(acquisitions.ToArray());
 
     private int IndexOf(DemandKey key)
     {

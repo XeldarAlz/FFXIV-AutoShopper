@@ -56,7 +56,7 @@ internal static class RunningPanel
         var (accent, accentSoft, label) = PhasePalette(controller);
         var run = controller.ShopRun;
 
-        DrawHeaderStrip(CurrentZoneName(), accent, accentSoft, paused, run is { DryRun: true });
+        DrawHeaderStrip(CurrentZoneName(), accent, accentSoft, paused);
         Styling.VSpace(6f);
         DrawHeroCard(controller, accent, accentSoft, label);
 
@@ -222,7 +222,7 @@ internal static class RunningPanel
         return view;
     }
 
-    private static void DrawHeaderStrip(string footer, Vector4 accent, Vector4 accentSoft, bool paused, bool dryRun)
+    private static void DrawHeaderStrip(string footer, Vector4 accent, Vector4 accentSoft, bool paused)
     {
         var scale = ImGuiHelpers.GlobalScale;
         var drawList = ImGui.GetWindowDrawList();
@@ -240,11 +240,6 @@ internal static class RunningPanel
         var statusX = origin.X + radius * 2f + 12f * scale;
         TextDraw.SmallCaps(status, new Vector2(statusX, midY - statusSize.Y * 0.5f), Styling.TextSecondary);
         var statusEnd = statusX + statusSize.X;
-        if (dryRun)
-        {
-            statusEnd += HeaderFooterGap * scale * 0.5f;
-            statusEnd += Badge.DrawLeft(drawList, Loc.T(L.Market.DryRunBadge), Styling.AccentBlue, statusEnd, midY);
-        }
 
         using (Fonts.PushCaption())
         {

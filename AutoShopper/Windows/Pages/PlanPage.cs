@@ -132,7 +132,7 @@ internal sealed partial class PlanPage
         DrawGetPrices(plugin, list, buttonLabel);
         if (list is not null)
         {
-            var startLabel = Loc.T(plugin.Configuration.DryRun ? L.Plan.StartPlanDry : L.Plan.StartPlan);
+            var startLabel = Loc.T(L.Plan.StartPlan);
             var startWidth = PillButton.Width(startLabel, FontAwesomeIcon.Play);
             ImGui.SetCursorScreenPos(new Vector2(origin.X + width - buttonWidth - HeaderButtonGap * scale - startWidth, buttonY));
             DrawStart(plugin, startLabel);

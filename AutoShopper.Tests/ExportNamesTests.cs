@@ -46,7 +46,7 @@ public sealed class ExportNamesTests
     {
         var journal = MixedRun();
 
-        var summary = RunSummaryBuilder.Build(RunId, journal.Entries, false, Adapter());
+        var summary = RunSummaryBuilder.Build(RunId, journal.Entries, Adapter());
         var text = RunSummaryExporter.ToText(summary);
         var json = RunSummaryExporter.ToJson(summary);
 

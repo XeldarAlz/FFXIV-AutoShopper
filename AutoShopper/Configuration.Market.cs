@@ -14,10 +14,6 @@ public sealed partial class Configuration
     public const int MinimumResultTimeoutSeconds = PurchaseEvidence.MinimumDeadlineMs / TimeUnits.MillisecondsPerSecond;
     public const int MaximumResultTimeoutSeconds = PurchaseEvidence.MaximumDeadlineMs / TimeUnits.MillisecondsPerSecond;
 
-    // On until the user has watched a dry run and turned it off on purpose: the run then does everything except send
-    // the purchase.
-    public bool DryRun { get; set; } = true;
-
     public MarketCity PreferredMarketCity { get; set; } = MarketCityChoice.DefaultPreferred;
 
     public float SearchIntervalSeconds { get; set; } = MinimumSearchIntervalSeconds;

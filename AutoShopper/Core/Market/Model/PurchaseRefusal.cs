@@ -4,7 +4,6 @@ internal enum PurchaseSendStatus : byte
 {
     Sent = 0,
     NotSent = 1,
-    DryRunWouldBuy = 2,
 }
 
 internal enum PurchaseRefusal : byte

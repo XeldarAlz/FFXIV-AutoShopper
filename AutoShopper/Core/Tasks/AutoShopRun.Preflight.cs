@@ -153,7 +153,7 @@ internal sealed partial class AutoShopRun
             return Refused(ApiRefusal.ReadingUnavailable, L.Shop.ReasonReadingOff);
         }
 
-        if (!run.DryRun && !compatibility.ExecutionAvailable)
+        if (!compatibility.ExecutionAvailable)
         {
             return Refused(ApiRefusal.BuyingUnavailable, L.Shop.ReasonBuyingOff);
         }
@@ -221,7 +221,6 @@ internal sealed partial class AutoShopRun
             out var authorization,
             plan.Request.Settings.MaxStops,
             configuration.WorldRevisits,
-            run.DryRun,
             run.External?.ToRunCaller());
         if (problem != AuthorizationProblem.None)
         {
@@ -234,11 +233,8 @@ internal sealed partial class AutoShopRun
             };
         }
 
-        if (!run.DryRun)
-        {
-            var rotation = Owner.Ledger.Rotate(now);
-            RunLog.Info($"Run: journal rotation archived {rotation.ArchivedRuns} finished run(s){(rotation.Succeeded ? string.Empty : $"; it failed: {rotation.Error}")}.");
-        }
+        var rotation = Owner.Ledger.Rotate(now);
+        RunLog.Info($"Run: journal rotation archived {rotation.ArchivedRuns} finished run(s){(rotation.Succeeded ? string.Empty : $"; it failed: {rotation.Error}")}.");
 
         if (!run.Authorize(authorization!, plan, prices, now))
         {
@@ -246,18 +242,12 @@ internal sealed partial class AutoShopRun
             return Refused(ApiRefusal.JournalWriteFailed, L.Buyer.RefuseJournal);
         }
 
-        if (!run.DryRun)
-        {
-            Owner.Ledger.Invalidate();
-        }
-
+        Owner.Ledger.Invalidate();
         session.DidWork = true;
         NoteWorld();
         NoteUnplanned(plan);
-        RunLog.Info($"Run: {(run.DryRun ? "dry run" : "run")} {run.RunId} authorized for '{run.ListName}'{(run.External is { } external ? $" from {external.CallerDisplayName}" : string.Empty)}: {authorization!.Demands.Length} line(s), cap {maxSpend}, reserve {configuration.GilReserve}, {authorization.AllowedWorldIds.Length} world(s), {plan.Stops.Length} stop(s).");
-        Print(run.DryRun
-            ? Loc.T(L.Buyer.ChatStartedDry, run.ListName)
-            : Loc.T(L.Buyer.ChatStarted, run.ListName, Loc.Gil(maxSpend)));
+        RunLog.Info($"Run: run {run.RunId} authorized for '{run.ListName}'{(run.External is { } external ? $" from {external.CallerDisplayName}" : string.Empty)}: {authorization!.Demands.Length} line(s), cap {maxSpend}, reserve {configuration.GilReserve}, {authorization.AllowedWorldIds.Length} world(s), {plan.Stops.Length} stop(s).");
+        Print(Loc.T(L.Buyer.ChatStarted, run.ListName, Loc.Gil(maxSpend)));
         return null;
     }
 

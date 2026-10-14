@@ -32,11 +32,11 @@ internal sealed class TemporaryDirectory : IDisposable
     }
 }
 
-internal sealed class JournalWriter(IRunJournal journal, Guid? runId = null)
+internal sealed class JournalWriter(RunJournal journal, Guid? runId = null)
 {
     private readonly Guid runId = runId ?? RunId;
 
-    public IRunJournal Journal { get; } = journal;
+    public RunJournal Journal { get; } = journal;
 
     public JournalWriter Authorize()
     {

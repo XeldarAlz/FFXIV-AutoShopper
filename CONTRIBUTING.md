@@ -35,7 +35,7 @@ Keep logic small and direct. This plugin has one job.
 ## Before you open a PR
 
 1. `dotnet build -c Release` cleanly, and `dotnet test -c Release` passes.
-2. Test in game on at least one dry run of a short list, or with `/ashop goto` when you changed travel. Worlds, data centers, and market board spots differ between regions and cities, so a fix that works on one data center may not work on another. When you change how a purchase is sent or confirmed, also buy one cheap item for real with a small spend cap, and attach the Console lines of that purchase.
+2. Test in game on at least one run of a short, cheap list under a small spend cap, or with `/ashop goto` when you changed travel. Worlds, data centers, and market board spots differ between regions and cities, so a fix that works on one data center may not work on another. When you change how a purchase is sent or confirmed, attach the Console lines of a purchase made with the change.
 3. Keep the diff focused. One concern per PR.
 4. Match the existing style. No heavy abstractions "for later."
 5. Every string a user sees goes through `Core/Localization/L*.cs` and all nine catalogs under `AutoShopper/Localization/`, with the same keys in the same order. CI checks the keys and rejects em dashes.

@@ -40,9 +40,6 @@ public sealed class ShopSession
 
     public Guid RunId { get; internal set; }
 
-    public bool DryRun { get; internal set; }
-
-    // For a dry run, what it would have spent and bought.
     public long Spent { get; internal set; }
 
     public int Units { get; internal set; }

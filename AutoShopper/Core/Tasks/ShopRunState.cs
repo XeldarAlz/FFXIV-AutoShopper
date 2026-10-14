@@ -39,12 +39,11 @@ internal sealed class ShopRunState : IDisposable
     private bool settleHooked;
     private bool disposed;
 
-    private ShopRunState(MarketServices market, IRunJournal journal, Guid runId, bool dryRun, ExternalRun? external = null)
+    private ShopRunState(MarketServices market, RunJournal journal, Guid runId, ExternalRun? external = null)
     {
         this.market = market;
         Journal = journal;
         RunId = runId;
-        DryRun = dryRun;
         External = external;
         settleTick = _ => SettleIfAnswered();
         Spend = new SpendBook(0);
@@ -53,9 +52,7 @@ internal sealed class ShopRunState : IDisposable
 
     public Guid RunId { get; }
 
-    public bool DryRun { get; }
-
-    public IRunJournal Journal { get; }
+    public RunJournal Journal { get; }
 
     public ExternalRun? External { get; }
 
@@ -132,7 +129,7 @@ internal sealed class ShopRunState : IDisposable
 
     public bool HasUnknownOutcome => LastSettlement.Kind == SettledKind.Unknown || (LastSettlement.Kind != SettledKind.None && !LastSettlement.Durable);
 
-    public long Spent => DryRun ? Tally.WouldBuySpend : Tally.ConfirmedSpend;
+    public long Spent => Tally.ConfirmedSpend;
 
     public Action? Settled { get; set; }
 
@@ -145,8 +142,8 @@ internal sealed class ShopRunState : IDisposable
         _ => RunOutcome.Stopped,
     };
 
-    public static ShopRunState Fresh(MarketServices market, IRunJournal journal, bool dryRun, string listName, ExternalRun? external)
-        => new(market, journal, Guid.NewGuid(), dryRun, external) { ListName = listName };
+    public static ShopRunState Fresh(MarketServices market, RunJournal journal, string listName, ExternalRun? external)
+        => new(market, journal, Guid.NewGuid(), external) { ListName = listName };
 
     public bool FromApi => External is not null || Authorization?.Caller is not null;
 
@@ -163,10 +160,10 @@ internal sealed class ShopRunState : IDisposable
 
     // A run the journal says was interrupted: its authorization, its confirmed purchases, its exclusions and the
     // revisits it made come back; its plan is made again from fresh prices.
-    public static ShopRunState FromJournal(MarketServices market, IRunJournal journal, JournalProgress progress)
+    public static ShopRunState FromJournal(MarketServices market, RunJournal journal, JournalProgress progress)
     {
         var authorization = progress.Authorization!;
-        var state = new ShopRunState(market, journal, progress.RunId, dryRun: false)
+        var state = new ShopRunState(market, journal, progress.RunId)
         {
             Authorization = authorization,
             Spend = progress.ToSpendBook(),
@@ -394,15 +391,13 @@ internal sealed class ShopRunState : IDisposable
         return false;
     }
 
-    // What the history row shows: a dry run's "would buy" totals, a real run's confirmed ones.
     public void ApplyTo(ShopSession session)
     {
-        session.DryRun = DryRun;
         session.RunId = RunId;
         session.ListName = ListName;
         session.Caller = External?.CallerDisplayName ?? Authorization?.Caller?.DisplayName ?? string.Empty;
         session.Spent = Spent;
-        session.Units = DryRun ? Tally.WouldBuyUnits : Tally.ConfirmedUnits;
+        session.Units = Tally.ConfirmedUnits;
         session.Purchases = Tally.Purchases;
     }
 
