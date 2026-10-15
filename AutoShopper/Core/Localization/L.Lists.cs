@@ -150,6 +150,13 @@ internal static partial class L
         public static readonly LocString ImportErrorCraftingFormat = new("lists.import.error.craftingFormat", "This JSON is not a crafting list.");
         public static readonly LocString StatusLeftOut = new("lists.import.status.leftOut", "Left out");
         public static readonly LocString ImportSummaryLeftOut = new("lists.import.summaryLeftOut", "Ready {0}  ·  Pick one {1}  ·  Unknown {2}  ·  Invalid {3}  ·  Left out {4}");
+        public static readonly LocString FormatMakePlace = new("lists.format.makePlace", "MakePlace layout");
+        public static readonly LocString ImportLayoutHelp = new("lists.import.layoutHelp", "MakePlace and ReMakePlace layouts work too: every furnishing, fixture, wallpaper and dye in the house becomes a row.");
+        public static readonly LocString ImportOpenFile = new("lists.import.openFile", "Open file");
+        public static readonly LocString ImportFileTitle = new("lists.import.fileTitle", "Open a list or layout file");
+        public static readonly LocString ImportFileUnreadable = new("lists.import.fileUnreadable", "The file could not be read.");
+        public static readonly LocString ImportErrorLayoutFormat = new("lists.import.error.layoutFormat", "This JSON is not a MakePlace layout.");
+        public static readonly LocString ImportProblemDye = new("lists.import.problem.dye", "No dye has this color");
 
         public static readonly LocString Crystals = new("lists.crystals", "Crystals");
         public static readonly LocString CrystalsHelp = new("lists.crystals.help", "Top up shards, crystals or clusters in one step.");

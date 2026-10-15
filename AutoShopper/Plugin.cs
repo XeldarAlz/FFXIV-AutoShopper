@@ -54,6 +54,7 @@ public sealed class Plugin : IDalamudPlugin
     internal RunHistory History { get; }
     internal AutoShopController Controller { get; }
     internal ItemCatalog Items { get; }
+    internal DyeChart Dyes { get; }
     internal RecipeExpander Recipes { get; }
     internal InventoryReader Inventory { get; }
     internal ShoppingListStore Lists { get; }
@@ -97,6 +98,7 @@ public sealed class Plugin : IDalamudPlugin
             History = new RunHistory();
             Controller = new AutoShopController();
             Items = new ItemCatalog();
+            Dyes = new DyeChart(Items);
             Recipes = new RecipeExpander();
             Inventory = new InventoryReader();
             completed.Push(Inventory.Dispose);

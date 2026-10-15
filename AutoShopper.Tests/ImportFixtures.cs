@@ -32,6 +32,7 @@ internal static class ImportFixtures
     public const string ArtisanLegacyList = "artisan-legacy-list.json";
     public const string TeamcraftWholeList = "teamcraft-whole-list.txt";
     public const string TeamcraftCrystalsPanel = "teamcraft-crystals-panel.txt";
+    public const string MakePlaceLayout = "makeplace-layout.json";
 
     public static string Read(string name) => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "ImportFixtures", name));
 
