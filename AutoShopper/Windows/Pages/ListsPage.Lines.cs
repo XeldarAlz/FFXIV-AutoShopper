@@ -30,6 +30,10 @@ internal sealed partial class ListsPage
     }
 
     private const float LineRowHeight = 48f;
+    private const float CompactNameRowHeight = 40f;
+    private const float CompactRowHeight = 86f;
+    private const float MinimumNameWidth = 160f;
+    private const int ControlColumns = 6;
     private const float LineRowGap = 4f;
     private const float LineIconSize = 30f;
     private const float LinePadX = 10f;
@@ -73,7 +77,8 @@ internal sealed partial class ListsPage
     private Guid removeLineId;
 
     private readonly record struct LineColumns(
-        float Left, float Name, float NameWidth, float Quality, float Mode, float Quantity, float Owned, float Cap, float Excess, float Remove, float Right);
+        float Left, float Name, float NameWidth, float Quality, float Mode, float Quantity, float Owned, float Cap, float Excess, float Remove, float Right,
+        bool Compact, float RowHeight, float NameRowHeight);
 
     private sealed class NumberText
     {
@@ -212,16 +217,36 @@ internal sealed partial class ListsPage
     {
         var scale = ImGuiHelpers.GlobalScale;
         var gap = CellGap * scale;
-        var right = left + width;
-        var remove = right - LinePadX * scale - ImGui.GetFrameHeight();
-        var excess = remove - gap - ExcessWidth * scale;
-        var cap = excess - gap - CapWidth * scale;
-        var owned = cap - gap - OwnedWidth * scale;
-        var quantity = owned - gap - QuantityWidth * scale;
-        var mode = quantity - gap - ModeWidth * scale;
-        var quality = mode - gap - QualityWidth * scale;
-        var name = left + (LinePadX + RailWidth + LineIconSize) * scale + gap;
-        return new LineColumns(left, name, MathF.Max(0f, quality - gap - name), quality, mode, quantity, owned, cap, excess, remove, right);
+        var pad = LinePadX * scale;
+        var nameOffset = (LinePadX + RailWidth + LineIconSize) * scale + gap;
+        var controls = (QualityWidth + ModeWidth + QuantityWidth + OwnedWidth + CapWidth + ExcessWidth) * scale + gap * (ControlColumns - 1);
+        var frame = ImGui.GetFrameHeight();
+        if (width >= nameOffset + MinimumNameWidth * scale + gap + controls + gap + frame + pad)
+        {
+            var right = left + width;
+            var remove = right - pad - frame;
+            var excess = remove - gap - ExcessWidth * scale;
+            var cap = excess - gap - CapWidth * scale;
+            var owned = cap - gap - OwnedWidth * scale;
+            var quantity = owned - gap - QuantityWidth * scale;
+            var mode = quantity - gap - ModeWidth * scale;
+            var quality = mode - gap - QualityWidth * scale;
+            var name = left + nameOffset;
+            var height = LineRowHeight * scale;
+            return new LineColumns(left, name, MathF.Max(0f, quality - gap - name), quality, mode, quantity, owned, cap, excess, remove, right, false, height, height);
+        }
+
+        var compactRight = left + MathF.Max(width, nameOffset + controls + pad);
+        var compactName = left + nameOffset;
+        var compactRemove = compactRight - pad - frame;
+        var compactQuality = compactName;
+        var compactMode = compactQuality + QualityWidth * scale + gap;
+        var compactQuantity = compactMode + ModeWidth * scale + gap;
+        var compactOwned = compactQuantity + QuantityWidth * scale + gap;
+        var compactCap = compactOwned + OwnedWidth * scale + gap;
+        var compactExcess = compactCap + CapWidth * scale + gap;
+        return new LineColumns(left, compactName, MathF.Max(0f, compactRemove - gap - compactName), compactQuality, compactMode, compactQuantity, compactOwned,
+            compactCap, compactExcess, compactRemove, compactRight, true, CompactRowHeight * scale, CompactNameRowHeight * scale);
     }
 
     private void DrawLineHeader(LineColumns columns)
@@ -230,16 +255,18 @@ internal sealed partial class ListsPage
         var origin = ImGui.GetCursorScreenPos();
         var height = HeaderRowHeight * scale;
         var itemX = columns.Left + (LinePadX + RailWidth) * scale;
-        SortHeader("##ashop_sort_name", L.Lists.ColumnItem, SortColumn.Name, itemX, origin.Y, columns.Quality - CellGap * scale - itemX, height, null);
-        HeaderLabel(L.Lists.ColumnQuality, columns.Quality, origin.Y, QualityWidth * scale, height, L.Lists.QualityHelp);
-        HeaderLabel(L.Lists.ColumnMode, columns.Mode, origin.Y, ModeWidth * scale, height, null);
-        SortHeader("##ashop_sort_quantity", L.Lists.ColumnQuantity, SortColumn.Quantity, columns.Quantity, origin.Y, QuantityWidth * scale, height, null);
-        HeaderLabel(L.Lists.ColumnOwned, columns.Owned, origin.Y, OwnedWidth * scale, height, L.Lists.OwnedHelp);
-        SortHeader("##ashop_sort_cap", L.Lists.ColumnCap, SortColumn.Cap, columns.Cap, origin.Y, CapWidth * scale, height, L.Lists.CapHelp);
-        HeaderLabel(L.Lists.ColumnExcess, columns.Excess, origin.Y, ExcessWidth * scale, height, L.Lists.ExcessHelp);
+        var itemRight = columns.Compact ? columns.Remove : columns.Quality - CellGap * scale;
+        SortHeader("##ashop_sort_name", L.Lists.ColumnItem, SortColumn.Name, itemX, origin.Y, itemRight - itemX, height, null);
+        var labelsY = columns.Compact ? origin.Y + height : origin.Y;
+        HeaderLabel(L.Lists.ColumnQuality, columns.Quality, labelsY, QualityWidth * scale, height, L.Lists.QualityHelp);
+        HeaderLabel(L.Lists.ColumnMode, columns.Mode, labelsY, ModeWidth * scale, height, null);
+        SortHeader("##ashop_sort_quantity", L.Lists.ColumnQuantity, SortColumn.Quantity, columns.Quantity, labelsY, QuantityWidth * scale, height, null);
+        HeaderLabel(L.Lists.ColumnOwned, columns.Owned, labelsY, OwnedWidth * scale, height, L.Lists.OwnedHelp);
+        SortHeader("##ashop_sort_cap", L.Lists.ColumnCap, SortColumn.Cap, columns.Cap, labelsY, CapWidth * scale, height, L.Lists.CapHelp);
+        HeaderLabel(L.Lists.ColumnExcess, columns.Excess, labelsY, ExcessWidth * scale, height, L.Lists.ExcessHelp);
 
         ImGui.SetCursorScreenPos(origin);
-        ImGui.Dummy(new Vector2(columns.Right - columns.Left, height));
+        ImGui.Dummy(new Vector2(columns.Right - columns.Left, labelsY + height - origin.Y));
     }
 
     private static void HeaderLabel(LocString label, float x, float y, float width, float height, LocString? help)
@@ -332,7 +359,7 @@ internal sealed partial class ListsPage
     private void DrawLineRow(Plugin plugin, ShoppingList list, ListAnalysis analysis, int lineIndex, LineColumns columns)
     {
         var scale = ImGuiHelpers.GlobalScale;
-        var size = new Vector2(columns.Right - columns.Left, LineRowHeight * scale);
+        var size = new Vector2(columns.Right - columns.Left, columns.RowHeight);
         if (!ImGui.IsRectVisible(size))
         {
             ImGui.Dummy(size);
@@ -343,7 +370,10 @@ internal sealed partial class ListsPage
         var line = list.Lines[lineIndex];
         var origin = ImGui.GetCursorScreenPos();
         var end = origin + size;
-        var midY = origin.Y + size.Y * 0.5f;
+        var nameMidY = origin.Y + columns.NameRowHeight * 0.5f;
+        var controlsTop = columns.Compact ? origin.Y + columns.NameRowHeight : origin.Y;
+        var controlsHeight = size.Y - (controlsTop - origin.Y);
+        var controlsMidY = controlsTop + controlsHeight * 0.5f;
         var problems = analysis.Validation.At(lineIndex);
         var drawList = ImGui.GetWindowDrawList();
         DrawRowSurface(drawList, origin, end, problems);
@@ -351,20 +381,21 @@ internal sealed partial class ListsPage
         var known = plugin.Items.TryGet(line.ItemId, out var item);
         var iconSize = LineIconSize * scale;
         var iconX = columns.Left + (LinePadX + RailWidth) * scale;
-        ItemIcon.Draw(drawList, known ? item.IconId : 0, new Vector2(iconX, midY - iconSize * 0.5f), iconSize,
+        ItemIcon.Draw(drawList, known ? item.IconId : 0, new Vector2(iconX, nameMidY - iconSize * 0.5f), iconSize,
             line.Quality == ItemQuality.HighQuality && known && item.CanBeHighQuality);
 
         ImGui.PushID(line.Id.GetHashCode());
-        DrawLineName(line, lineIndex, known, item, problems, columns, origin.Y, size.Y);
-        var frameTop = midY - ImGui.GetFrameHeight() * 0.5f;
+        DrawLineName(line, lineIndex, known, item, problems, columns, origin.Y, columns.NameRowHeight);
+        var frameHeight = ImGui.GetFrameHeight();
+        var frameTop = controlsMidY - frameHeight * 0.5f;
         DrawQualityCell(plugin.Lists, list, line, known && !item.CanBeHighQuality, new Vector2(columns.Quality, frameTop));
         DrawModeCell(plugin.Lists, list, line, new Vector2(columns.Mode, frameTop));
         DrawQuantityCell(plugin.Lists, list, line, new Vector2(columns.Quantity, frameTop));
-        DrawOwnedCell(plugin.Inventory, analysis, line, lineIndex, columns.Owned, OwnedWidth * scale, origin.Y, size.Y);
+        DrawOwnedCell(plugin.Inventory, analysis, line, lineIndex, columns.Owned, OwnedWidth * scale, controlsTop, controlsHeight);
         DrawNumberCell(plugin.Lists, list, line, NumberColumn.UnitCap, new Vector2(columns.Cap, frameTop));
         DrawNumberCell(plugin.Lists, list, line, NumberColumn.Excess, new Vector2(columns.Excess, frameTop));
 
-        ImGui.SetCursorScreenPos(new Vector2(columns.Remove, frameTop));
+        ImGui.SetCursorScreenPos(new Vector2(columns.Remove, nameMidY - frameHeight * 0.5f));
         if (IconButton.Draw(FontAwesomeIcon.Times, "##remove", ImGui.GetFrameHeight(), Styling.AccentRose, Loc.T(L.Lists.RemoveLine)))
         {
             removeLineId = line.Id;

@@ -48,7 +48,7 @@ internal sealed partial class ListsPage
 
             ImGui.SameLine(0f, ColumnGap * scale);
 
-            using (var editor = ImRaii.Child("##ashop_lists_editor", new Vector2(-1f, -1f), false, ImGuiWindowFlags.None))
+            using (var editor = ImRaii.Child("##ashop_lists_editor", new Vector2(-1f, -1f), false, ImGuiWindowFlags.HorizontalScrollbar))
             {
                 if (editor)
                 {
