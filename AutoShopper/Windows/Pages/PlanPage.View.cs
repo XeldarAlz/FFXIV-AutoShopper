@@ -4,7 +4,10 @@ using AutoShopper.Core.Localization;
 using AutoShopper.Core.Planning;
 using AutoShopper.Core.Preview.Model;
 using AutoShopper.Core.Pricing.Model;
+using AutoShopper.Core.Vendors;
+using AutoShopper.Core.Vendors.Model;
 using AutoShopper.Windows.Sections.Config;
+using ECommons.DalamudServices;
 
 namespace AutoShopper.Windows.Pages;
 
@@ -60,14 +63,18 @@ internal sealed partial class PlanPage
 
         public required StopView[] Route { get; init; }
 
+        public required StopView[] Vendors { get; init; }
+
         public required MissingView[] Missing { get; init; }
+
+        public required MissingView[] LeftOut { get; init; }
 
         public required ModeView[] Modes { get; init; }
 
         public required FreshnessView[] Freshness { get; init; }
     }
 
-    private static PlanView BuildView(ItemCatalog catalog, ResolvedScope scope, PreviewResult result, int staleHours, long bucket)
+    private static PlanView BuildView(ItemCatalog catalog, VendorCatalog vendors, ResolvedScope scope, PreviewResult result, int staleHours, long bucket)
     {
         var now = DateTime.UtcNow;
         var culture = Loc.Culture;
@@ -80,16 +87,18 @@ internal sealed partial class PlanPage
             WithNames = catalog.IsReady,
             StaleHours = staleHours,
             Bucket = bucket,
-            Warnings = PreviewReview.Evaluate(result, now, TimeSpan.FromHours(staleHours)),
+            Warnings = WarningsFor(result, now, staleHours),
             StaleWarning = Loc.T(L.Plan.WarnStale, staleHours),
-            Total = Formatting.Gil(totals.PurchaseEstimate),
+            Total = Formatting.Gil(result.SelectedTotal),
             Fee = Formatting.Gil(totals.FeeEstimate),
             Stops = totals.StopCount.ToString("N0", culture),
             StopsDetail = Loc.Plural(L.Plan.TileStopsSub, totals.WorldChanges),
             DataCenters = totals.DataCenterChanges.ToString("N0", culture),
             Partial = plan.IsComplete ? null : Loc.Plural(L.Plan.Partial, totals.MissingQuantity),
             Route = BuildRoute(catalog, plan, scope),
+            Vendors = BuildVendorStops(catalog, vendors, result),
             Missing = BuildMissing(catalog, plan, result.Input.Prices),
+            LeftOut = BuildLeftOut(catalog, result),
             Modes = BuildModes(result),
             Freshness = BuildFreshness(result, now, TimeSpan.FromHours(staleHours)),
         };
@@ -105,6 +114,69 @@ internal sealed partial class PlanPage
             var lines = BuildStopLines(catalog, stop.Lines);
             var detail = string.Concat(Loc.Plural(L.Plan.StopItems, lines.Length), TextDraw.Separator, Formatting.Gil(stop.PurchaseEstimate));
             stops[stopIndex] = new StopView((stopIndex + 1).ToString(culture), stop.World.Name, DataCenterName(scope, stop.World.WorldId), detail, lines);
+        }
+
+        return stops;
+    }
+
+    private static PreviewWarnings WarningsFor(PreviewResult result, DateTime nowUtc, int staleHours)
+    {
+        var warnings = PreviewReview.Evaluate(result, nowUtc, TimeSpan.FromHours(staleHours));
+        return result.VendorsOnly ? warnings & PreviewWarnings.UnknownOwned : warnings;
+    }
+
+    private static MissingView[] BuildLeftOut(ItemCatalog catalog, PreviewResult result)
+    {
+        var culture = Loc.Culture;
+        var leftOut = new MissingView[result.LeftOut.Length];
+        for (var index = 0; index < leftOut.Length; index++)
+        {
+            var demand = result.LeftOut[index];
+            var (iconId, name) = Describe(catalog, demand.ItemId);
+            leftOut[index] = new MissingView(
+                iconId,
+                demand.Quality == DemandQuality.HighQuality,
+                name,
+                QualityLabel(demand.Quality),
+                Loc.T(L.Plan.Quantity, demand.RequiredQuantity.ToString("N0", culture)),
+                Loc.T(L.Plan.LeftOutReason));
+        }
+
+        return leftOut;
+    }
+
+    private static StopView[] BuildVendorStops(ItemCatalog catalog, VendorCatalog vendors, PreviewResult result)
+    {
+        if (result.VendorLines.IsEmpty || !vendors.IsReady)
+        {
+            return [];
+        }
+
+        var culture = Loc.Culture;
+        var route = VendorRoute.Plan(result.VendorLines, vendors, Svc.ClientState.TerritoryType, VendorReachability.CanReach);
+        var stops = new StopView[route.Stops.Length];
+        for (var stopIndex = 0; stopIndex < stops.Length; stopIndex++)
+        {
+            var stop = route.Stops[stopIndex];
+            var lines = new LineView[stop.Purchases.Length];
+            long subtotal = 0;
+            for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+            {
+                var line = stop.Purchases[lineIndex].Line;
+                var (iconId, name) = Describe(catalog, line.Demand.ItemId);
+                lines[lineIndex] = new LineView(
+                    iconId,
+                    false,
+                    name,
+                    QualityLabel(line.Demand.Quality),
+                    Loc.T(L.Plan.Quantity, line.Quantity.ToString("N0", culture)),
+                    Loc.T(L.Plan.VendorUnitPrice, Formatting.Gil(line.UnitPrice)),
+                    Formatting.Gil(line.Payable));
+                subtotal = Core.Shared.Gil.TryAdd(subtotal, line.Payable, out var sum) ? sum : long.MaxValue;
+            }
+
+            var detail = string.Concat(Loc.Plural(L.Plan.StopItems, lines.Length), TextDraw.Separator, Formatting.Gil(subtotal));
+            stops[stopIndex] = new StopView((stopIndex + 1).ToString(culture), vendors.NpcName(stop.SpotIndex), vendors.PlaceName(stop.SpotIndex), detail, lines);
         }
 
         return stops;
@@ -187,7 +259,7 @@ internal sealed partial class PlanPage
             views[index] = new ModeView(
                 mode,
                 ShoppingSettings.ModeName(Core.Preview.PlanPreview.ToPlanningMode(mode)),
-                Formatting.Gil(totals.PurchaseEstimate),
+                Formatting.Gil(result.TotalOf(plan)),
                 totals.StopCount.ToString("N0", culture),
                 totals.DataCenterChanges.ToString("N0", culture),
                 plan.IsComplete ? Loc.T(L.Plan.Complete) : Loc.T(L.Plan.MissingUnits, totals.MissingQuantity.ToString("N0", culture)),

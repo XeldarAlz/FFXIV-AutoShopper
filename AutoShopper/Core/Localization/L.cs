@@ -70,6 +70,20 @@ internal static partial class L
         public static readonly LocString PlanNoCap = new("shop.planNoCap", "Estimate {0}  ·  no spend cap set");
         public static readonly LocPlural PlanStops = new("shop.planStops", "{0} stop", "{0} stops");
         public static readonly LocPlural PlanMissing = new("shop.planMissing", "{0} unit not covered", "{0} units not covered");
+        public static readonly LocPlural PlanVendors = new("shop.planVendors", "{0} item from NPC vendors", "{0} items from NPC vendors");
+        public static readonly LocPlural PlanLeftOut = new("shop.planLeftOut", "{0} item not sold by NPC vendors", "{0} items not sold by NPC vendors");
+        public static readonly LocString HowToBuy = new("shop.howToBuy", "How to buy");
+        public static readonly LocString BuyFrom = new("shop.buyFrom", "Buy from");
+        public static readonly LocString Route = new("shop.route", "Route");
+        public static readonly LocString SourceEverything = new("shop.source.everything", "Everything");
+        public static readonly LocString SourceMarket = new("shop.source.market", "Market board");
+        public static readonly LocString SourceVendors = new("shop.source.vendors", "NPC vendors");
+        public static readonly LocString SourceEverythingHelp = new("shop.source.everythingHelp", "NPC vendors first for anything they sell for no more than the market board asks, then the market board for the rest.");
+        public static readonly LocString SourceMarketHelp = new("shop.source.marketHelp", "Every item from the market board; NPC vendors are left out.");
+        public static readonly LocString SourceVendorsHelp = new("shop.source.vendorsHelp", "Only what NPC vendors sell, at their price, with no market board stops and no price fetch. Anything no NPC you can reach sells is left out. Housing merchants are reached through Lifestream, in ward 1 of a residential district.");
+        public static readonly LocString ModeCheapestHelp = new("shop.mode.cheapestHelp", "The lowest total, however many worlds it takes.");
+        public static readonly LocString ModeBalancedHelp = new("shop.mode.balancedHelp", "A low total without too many world changes.");
+        public static readonly LocString ModeFewestHelp = new("shop.mode.fewestHelp", "As few worlds as possible, for a little more gil.");
         public static readonly LocString PlanOldest = new("shop.planOldest", "oldest price {0}");
 
         public static readonly LocString Start = new("shop.start", "START");
@@ -241,6 +255,14 @@ internal static partial class L
         public static readonly LocString Latest = new("changelog.latest", "Latest");
         public static readonly LocString New = new("changelog.new", "New");
         public static readonly LocPlural Changes = new("changelog.changes", "{0} change", "{0} changes");
+
+        public static readonly LocString[] Release1300 =
+        [
+            new("changelog.r1300.1", "Imports MakePlace and ReMakePlace house layouts: every furnishing, fixture, wallpaper and dye in the house becomes a line, and the import panel can open a file"),
+            new("changelog.r1300.2", "Buys from NPC vendors when they cost no more than the market board, housing merchants in the residential districts included, before any market stop"),
+            new("changelog.r1300.3", "The Shop page has a How to buy section: buy from everything, the market board only or NPC vendors only, and pick the route mode with buttons"),
+            new("changelog.r1300.4", "List lines stay readable in a narrow window: the item name moves above the controls instead of being cut off"),
+        ];
 
         public static readonly LocString[] Release1200 =
         [

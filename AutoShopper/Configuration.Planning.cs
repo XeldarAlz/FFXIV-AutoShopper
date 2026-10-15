@@ -21,10 +21,21 @@ public sealed partial class Configuration
 
     public int StaleAfterHours { get; set; } = 3;
 
+    public BuySource BuySource { get; set; } = BuySource.Everything;
+
+    [Newtonsoft.Json.JsonIgnore]
+    public bool BuysOnlyFromVendors => BuySource == BuySource.NpcVendors;
+
     // A hand-edited file can carry nulls or values out of range; they are put back in range once on load.
     private bool RepairShoppingSettings()
     {
         var changed = false;
+        if (!Enum.IsDefined(BuySource))
+        {
+            BuySource = BuySource.Everything;
+            changed = true;
+        }
+
         if (AllowedWorlds is null)
         {
             AllowedWorlds = [];

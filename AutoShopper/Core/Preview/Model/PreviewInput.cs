@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
 using AutoShopper.Core.Planning;
 using AutoShopper.Core.Pricing.Model;
+using AutoShopper.Core.Shared;
+using AutoShopper.Core.Vendors.Model;
 
 namespace AutoShopper.Core.Preview.Model;
 
@@ -19,6 +21,10 @@ internal sealed record PreviewInput
     public required ImmutableArray<PlanWorld> Worlds { get; init; }
 
     public required PlanSettings Settings { get; init; }
+
+    public VendorPriceTable Vendors { get; init; } = VendorPriceTable.Empty;
+
+    public BuySource Source { get; init; } = BuySource.Everything;
 }
 
 internal sealed class PreviewResult
@@ -30,7 +36,19 @@ internal sealed class PreviewResult
 
     public required DateTime PlannedAtUtc { get; init; }
 
+    public ImmutableArray<VendorLine> VendorLines { get; init; } = ImmutableArray<VendorLine>.Empty;
+
+    public long VendorTotal { get; init; }
+
+    public ImmutableArray<PlanDemand> LeftOut { get; init; } = ImmutableArray<PlanDemand>.Empty;
+
+    public bool VendorsOnly => Input.Source == BuySource.NpcVendors;
+
     public long Generation => Input.Generation;
+
+    public long SelectedTotal => TotalOf(Selected);
+
+    public long TotalOf(PurchasePlan plan) => Gil.TryAdd(plan.Totals.PurchaseEstimate, VendorTotal, out var total) ? total : long.MaxValue;
 
     public PlanMode Mode => Input.Settings.Mode;
 

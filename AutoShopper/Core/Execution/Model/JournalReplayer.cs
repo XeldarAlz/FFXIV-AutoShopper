@@ -268,6 +268,7 @@ internal static class JournalReplayer
         {
             return left.Demand == right.Demand
                 && left.ListingId == right.ListingId
+                && left.VendorShopId == right.VendorShopId
                 && left.Quantity == right.Quantity
                 && left.Payable == right.Payable
                 && left.WorldId == right.WorldId;
@@ -391,7 +392,8 @@ internal static class JournalReplayer
                 reserved,
                 status,
                 confirmedQuantity,
-                charged);
+                charged,
+                intent?.VendorShopId ?? 0);
         }
 
         private static bool HasConflict(AttemptBuilder builder, IntentRecorded intent)

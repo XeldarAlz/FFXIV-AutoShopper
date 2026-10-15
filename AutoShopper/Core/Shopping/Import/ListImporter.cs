@@ -19,7 +19,17 @@ public static class ListImporter
         var start = text.AsSpan().TrimStart();
         if (!start.IsEmpty && start[0] == '{')
         {
-            return scansShape && ArtisanListParser.LooksLikeArtisan(text) ? ImportFormat.ArtisanList : ImportFormat.Json;
+            if (!scansShape)
+            {
+                return ImportFormat.Json;
+            }
+
+            if (ArtisanListParser.LooksLikeArtisan(text))
+            {
+                return ImportFormat.ArtisanList;
+            }
+
+            return MakePlaceParser.LooksLikeMakePlace(text) ? ImportFormat.MakePlace : ImportFormat.Json;
         }
 
         var position = 0;
@@ -63,6 +73,7 @@ public static class ListImporter
             ImportFormat.Csv => CsvListParser.Parse(text),
             ImportFormat.ArtisanList => ArtisanListParser.Parse(text),
             ImportFormat.TeamcraftText => TeamcraftTextParser.Parse(text),
+            ImportFormat.MakePlace => MakePlaceParser.Parse(text),
             _ => TextListParser.Parse(text),
         };
     }
@@ -124,6 +135,11 @@ public static class ListImporter
             if (row.RequestedItemId != 0)
             {
                 row.Apply(resolver.Resolve(row.RequestedItemId.ToString(CultureInfo.InvariantCulture)));
+                if (result.Format == ImportFormat.MakePlace && row.Status == ImportRowStatus.Unknown)
+                {
+                    row.Reject(ImportRowProblem.NotMarketable);
+                }
+
                 continue;
             }
 
@@ -140,6 +156,72 @@ public static class ListImporter
 
             row.Apply(resolution);
         }
+    }
+
+    public static ImportResult AddDyes(ImportResult layout, IDyeChart chart)
+    {
+        if (layout.Error != ImportError.None || layout.Dyes.Count == 0)
+        {
+            return layout;
+        }
+
+        var result = new ImportResult(layout.Format)
+        {
+            ListName = layout.ListName,
+            IgnoredFields = layout.IgnoredFields,
+        };
+
+        result.Rows.AddRange(layout.Rows);
+        var groups = new List<DyeGroup>();
+        var groupByItem = new Dictionary<uint, int>();
+        var unmatched = new List<DyeImport>();
+        var dyes = layout.Dyes;
+        for (var index = 0; index < dyes.Count; index++)
+        {
+            var dye = dyes[index];
+            if (!chart.TryFind(dye.Color, out var match))
+            {
+                unmatched.Add(dye);
+                continue;
+            }
+
+            if (!groupByItem.TryGetValue(match.ItemId, out var groupIndex))
+            {
+                groupIndex = groups.Count;
+                groupByItem.Add(match.ItemId, groupIndex);
+                groups.Add(new DyeGroup(match.ItemId));
+            }
+
+            groups[groupIndex].Add(match.StainName, dye.Count);
+        }
+
+        for (var index = 0; index < groups.Count; index++)
+        {
+            var group = groups[index];
+            var row = new ImportRow(result.Rows.Count + 1, TextLines.Clip(group.Stains.ToString()))
+            {
+                RequestedItemId = group.ItemId,
+            };
+
+            ImportFields.SetQuantity(row, NumberStatus.Valid, group.Count);
+            result.Rows.Add(row);
+        }
+
+        for (var index = 0; index < unmatched.Count; index++)
+        {
+            var dye = unmatched[index];
+            var row = new ImportRow(result.Rows.Count + 1, string.Concat("#", dye.Color.ToString("X6", CultureInfo.InvariantCulture)));
+            row.Reject(ImportRowProblem.UnknownDye);
+            ImportFields.SetQuantity(row, NumberStatus.Valid, dye.Count);
+            result.Rows.Add(row);
+        }
+
+        if (result.Rows.Count > ShoppingLimits.MaximumImportRows)
+        {
+            result.Fail(ImportError.TooManyRows);
+        }
+
+        return result;
     }
 
     private static void AddDemandRows(ItemDemand[] demands, List<ImportRow> rows)
@@ -185,6 +267,26 @@ public static class ListImporter
             var row = new ImportRow(craft.SourceLine, craft.SourceText);
             row.Reject(problem);
             rows.Add(row);
+        }
+    }
+
+    private sealed class DyeGroup(uint itemId)
+    {
+        private const string Separator = ", ";
+
+        public readonly uint ItemId = itemId;
+        public readonly StringBuilder Stains = new();
+        public int Count;
+
+        public void Add(string stainName, int count)
+        {
+            if (Stains.Length > 0)
+            {
+                Stains.Append(Separator);
+            }
+
+            Stains.Append(stainName).Append(" (").Append(count.ToString(CultureInfo.InvariantCulture)).Append(')');
+            Count += count;
         }
     }
 }

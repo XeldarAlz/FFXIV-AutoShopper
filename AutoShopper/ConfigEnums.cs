@@ -14,3 +14,10 @@ public enum PlanningMode : byte
     Balanced,
     FewestStops,
 }
+
+public enum BuySource : byte
+{
+    Everything,
+    MarketBoard,
+    NpcVendors,
+}

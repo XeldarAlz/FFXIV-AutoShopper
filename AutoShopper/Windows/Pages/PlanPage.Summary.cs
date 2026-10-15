@@ -79,7 +79,7 @@ internal sealed partial class PlanPage
         var count = 0;
         var flags = current.Warnings;
         var configuration = plugin.Configuration;
-        var total = current.Result.Selected.Totals.PurchaseEstimate;
+        var total = current.Result.SelectedTotal;
         if (configuration.MaxSpend <= 0)
         {
             AddWarning(ref count, Loc.T(L.Plan.WarnNoCap), false);
@@ -195,7 +195,7 @@ internal sealed partial class PlanPage
             captionHeight = ImGui.GetTextLineHeight();
         }
 
-        var total = current.Result.Selected.Totals.PurchaseEstimate;
+        var total = current.Result.SelectedTotal;
         var barBlock = lineHeight + 6f * scale + BudgetBarHeight * scale;
         var height = padY * 2f + (cap > 0 ? barBlock : 0f) + (cap > 0 && inventory.HasData ? 8f * scale : 0f) + (inventory.HasData ? captionHeight : 0f);
         var drawList = ImGui.GetWindowDrawList();
@@ -236,14 +236,14 @@ internal sealed partial class PlanPage
     private static string BudgetLine()
     {
         var plugin = Plugin.Instance;
-        var total = plugin.Preview.LatestFor(plugin.Lists.Selected)?.Selected.Totals.PurchaseEstimate ?? 0;
+        var total = plugin.Preview.LatestFor(plugin.Lists.Selected)?.SelectedTotal ?? 0;
         return Loc.T(L.Plan.BudgetLine, Formatting.Gil(total), Formatting.Gil(plugin.Configuration.MaxSpend));
     }
 
     private static string BudgetPercent()
     {
         var plugin = Plugin.Instance;
-        var total = plugin.Preview.LatestFor(plugin.Lists.Selected)?.Selected.Totals.PurchaseEstimate ?? 0;
+        var total = plugin.Preview.LatestFor(plugin.Lists.Selected)?.SelectedTotal ?? 0;
         var cap = Math.Max(1, plugin.Configuration.MaxSpend);
         return Loc.T(L.Plan.Percent, ((int)Math.Min(999, total * 100 / cap)).ToString(Loc.Culture));
     }

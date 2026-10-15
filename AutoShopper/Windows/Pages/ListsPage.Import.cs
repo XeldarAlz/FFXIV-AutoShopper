@@ -8,8 +8,10 @@ using AutoShopper.Core.Shopping.Model;
 using AutoShopper.Windows.Components;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
+using System.IO;
 using System.Numerics;
 using System.Text;
 
@@ -33,16 +35,20 @@ internal sealed partial class ListsPage
     // Each status count stays below 2^11 because an import holds at most 1,000 rows.
     private const int SummaryCountBits = 11;
     private const int DetectSource = 0;
+    private const int MaximumImportFiles = 1;
+    private const string ImportFileExtensions = "{.json,.csv,.txt},.*";
 
     // The source picker after "Detect automatically", in the order its labels are built.
     private static readonly ImportFormat[] sourceFormats =
     [
         ImportFormat.Text, ImportFormat.Csv, ImportFormat.Json, ImportFormat.ArtisanList, ImportFormat.TeamcraftText,
+        ImportFormat.MakePlace,
     ];
 
     private readonly string[] sourceLabels = new string[sourceFormats.Length + 1];
     private readonly string[] expansionLabels = new string[3];
     private readonly string[] expansionDetails = new string[3];
+    private readonly FileDialogManager importFileDialog = new();
     private LanguageInfo? importLabelsLanguage;
     private bool importOpen;
     private bool focusImportBox;
@@ -72,6 +78,9 @@ internal sealed partial class ListsPage
     private int importLeftOut;
     private bool importHasCaps;
     private long replaceArmedAtMs;
+    private string? importFileName;
+    private string? importFolder;
+    private string? pendingImportPath;
 
     private void ToggleImport()
     {
@@ -103,6 +112,9 @@ internal sealed partial class ListsPage
         candidateLabels = [];
         candidatePicks = [];
         replaceArmedAtMs = 0;
+        importFileName = null;
+        pendingImportPath = null;
+        importFileDialog.Reset();
     }
 
     private void DrawImportPanel(Plugin plugin, ShoppingList list)
@@ -110,6 +122,13 @@ internal sealed partial class ListsPage
         if (importBuffer is null)
         {
             return;
+        }
+
+        importFileDialog.Draw();
+        if (pendingImportPath is { } path)
+        {
+            pendingImportPath = null;
+            LoadImportFile(plugin, path);
         }
 
         var now = Environment.TickCount64;
@@ -171,7 +190,7 @@ internal sealed partial class ListsPage
 
     private bool DrawImportTitle(float width)
     {
-        var help = importHelpText.Get(0, static _ => string.Concat(Loc.T(L.Lists.ImportHelp), " ", Loc.T(L.Lists.ImportCraftingHelp)));
+        var help = importHelpText.Get(0, static _ => string.Join(" ", Loc.T(L.Lists.ImportHelp), Loc.T(L.Lists.ImportCraftingHelp), Loc.T(L.Lists.ImportLayoutHelp)));
         return DrawPanelTitle("##ashop_import_close", Loc.T(L.Lists.ImportTitle), help, width);
     }
 
@@ -295,7 +314,16 @@ internal sealed partial class ListsPage
             PasteImport(plugin);
         }
 
-        ImGui.SetCursorScreenPos(origin + new Vector2(PillButton.Width(pasteLabel, FontAwesomeIcon.Paste) + ToolbarGap * scale, 0f));
+        var openLabel = Loc.T(L.Lists.ImportOpenFile);
+        var x = origin.X + PillButton.Width(pasteLabel, FontAwesomeIcon.Paste) + ToolbarGap * scale;
+        ImGui.SetCursorScreenPos(new Vector2(x, origin.Y));
+        if (PillButton.Draw("##ashop_import_open", openLabel, Styling.AccentGlow, PillButton.Emphasis.Tinted, FontAwesomeIcon.FolderOpen, height: Layout.ActionPillHeight))
+        {
+            OpenImportFile();
+        }
+
+        x += PillButton.Width(openLabel, FontAwesomeIcon.FolderOpen) + ToolbarGap * scale;
+        ImGui.SetCursorScreenPos(new Vector2(x, origin.Y));
         if (PillButton.Draw("##ashop_import_clear", clearLabel, Styling.TextSecondary, PillButton.Emphasis.Ghost, FontAwesomeIcon.Eraser, height: Layout.ActionPillHeight))
         {
             Array.Clear(buffer);
@@ -304,6 +332,7 @@ internal sealed partial class ListsPage
             importEntries = [];
             importHeaders = 0;
             importDirty = false;
+            importFileName = null;
         }
 
         if (importParsed is not null)
@@ -330,26 +359,79 @@ internal sealed partial class ListsPage
         ImportFormat.Json => L.Lists.FormatJson,
         ImportFormat.ArtisanList => L.Lists.FormatArtisan,
         ImportFormat.TeamcraftText => L.Lists.FormatTeamcraft,
+        ImportFormat.MakePlace => L.Lists.FormatMakePlace,
         _ => L.Lists.FormatText,
     };
 
     private void PasteImport(Plugin plugin)
     {
-        var text = ImGui.GetClipboardText() ?? string.Empty;
+        importFileName = null;
+        LoadImportText(plugin, ImGui.GetClipboardText() ?? string.Empty);
+    }
+
+    private void OpenImportFile()
+    {
+        var folder = importFolder ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        importFileDialog.OpenFileDialog(Loc.T(L.Lists.ImportFileTitle), string.Concat(Loc.T(L.Lists.Title), ImportFileExtensions), OnImportFileChosen,
+            MaximumImportFiles, folder);
+    }
+
+    private void OnImportFileChosen(bool chosen, List<string> paths)
+    {
+        if (chosen && paths.Count > 0)
+        {
+            pendingImportPath = paths[0];
+        }
+    }
+
+    private void LoadImportFile(Plugin plugin, string path)
+    {
+        importFolder = Path.GetDirectoryName(path);
+        string text;
+        try
+        {
+            if (new FileInfo(path).Length > ShoppingLimits.MaximumImportBytes)
+            {
+                ShowImportTooLarge();
+                return;
+            }
+
+            text = File.ReadAllText(path);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            RunLog.Warning($"Import: the file '{path}' could not be read: {exception.Message}");
+            ShowNotice(Loc.T(L.Lists.ImportFileUnreadable), Styling.AccentRoseSoft);
+            return;
+        }
+
+        importFileName = ShoppingLimits.CleanName(Path.GetFileNameWithoutExtension(path), ShoppingLimits.MaximumListNameLength);
+        LoadImportText(plugin, text);
+    }
+
+    private void LoadImportText(Plugin plugin, string text)
+    {
         Array.Clear(importBuffer!);
         importDirty = false;
         if (Encoding.UTF8.GetByteCount(text) > ShoppingLimits.MaximumImportBytes)
         {
-            importParsed = ImportResult.Failed(ImportFormat.Text, ImportError.TooLarge);
-            importResult = importParsed;
-            importEntries = [];
-            importHeaders = 0;
-            importResolved = true;
+            ShowImportTooLarge();
             return;
         }
 
         Encoding.UTF8.GetBytes(text, importBuffer!);
         ParseImport(plugin);
+    }
+
+    private void ShowImportTooLarge()
+    {
+        Array.Clear(importBuffer!);
+        importDirty = false;
+        importParsed = ImportResult.Failed(ImportFormat.Text, ImportError.TooLarge);
+        importResult = importParsed;
+        importEntries = [];
+        importHeaders = 0;
+        importResolved = true;
     }
 
     private void ParseImport(Plugin plugin)
@@ -358,6 +440,11 @@ internal sealed partial class ListsPage
         var length = Array.IndexOf(buffer, (byte)0);
         var text = Encoding.UTF8.GetString(buffer, 0, length < 0 ? buffer.Length : length);
         importParsed = importSource == DetectSource ? ListImporter.Parse(text) : ListImporter.Parse(text, sourceFormats[importSource - 1]);
+        if (importParsed.ListName is null && importFileName is { Length: > 0 })
+        {
+            importParsed.ListName = importFileName;
+        }
+
         PrepareImport(plugin);
     }
 
@@ -383,6 +470,10 @@ internal sealed partial class ListsPage
             }
 
             importResult = plugin.Recipes.Expand(parsed, importExpansion, plugin.Items);
+        }
+        else if (parsed.Dyes.Count > 0 && plugin.Items.IsReady)
+        {
+            importResult = ListImporter.AddDyes(parsed, plugin.Dyes);
         }
         else
         {
@@ -534,7 +625,12 @@ internal sealed partial class ListsPage
         ImportError.TooLarge => L.Lists.ImportErrorTooLarge,
         ImportError.TooManyRows => L.Lists.ImportErrorTooMany,
         ImportError.MalformedJson => L.Lists.ImportErrorJson,
-        ImportError.WrongFormat => format == ImportFormat.ArtisanList ? L.Lists.ImportErrorCraftingFormat : L.Lists.ImportErrorFormat,
+        ImportError.WrongFormat => format switch
+        {
+            ImportFormat.ArtisanList => L.Lists.ImportErrorCraftingFormat,
+            ImportFormat.MakePlace => L.Lists.ImportErrorLayoutFormat,
+            _ => L.Lists.ImportErrorFormat,
+        },
         ImportError.UnsupportedVersion => format == ImportFormat.ArtisanList ? L.Lists.ImportErrorCraftingVersion : L.Lists.ImportErrorVersion,
         ImportError.MissingColumns => L.Lists.ImportErrorColumns,
         _ => L.Lists.ImportErrorEmpty,
@@ -759,6 +855,7 @@ internal sealed partial class ListsPage
         ImportRowProblem.SkippedCraft => L.Lists.ImportProblemSkipped,
         ImportRowProblem.NotMarketable => L.Lists.ImportProblemUntradable,
         ImportRowProblem.CraftedFromOtherRows => L.Lists.ImportProblemCrafted,
+        ImportRowProblem.UnknownDye => L.Lists.ImportProblemDye,
         _ => format == ImportFormat.ArtisanList ? L.Lists.ImportProblemNoRecipe : L.Lists.ImportProblemMissing,
     };
 

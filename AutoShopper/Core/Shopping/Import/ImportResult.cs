@@ -18,6 +18,8 @@ public sealed class ImportResult
 
     public bool IsCraftingList => Crafts.Count > 0;
 
+    public List<DyeImport> Dyes { get; } = [];
+
     public string? ListName { get; internal set; }
 
     // CSV columns and JSON properties this version does not read.
@@ -49,5 +51,6 @@ public sealed class ImportResult
         Error = error;
         Rows.Clear();
         Crafts.Clear();
+        Dyes.Clear();
     }
 }

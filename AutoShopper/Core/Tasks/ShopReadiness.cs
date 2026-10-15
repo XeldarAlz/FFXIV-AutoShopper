@@ -83,12 +83,13 @@ internal static class ShopReadiness
         }
 
         var compatibility = plugin.Market.Compatibility;
-        if (!compatibility.ReadingAvailable)
+        var marketNeeded = external is not null || !configuration.BuysOnlyFromVendors;
+        if (marketNeeded && !compatibility.ReadingAvailable)
         {
             return Readiness.ReadingUnavailable;
         }
 
-        if (!compatibility.ExecutionAvailable)
+        if (marketNeeded && !compatibility.ExecutionAvailable)
         {
             return Readiness.BuyingUnavailable;
         }

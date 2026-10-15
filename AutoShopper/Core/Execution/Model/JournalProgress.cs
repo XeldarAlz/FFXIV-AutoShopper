@@ -22,7 +22,11 @@ internal sealed record AttemptRecord(
     long ReservedAmount,
     AttemptStatus Status,
     int ConfirmedQuantity,
-    long ChargedAmount);
+    long ChargedAmount,
+    uint VendorShopId = 0)
+{
+    public string ListingKey => VendorShopId != 0 ? ListingKeys.ForVendorPurchase(AttemptId) : ListingKeys.ForGameListing(ListingId);
+}
 
 internal readonly record struct DemandProgress(PlanDemand Demand, int ConfirmedQuantity, int UnknownQuantity, int FailedAttempts)
 {
@@ -151,7 +155,7 @@ internal sealed class JournalProgress
                 continue;
             }
 
-            purchases.Add(new ConfirmedPurchase(attempt.Demand, ListingKeys.ForGameListing(attempt.ListingId), attempt.ConfirmedQuantity, attempt.ChargedAmount));
+            purchases.Add(new ConfirmedPurchase(attempt.Demand, attempt.ListingKey, attempt.ConfirmedQuantity, attempt.ChargedAmount));
         }
 
         return purchases.ToImmutable();

@@ -24,4 +24,5 @@ public enum ImportRowProblem : byte
     NotMarketable,
     CraftedFromOtherRows,
     AmbiguousNumber,
+    UnknownDye,
 }

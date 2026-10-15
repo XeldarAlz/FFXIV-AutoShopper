@@ -1,0 +1,66 @@
+{
+	"lightLevel": 1,
+	"houseSize": "Small",
+	"interiorFixture": [
+		{ "level": "", "type": "District", "name": "Goblet", "itemId": 0, "color": "" },
+		{ "level": "Ground Floor", "type": "Wall", "name": "Hingan Interior Wall", "itemId": 20716, "color": "" },
+		{ "level": "Ground Floor", "type": "Floor", "name": "Hingan Flooring", "itemId": 20718, "color": "" }
+	],
+	"exteriorScale": 100,
+	"exteriorFixture": [
+		{ "level": "", "type": "Roof", "name": "Riviera Cottage Roof (Wood)", "itemId": 6347, "color": "A2875C00" },
+		{ "level": "", "type": "Fence", "name": "Riviera Stone Fence", "itemId": 0, "color": "" }
+	],
+	"exteriorFurniture": [
+		{
+			"itemId": 7064,
+			"name": "Summoning Bell",
+			"transform": { "location": [ 1, 2, 3 ], "rotation": [ 0, 0, 0, 1 ], "scale": [ 1, 1, 1 ] },
+			"properties": {}
+		}
+	],
+	"metaData": { "version": 118 },
+	"interiorScale": 100,
+	"interiorFurniture": [
+		{
+			"itemId": 6569,
+			"name": "Manor Bookshelf",
+			"transform": { "location": [ 0, 582.5, -340.3 ], "rotation": [ 0, 0, 0, 1 ], "scale": [ 1, 1, 1 ] },
+			"properties": { "color": "B9A48900" }
+		},
+		{
+			"itemId": 6569,
+			"name": "Manor Bookshelf",
+			"transform": { "location": [ 10, 582.5, -340.3 ], "rotation": [ 0, 0, 0, 1 ], "scale": [ 1, 1, 1 ] },
+			"properties": {}
+		},
+		{
+			"itemId": 24514,
+			"name": "White Rectangular Partition",
+			"transform": { "location": [ 20, 0, 0 ], "rotation": [ 0, 0, 0, 1 ], "scale": [ 1, 1, 1 ] },
+			"properties": { "material": "/Game/HouseAssets/Wallpaper/MasonworkInteriorWall/MasonworkInteriorWall.MasonworkInteriorWall" }
+		},
+		{
+			"itemId": 24514,
+			"name": "White Rectangular Partition",
+			"transform": { "location": [ 30, 0, 0 ], "rotation": [ 0, 0, 0, 1 ], "scale": [ 1, 1, 1 ] },
+			"properties": { "material": { "name": "Hingan Interior Wall", "itemId": 20716 } }
+		},
+		{
+			"itemId": 28639,
+			"name": "Leather Sofa",
+			"transform": { "location": [ 40, 0, 0 ], "rotation": [ 0, 0, 0, 1 ], "scale": [ 1, 1, 1 ] },
+			"properties": { "color": "2B292300" },
+			"attachments": [
+				{
+					"itemId": 7962,
+					"name": "Assorted Fruit",
+					"transform": { "location": [ 40, 0, 50 ], "rotation": [ 0, 0, 0, 1 ], "scale": [ 1, 1, 1 ] },
+					"properties": { "color": "2B292300", "consumed": true },
+					"attachments": []
+				}
+			]
+		}
+	],
+	"properties": {}
+}

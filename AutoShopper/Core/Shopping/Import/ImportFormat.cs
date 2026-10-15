@@ -7,4 +7,5 @@ public enum ImportFormat : byte
     Json,
     ArtisanList,
     TeamcraftText,
+    MakePlace,
 }

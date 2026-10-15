@@ -45,17 +45,21 @@ internal sealed partial class AutoShopRun
             return Refused(ApiRefusal.LoggedOut, L.Shop.ReasonLoggedOut);
         }
 
-        run.SetState(RunState.FetchingPrices);
-        Status = Loc.T(L.Buyer.StatusPrices);
-        if (!await EnsureFreshPrices(scope, ItemIdsOf(plugin.Lists.Analyze(list))))
+        var vendorsOnly = plugin.Configuration.BuysOnlyFromVendors;
+        if (!vendorsOnly)
         {
-            return Refused(ApiRefusal.PricesUnavailable, L.Buyer.RefusePrices);
+            run.SetState(RunState.FetchingPrices);
+            Status = Loc.T(L.Buyer.StatusPrices);
+            if (!await EnsureFreshPrices(scope, ItemIdsOf(plugin.Lists.Analyze(list))))
+            {
+                return Refused(ApiRefusal.PricesUnavailable, L.Buyer.RefusePrices);
+            }
         }
 
         run.SetState(RunState.Planning);
         Status = Loc.T(L.Buyer.StatusPlanning);
-        var preview = await WaitForPreview(list);
-        if (preview is null || !ReferenceEquals(preview.Input.Prices, plugin.Prices.Latest))
+        var preview = await WaitForPreview(list, vendorsOnly);
+        if (preview is null || !PreviewMatches(preview, vendorsOnly))
         {
             return Refused(ApiRefusal.PlanFailed, L.Buyer.RefusePlan);
         }
@@ -65,10 +69,10 @@ internal sealed partial class AutoShopRun
             return Refused(ApiRefusal.PlanFailed, L.Buyer.RefuseOwned);
         }
 
-        var demands = RunPlanning.AuthorizedDemands(preview.Input.Demands.Demands);
+        var demands = RunPlanning.AuthorizedDemands(vendorsOnly ? VendorDemands(preview) : preview.Input.Demands.Demands);
         if (demands.IsEmpty)
         {
-            return Refused(ApiRefusal.NothingToBuy, L.Buyer.RefuseNothing);
+            return Refused(ApiRefusal.NothingToBuy, vendorsOnly ? L.Buyer.RefuseNoVendor : L.Buyer.RefuseNothing);
         }
 
         return Authorize(demands, preview.Selected, scope, preview.Input.Prices);
@@ -148,12 +152,13 @@ internal sealed partial class AutoShopRun
         }
 
         var compatibility = Owner.Market.Compatibility;
-        if (!compatibility.ReadingAvailable)
+        var vendorsOnly = VendorsOnly();
+        if (!vendorsOnly && !compatibility.ReadingAvailable)
         {
             return Refused(ApiRefusal.ReadingUnavailable, L.Shop.ReasonReadingOff);
         }
 
-        if (!compatibility.ExecutionAvailable)
+        if (!vendorsOnly && !compatibility.ExecutionAvailable)
         {
             return Refused(ApiRefusal.BuyingUnavailable, L.Shop.ReasonBuyingOff);
         }
@@ -170,11 +175,17 @@ internal sealed partial class AutoShopRun
             return Refused(ApiRefusal.LoggedOut, L.Shop.ReasonLoggedOut);
         }
 
-        run.SetState(RunState.FetchingPrices);
-        Status = Loc.T(L.Buyer.StatusPrices);
-        if (await ResumePrices(authorization, scope) is not { } prices)
+        PriceSnapshot? prices = null;
+        if (!vendorsOnly)
         {
-            return Refused(ApiRefusal.PricesUnavailable, L.Buyer.RefusePrices);
+            run.SetState(RunState.FetchingPrices);
+            Status = Loc.T(L.Buyer.StatusPrices);
+            if (await ResumePrices(authorization, scope) is not { } fetched)
+            {
+                return Refused(ApiRefusal.PricesUnavailable, L.Buyer.RefusePrices);
+            }
+
+            prices = fetched;
         }
 
         run.SetState(RunState.Planning);
@@ -190,7 +201,8 @@ internal sealed partial class AutoShopRun
         var worlds = RouteReplanning.TryStopsLeft(maxStops, run.CompletedWorldIds.Count + run.Revisits, out var stopsLeft)
             ? RouteReplanning.EligibleWorlds(runWorlds, run.CompletedWorldIds, run.Exclusions, revisitsLeft, authorization)
             : ImmutableArray<PlanWorld>.Empty;
-        var request = RunPlanning.RemainingRequest(authorization, run.Tally, prices.Offers, worlds, settings with { MaxStops = stopsLeft }, run.ExcludedListingKeys);
+        var request = RunPlanning.RemainingRequest(authorization, run.Tally, prices?.Offers ?? ImmutableArray<PlanOffer>.Empty, vendorsOnly ? ImmutableArray<PlanWorld>.Empty : worlds,
+            settings with { MaxStops = stopsLeft }, run.ExcludedListingKeys);
         var plan = await OffThread(token => new Planner().Plan(request, token), "planning what is left of the run");
         if (plan is null)
         {
@@ -416,14 +428,14 @@ internal sealed partial class AutoShopRun
     }
 
     // The preview plans the selected list on its own; the run takes its plan once it was made from the newest prices.
-    private async Task<PreviewResult?> WaitForPreview(ShoppingList list)
+    private async Task<PreviewResult?> WaitForPreview(ShoppingList list, bool vendorsOnly)
     {
         var preview = Owner.Preview;
         var deadline = Environment.TickCount64 + PlanWaitMs;
         while (true)
         {
             var result = preview.LatestFor(list);
-            var current = result is not null && !preview.Planning && ReferenceEquals(result.Input.Prices, Owner.Prices.Latest);
+            var current = result is not null && !preview.Planning && PreviewMatches(result, vendorsOnly);
             if ((current && result!.Input.Demands.TargetsUnknown == 0) || Environment.TickCount64 >= deadline)
             {
                 return result;
@@ -431,6 +443,28 @@ internal sealed partial class AutoShopRun
 
             await NextFrame(SlowPollFrames);
         }
+    }
+
+    private static bool PreviewMatches(PreviewResult preview, bool vendorsOnly)
+    {
+        if (!vendorsOnly)
+        {
+            return preview.Input.Source == Owner.Configuration.BuySource && ReferenceEquals(preview.Input.Prices, Owner.Prices.Latest);
+        }
+
+        return preview.VendorsOnly && (!preview.Input.Vendors.IsEmpty || Owner.Vendors.LoadFailed);
+    }
+
+    private static ImmutableArray<PlanDemand> VendorDemands(PreviewResult preview)
+    {
+        var lines = preview.VendorLines;
+        var demands = ImmutableArray.CreateBuilder<PlanDemand>(lines.Length);
+        for (var index = 0; index < lines.Length; index++)
+        {
+            demands.Add(lines[index].Demand);
+        }
+
+        return demands.MoveToImmutable();
     }
 
     private static ImmutableArray<uint> ItemIdsOf(ListAnalysis analysis) => [.. analysis.ItemIds];

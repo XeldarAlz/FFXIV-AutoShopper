@@ -275,6 +275,8 @@ internal sealed class RunView
         RunIssueReason.JournalWriteFailed => Loc.T(L.Issues.JournalWriteFailed),
         RunIssueReason.CharacterChanged => Loc.T(L.Issues.CharacterChanged),
         RunIssueReason.CrystalLimit => Loc.T(L.Issues.CrystalLimit),
+        RunIssueReason.VendorUnreachable => Loc.T(L.Issues.VendorUnreachable),
+        RunIssueReason.VendorRefused => Loc.T(L.Issues.VendorRefused),
         _ => Loc.T(L.Issues.NotMarketable),
     };
 }
