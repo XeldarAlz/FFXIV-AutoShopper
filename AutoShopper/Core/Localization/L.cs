@@ -71,6 +71,19 @@ internal static partial class L
         public static readonly LocPlural PlanStops = new("shop.planStops", "{0} stop", "{0} stops");
         public static readonly LocPlural PlanMissing = new("shop.planMissing", "{0} unit not covered", "{0} units not covered");
         public static readonly LocPlural PlanVendors = new("shop.planVendors", "{0} item from NPC vendors", "{0} items from NPC vendors");
+        public static readonly LocPlural PlanLeftOut = new("shop.planLeftOut", "{0} item not sold by NPC vendors", "{0} items not sold by NPC vendors");
+        public static readonly LocString HowToBuy = new("shop.howToBuy", "How to buy");
+        public static readonly LocString BuyFrom = new("shop.buyFrom", "Buy from");
+        public static readonly LocString Route = new("shop.route", "Route");
+        public static readonly LocString SourceEverything = new("shop.source.everything", "Everything");
+        public static readonly LocString SourceMarket = new("shop.source.market", "Market board");
+        public static readonly LocString SourceVendors = new("shop.source.vendors", "NPC vendors");
+        public static readonly LocString SourceEverythingHelp = new("shop.source.everythingHelp", "NPC vendors first for anything they sell for no more than the market board asks, then the market board for the rest.");
+        public static readonly LocString SourceMarketHelp = new("shop.source.marketHelp", "Every item from the market board; NPC vendors are left out.");
+        public static readonly LocString SourceVendorsHelp = new("shop.source.vendorsHelp", "Only what NPC vendors sell, at their price, with no market board stops and no price fetch. Anything no NPC you can reach sells is left out. Housing merchants are reached through Lifestream, in ward 1 of a residential district.");
+        public static readonly LocString ModeCheapestHelp = new("shop.mode.cheapestHelp", "The lowest total, however many worlds it takes.");
+        public static readonly LocString ModeBalancedHelp = new("shop.mode.balancedHelp", "A low total without too many world changes.");
+        public static readonly LocString ModeFewestHelp = new("shop.mode.fewestHelp", "As few worlds as possible, for a little more gil.");
         public static readonly LocString PlanOldest = new("shop.planOldest", "oldest price {0}");
 
         public static readonly LocString Start = new("shop.start", "START");

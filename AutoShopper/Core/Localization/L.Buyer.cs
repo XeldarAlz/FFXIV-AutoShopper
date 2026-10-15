@@ -33,6 +33,7 @@ internal static partial class L
         public static readonly LocString RefuseCharacter = new("buyer.refuse.character", "the run belongs to another character");
         public static readonly LocString RefuseAuthorization = new("buyer.refuse.authorization", "the run could not be authorized ({0})");
         public static readonly LocString RefuseJournal = new("buyer.refuse.journal", "the purchase journal could not be written");
+        public static readonly LocString RefuseNoVendor = new("buyer.refuse.noVendor", "no NPC vendor you can reach sells anything on this list");
     }
 
     internal static class Issues

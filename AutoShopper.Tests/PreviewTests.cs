@@ -4,6 +4,7 @@ using AutoShopper.Core.Planning;
 using AutoShopper.Core.Preview.Model;
 using AutoShopper.Core.Pricing.Model;
 using AutoShopper.Core.Pricing.Universalis;
+using AutoShopper.Core.Vendors.Model;
 using static AutoShopper.Tests.PricingFixtures;
 
 namespace AutoShopper.Tests;
@@ -28,6 +29,53 @@ public sealed class PreviewTests
 
         Assert.Same(result.For(PlanMode.Balanced), result.Selected);
         Assert.True(result.For(PlanMode.Cheapest).Totals.PurchaseEstimate <= result.For(PlanMode.FewestStops).Totals.PurchaseEstimate);
+    }
+
+    [Fact]
+    public void AVendorCheaperThanTheMarketTakesTheLineOutOfTheRoute()
+    {
+        var input = Input(Snapshot(), Demands(PlanDemand.ForPurchase(FireShard, DemandQuality.Any, 3000)), null) with { Vendors = Vendors(1) };
+
+        var result = PreviewRunner.Run(input, new FixedTimeProvider(), CancellationToken.None);
+
+        Assert.Equal(FireShard, Assert.Single(result.VendorLines).Demand.ItemId);
+        Assert.Equal(3_000, result.VendorTotal);
+        Assert.Equal(0, result.Selected.Totals.StopCount);
+        Assert.Empty(result.LeftOut);
+    }
+
+    [Fact]
+    public void TheMarketBoardSourceLeavesVendorsOut()
+    {
+        var input = Input(Snapshot(), Demands(PlanDemand.ForPurchase(FireShard, DemandQuality.Any, 3000)), null) with
+        {
+            Vendors = Vendors(1),
+            Source = BuySource.MarketBoard,
+        };
+
+        var result = PreviewRunner.Run(input, new FixedTimeProvider(), CancellationToken.None);
+
+        Assert.Empty(result.VendorLines);
+        Assert.True(result.Selected.IsComplete);
+        Assert.True(result.Selected.Totals.StopCount > 0);
+    }
+
+    [Fact]
+    public void TheVendorSourceBuysWhatNpcsSellWithoutPricesAndLeavesTheRestOut()
+    {
+        var input = Input(null, Demands(PlanDemand.ForPurchase(FireShard, DemandQuality.Any, 3000), PlanDemand.ForPurchase(OneGilItem, DemandQuality.Any, 2)), null) with
+        {
+            Vendors = Vendors(100_000),
+            Source = BuySource.NpcVendors,
+        };
+
+        var result = PreviewRunner.Run(input, new FixedTimeProvider(), CancellationToken.None);
+
+        Assert.True(result.VendorsOnly);
+        Assert.Equal(FireShard, Assert.Single(result.VendorLines).Demand.ItemId);
+        Assert.Equal(OneGilItem, Assert.Single(result.LeftOut).ItemId);
+        Assert.Equal(0, result.Selected.Totals.StopCount);
+        Assert.Equal(300_000_000, result.SelectedTotal);
     }
 
     [Fact]
@@ -128,6 +176,8 @@ public sealed class PreviewTests
             },
         };
     }
+
+    private static VendorPriceTable Vendors(long fireShardPrice) => new(new Dictionary<uint, long> { [FireShard] = fireShardPrice });
 
     private static DemandSet Demands(params PlanDemand[] demands)
     {

@@ -223,6 +223,7 @@ internal sealed class PlanPreview : IDisposable
             configuration.CrossDataCenterPenaltyGil,
             configuration.FewestStopsPremiumPercent,
             configuration.ReturnHomeAfterRun,
+            configuration.BuySource,
             VendorPrices());
         if (key == planningKey)
         {
@@ -242,6 +243,7 @@ internal sealed class PlanPreview : IDisposable
                 PlannedAtUtc = current.PlannedAtUtc,
                 VendorLines = current.VendorLines,
                 VendorTotal = current.VendorTotal,
+                LeftOut = current.LeftOut,
             });
             return;
         }
@@ -251,7 +253,7 @@ internal sealed class PlanPreview : IDisposable
 
     private VendorPriceTable VendorPrices()
     {
-        if (!configuration.BuyFromVendors)
+        if (configuration.BuySource == BuySource.MarketBoard)
         {
             return VendorPriceTable.Empty;
         }
@@ -321,6 +323,7 @@ internal sealed class PlanPreview : IDisposable
             Worlds = scope.PlanWorlds,
             Settings = SettingsFor(configuration, scope),
             Vendors = planningKey.Vendors ?? VendorPriceTable.Empty,
+            Source = planningKey.Source,
         };
         CancelPlanning();
         planning = new CancellationTokenSource();
@@ -381,5 +384,5 @@ internal sealed class PlanPreview : IDisposable
 
     private readonly record struct ScopeKey(ScopePreset Preset, uint CurrentWorldId, uint HomeWorldId, int Revision);
 
-    private readonly record struct PlanningKey(PlanningMode Mode, int MaxStops, long StopPenalty, long CrossDataCenterPenalty, int PremiumPercent, bool ReturnHome, VendorPriceTable Vendors);
+    private readonly record struct PlanningKey(PlanningMode Mode, int MaxStops, long StopPenalty, long CrossDataCenterPenalty, int PremiumPercent, bool ReturnHome, BuySource Source, VendorPriceTable Vendors);
 }

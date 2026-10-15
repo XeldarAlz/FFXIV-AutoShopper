@@ -21,7 +21,7 @@ internal sealed partial class AutoShopRun
 
     private async Task<RunEnd?> BuyFromVendors()
     {
-        if (!Owner.Configuration.BuyFromVendors || run.FromApi)
+        if (run.FromApi || Owner.Configuration.BuySource == BuySource.MarketBoard)
         {
             return null;
         }
@@ -37,9 +37,16 @@ internal sealed partial class AutoShopRun
         }
 
         run.Checkpoint(DateTime.UtcNow);
+        if (VendorsOnly())
+        {
+            return null;
+        }
+
         await ReplanRemaining();
         return CancelToken.IsCancellationRequested ? Cancelled : null;
     }
+
+    private bool VendorsOnly() => !run.FromApi && Owner.Configuration.BuysOnlyFromVendors;
 
     private async Task<RunEnd?> VisitVendors()
     {
@@ -109,7 +116,7 @@ internal sealed partial class AutoShopRun
         }
 
         var vendors = Owner.Vendors;
-        var offers = run.Prices?.Offers ?? ImmutableArray<PlanOffer>.Empty;
+        var offers = VendorsOnly() ? ImmutableArray<PlanOffer>.Empty : run.Prices?.Offers ?? ImmutableArray<PlanOffer>.Empty;
         var split = VendorSplit.Split(outstanding.ToImmutable(), offers, vendors.Prices);
         return VendorRoute.Plan(split.Vendor, vendors, Svc.ClientState.TerritoryType, VendorReachability.CanReach);
     }

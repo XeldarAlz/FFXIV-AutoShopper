@@ -67,6 +67,8 @@ internal sealed partial class PlanPage
 
         public required MissingView[] Missing { get; init; }
 
+        public required MissingView[] LeftOut { get; init; }
+
         public required ModeView[] Modes { get; init; }
 
         public required FreshnessView[] Freshness { get; init; }
@@ -85,7 +87,7 @@ internal sealed partial class PlanPage
             WithNames = catalog.IsReady,
             StaleHours = staleHours,
             Bucket = bucket,
-            Warnings = PreviewReview.Evaluate(result, now, TimeSpan.FromHours(staleHours)),
+            Warnings = WarningsFor(result, now, staleHours),
             StaleWarning = Loc.T(L.Plan.WarnStale, staleHours),
             Total = Formatting.Gil(result.SelectedTotal),
             Fee = Formatting.Gil(totals.FeeEstimate),
@@ -96,6 +98,7 @@ internal sealed partial class PlanPage
             Route = BuildRoute(catalog, plan, scope),
             Vendors = BuildVendorStops(catalog, vendors, result),
             Missing = BuildMissing(catalog, plan, result.Input.Prices),
+            LeftOut = BuildLeftOut(catalog, result),
             Modes = BuildModes(result),
             Freshness = BuildFreshness(result, now, TimeSpan.FromHours(staleHours)),
         };
@@ -114,6 +117,32 @@ internal sealed partial class PlanPage
         }
 
         return stops;
+    }
+
+    private static PreviewWarnings WarningsFor(PreviewResult result, DateTime nowUtc, int staleHours)
+    {
+        var warnings = PreviewReview.Evaluate(result, nowUtc, TimeSpan.FromHours(staleHours));
+        return result.VendorsOnly ? warnings & PreviewWarnings.UnknownOwned : warnings;
+    }
+
+    private static MissingView[] BuildLeftOut(ItemCatalog catalog, PreviewResult result)
+    {
+        var culture = Loc.Culture;
+        var leftOut = new MissingView[result.LeftOut.Length];
+        for (var index = 0; index < leftOut.Length; index++)
+        {
+            var demand = result.LeftOut[index];
+            var (iconId, name) = Describe(catalog, demand.ItemId);
+            leftOut[index] = new MissingView(
+                iconId,
+                demand.Quality == DemandQuality.HighQuality,
+                name,
+                QualityLabel(demand.Quality),
+                Loc.T(L.Plan.Quantity, demand.RequiredQuantity.ToString("N0", culture)),
+                Loc.T(L.Plan.LeftOutReason));
+        }
+
+        return leftOut;
     }
 
     private static StopView[] BuildVendorStops(ItemCatalog catalog, VendorCatalog vendors, PreviewResult result)

@@ -23,6 +23,8 @@ internal sealed record PreviewInput
     public required PlanSettings Settings { get; init; }
 
     public VendorPriceTable Vendors { get; init; } = VendorPriceTable.Empty;
+
+    public BuySource Source { get; init; } = BuySource.Everything;
 }
 
 internal sealed class PreviewResult
@@ -37,6 +39,10 @@ internal sealed class PreviewResult
     public ImmutableArray<VendorLine> VendorLines { get; init; } = ImmutableArray<VendorLine>.Empty;
 
     public long VendorTotal { get; init; }
+
+    public ImmutableArray<PlanDemand> LeftOut { get; init; } = ImmutableArray<PlanDemand>.Empty;
+
+    public bool VendorsOnly => Input.Source == BuySource.NpcVendors;
 
     public long Generation => Input.Generation;
 

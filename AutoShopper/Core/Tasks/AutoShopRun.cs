@@ -71,6 +71,13 @@ internal sealed partial class AutoShopRun(ShopRunState run, ShopSession session)
             return vendorEnd;
         }
 
+        if (VendorsOnly())
+        {
+            return run.Tally.AllSatisfied
+                ? new RunEnd(RunState.Completed, "every line is bought")
+                : new RunEnd(RunState.CompletedPartial, "some lines could not be bought from NPC vendors");
+        }
+
         return await ShopStops();
     }
 

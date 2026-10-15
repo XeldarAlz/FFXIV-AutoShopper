@@ -141,13 +141,23 @@ internal sealed partial class PlanPage
 
     private static void DrawMissing(PlanView current)
     {
-        var missing = current.Missing;
-        if (missing.Length == 0)
+        if (current.Missing.Length > 0)
         {
-            return;
+            DrawMissingRows(current.Missing, Loc.T(L.Plan.NotCovered), Loc.T(L.Plan.NotCoveredNote));
         }
+    }
 
-        SectionTitle(Loc.T(L.Plan.NotCovered), Loc.T(L.Plan.NotCoveredNote));
+    private static void DrawLeftOut(PlanView current)
+    {
+        if (current.LeftOut.Length > 0)
+        {
+            DrawMissingRows(current.LeftOut, Loc.T(L.Plan.LeftOut), Loc.T(L.Plan.LeftOutNote));
+        }
+    }
+
+    private static void DrawMissingRows(MissingView[] missing, string title, string note)
+    {
+        SectionTitle(title, note);
         var scale = ImGuiHelpers.GlobalScale;
         var width = ImGui.GetContentRegionAvail().X;
         for (var index = 0; index < missing.Length; index++)

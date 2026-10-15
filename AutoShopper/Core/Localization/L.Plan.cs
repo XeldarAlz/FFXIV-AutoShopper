@@ -67,6 +67,9 @@ internal static partial class L
         public static readonly LocString Vendors = new("plan.vendors", "From NPC vendors");
         public static readonly LocString VendorsNote = new("plan.vendorsNote", "Sold by NPCs for no more than the market board asks. A run buys these first, on the world you are on.");
         public static readonly LocString VendorUnitPrice = new("plan.vendorUnitPrice", "{0} each");
+        public static readonly LocString LeftOut = new("plan.leftOut", "Not sold by NPC vendors");
+        public static readonly LocString LeftOutNote = new("plan.leftOutNote", "No NPC you can reach sells these, so this run leaves them out. Choose Everything or Market board on the Shop page to buy them.");
+        public static readonly LocString LeftOutReason = new("plan.leftOutReason", "No NPC you can reach sells it");
         public static readonly LocPlural StopItems = new("plan.stopItems", "{0} item", "{0} items");
         public static readonly LocPlural Listings = new("plan.listings", "{0} listing", "{0} listings");
         public static readonly LocString Quantity = new("plan.quantity", "×{0}");

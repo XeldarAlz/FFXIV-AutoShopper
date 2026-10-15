@@ -26,6 +26,7 @@ internal sealed class ShopPage
     private const float PlanCardGap = 10f;
     private const float MarketStatusGap = 12f;
     private const float DataCenterNoteGap = 6f;
+    private const float ChoicesGap = 20f;
     // The plan card's text is rebuilt at most once a minute for the price age.
     private const long PlanTextRefreshMs = 60_000;
 
@@ -69,6 +70,13 @@ internal sealed class ShopPage
         SectionTitle(Loc.T(L.Shop.Lists));
         DrawListCard(plugin.Lists, window);
         DrawPlanCard(plugin, window);
+        if (plugin.Lists.Selected is not null)
+        {
+            Styling.VSpace(ChoicesGap);
+            SectionTitle(Loc.T(L.Shop.HowToBuy));
+            BuyChoices.Draw(plugin.Configuration);
+        }
+
         Styling.VSpace(12f);
     }
 
@@ -88,9 +96,10 @@ internal sealed class ShopPage
         var end = origin + size;
         var drawList = ImGui.GetWindowDrawList();
         var result = plugin.Preview.LatestFor(list);
-        var priced = result?.Input.Prices is not null && plugin.Preview.Scope is not null;
+        var priced = result is not null && plugin.Preview.Scope is not null && (result.Input.Prices is not null || result.VendorsOnly);
         var over = priced && plugin.Configuration.MaxSpend > 0 && result!.SelectedTotal > plugin.Configuration.MaxSpend;
-        var accent = !priced ? Styling.AccentNebula : over || !result!.Selected.IsComplete ? Styling.AccentRose : Styling.AccentMint;
+        var complete = priced && result!.Selected.IsComplete && result.LeftOut.IsEmpty;
+        var accent = !priced ? Styling.AccentNebula : over || !complete ? Styling.AccentRose : Styling.AccentMint;
         Paint.Glass(drawList, origin, end, Styling.CardRounding * scale, accent, 0.04f);
 
         var padX = ListCardPadX * scale;
@@ -125,7 +134,7 @@ internal sealed class ShopPage
             var detail = planDetailText.Get(key, static _ => PlanDetail());
             var top = midY - (lineHeight + 6f * scale + lineHeight) * 0.5f;
             TextDraw.At(TextDraw.Truncate(headline, contentWidth), new Vector2(contentX, top), over ? Styling.AccentRoseSoft : Styling.TextStrong);
-            var detailColor = result!.Selected.IsComplete ? Styling.TextDim : Styling.AccentRoseSoft;
+            var detailColor = complete ? Styling.TextDim : Styling.AccentRoseSoft;
             TextDraw.At(TextDraw.Truncate(detail, contentWidth), new Vector2(contentX, top + lineHeight + 6f * scale), detailColor);
         }
 
@@ -180,6 +189,12 @@ internal sealed class ShopPage
         if (result is null)
         {
             return string.Empty;
+        }
+
+        if (result.VendorsOnly)
+        {
+            var vendors = Loc.Plural(L.Shop.PlanVendors, result.VendorLines.Length);
+            return result.LeftOut.IsEmpty ? vendors : string.Concat(vendors, TextDraw.Separator, Loc.Plural(L.Shop.PlanLeftOut, result.LeftOut.Length));
         }
 
         var plan = result.Selected;

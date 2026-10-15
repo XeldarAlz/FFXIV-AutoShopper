@@ -72,7 +72,7 @@ internal sealed partial class PlanPage
             return;
         }
 
-        if (result.Input.Prices is null)
+        if (result.Input.Prices is null && !result.VendorsOnly)
         {
             EmptyCard(FontAwesomeIcon.Route, Loc.T(L.Plan.NoPricesYet));
             return;
@@ -82,6 +82,13 @@ internal sealed partial class PlanPage
         DrawWarnings(plugin, current);
         DrawTotals(current);
         DrawBudget(plugin, current);
+        if (result.VendorsOnly)
+        {
+            DrawVendors(current);
+            DrawLeftOut(current);
+            return;
+        }
+
         DrawComparison(plugin, current);
         DrawVendors(current);
         DrawRoute(current);
