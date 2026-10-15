@@ -256,6 +256,14 @@ internal static partial class L
         public static readonly LocString New = new("changelog.new", "New");
         public static readonly LocPlural Changes = new("changelog.changes", "{0} change", "{0} changes");
 
+        public static readonly LocString[] Release1300 =
+        [
+            new("changelog.r1300.1", "Imports MakePlace and ReMakePlace house layouts: every furnishing, fixture, wallpaper and dye in the house becomes a line, and the import panel can open a file"),
+            new("changelog.r1300.2", "Buys from NPC vendors when they cost no more than the market board, housing merchants in the residential districts included, before any market stop"),
+            new("changelog.r1300.3", "The Shop page has a How to buy section: buy from everything, the market board only or NPC vendors only, and pick the route mode with buttons"),
+            new("changelog.r1300.4", "List lines stay readable in a narrow window: the item name moves above the controls instead of being cut off"),
+        ];
+
         public static readonly LocString[] Release1200 =
         [
             new("changelog.r1200.1", "Dry run is gone: Start always buys for real, up to your run spend cap, so check the cap before your next run"),
