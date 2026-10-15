@@ -186,6 +186,7 @@ internal static class RunningPanel
             TravelPhase.TransferringDataCenter => Loc.T(L.Route.PhaseTransfer, target),
             TravelPhase.Settling => Loc.T(L.Route.PhaseSettling, target),
             TravelPhase.GoingToBoard => Loc.T(L.Route.PhaseBoard, target),
+            TravelPhase.GoingToVendor => Loc.T(L.Route.PhaseVendor, target),
             TravelPhase.WaitingToRetry => Loc.T(L.Route.PhaseRetry, target),
             _ => Loc.T(L.Route.PhaseHome, target),
         };

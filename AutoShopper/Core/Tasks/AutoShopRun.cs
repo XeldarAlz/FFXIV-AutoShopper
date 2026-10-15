@@ -66,6 +66,11 @@ internal sealed partial class AutoShopRun(ShopRunState run, ShopSession session)
             return new RunEnd(RunState.NeedsReconciliation, "a purchase has no clear answer");
         }
 
+        if (await BuyFromVendors() is { } vendorEnd)
+        {
+            return vendorEnd;
+        }
+
         return await ShopStops();
     }
 
@@ -113,7 +118,7 @@ internal sealed partial class AutoShopRun(ShopRunState run, ShopSession session)
             var line = tally.LineAt(index);
             if (!line.Satisfied && !run.HasIssueFor(line.Demand.ItemId))
             {
-                run.AddIssue(RunIssueReason.NoStock, line.Demand.ItemId, 0, line.Missing);
+                run.AddIssue(run.MissingReason(line.Demand.Key), line.Demand.ItemId, 0, line.Missing);
             }
         }
     }

@@ -27,6 +27,7 @@ Write down what you want, and Auto Shopper works out where to buy it. It reads U
 - **Shopping lists**: any marketable item, with quality, a set amount or a top up to what you own, and a price cap per unit.
 - **Imports**: paste or open plain text, CSV, Artisan crafting lists, Teamcraft lists, and MakePlace / ReMakePlace house layouts (furniture, fixtures, wallpaper and dyes).
 - **Crystal helper**: top up shards, crystals and clusters in one step.
+- **NPC vendors**: anything an NPC sells for no more than the market board asks is bought from that NPC first, housing merchants in the residential districts included.
 - **Three plan modes**: Cheapest, Balanced and Fewest stops, compared side by side on the same prices.
 - **Travel**: world and data center changes through Lifestream, then the aethernet and a walk to the board.
 - **Live listings**: re-plans from the board itself at every stop, so a stale price never decides a purchase.
@@ -68,6 +69,7 @@ The plugin needs **Lifestream** and **vnavmesh**. Open `/ashop deps` after insta
 | `/ashop stop` | Stop the run |
 | `/ashop pause` | Pause or resume the current run |
 | `/ashop mbstatus` | Check whether the market board works on your game version (debug helper) |
+| `/ashop vendor <item>` | Go to an NPC that sells the item and open its shop, without buying (debug helper) |
 | `/ashop goto <world> [<aetheryte>]` | Travel to a world, e.g. `/ashop goto Zalera Wachunpelo` (debug helper) |
 
 ## Languages

@@ -70,6 +70,7 @@ internal static partial class L
         public static readonly LocString PlanNoCap = new("shop.planNoCap", "Estimate {0}  ·  no spend cap set");
         public static readonly LocPlural PlanStops = new("shop.planStops", "{0} stop", "{0} stops");
         public static readonly LocPlural PlanMissing = new("shop.planMissing", "{0} unit not covered", "{0} units not covered");
+        public static readonly LocPlural PlanVendors = new("shop.planVendors", "{0} item from NPC vendors", "{0} items from NPC vendors");
         public static readonly LocString PlanOldest = new("shop.planOldest", "oldest price {0}");
 
         public static readonly LocString Start = new("shop.start", "START");

@@ -24,13 +24,33 @@ internal sealed partial class PlanPage
         var route = current.Route;
         if (route.Length == 0)
         {
-            DrawNote(Loc.T(L.Plan.NoStops), Styling.TextMuted);
+            if (current.Vendors.Length == 0)
+            {
+                DrawNote(Loc.T(L.Plan.NoStops), Styling.TextMuted);
+            }
+
             return;
         }
 
         for (var index = 0; index < route.Length; index++)
         {
             DrawStop(route[index]);
+            Styling.VSpace(8f);
+        }
+    }
+
+    private static void DrawVendors(PlanView current)
+    {
+        var vendors = current.Vendors;
+        if (vendors.Length == 0)
+        {
+            return;
+        }
+
+        SectionTitle(Loc.T(L.Plan.Vendors), Loc.T(L.Plan.VendorsNote));
+        for (var index = 0; index < vendors.Length; index++)
+        {
+            DrawStop(vendors[index]);
             Styling.VSpace(8f);
         }
     }

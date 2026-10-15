@@ -14,6 +14,8 @@ internal static partial class L
         public static readonly LocString StatusAwaiting = new("buyer.status.awaiting", "Waiting for the answer on {0} x {1}");
         public static readonly LocString StatusBackOff = new("buyer.status.backOff", "The board asked to wait; searching again shortly");
         public static readonly LocString StatusSettling = new("buyer.status.settling", "Waiting for the answer on the purchase in flight");
+        public static readonly LocString StatusGoingToVendor = new("buyer.status.goingToVendor", "Going to {0} in {1}");
+        public static readonly LocString StatusBuyingVendor = new("buyer.status.buyingVendor", "Buying {0} x {1} from {2}");
 
         public static readonly LocString ChatStarted = new("buyer.chat.started", "Run started for {0}: spending up to {1}.");
         public static readonly LocString ChatResumed = new("buyer.chat.resumed", "Resuming the interrupted run.");
@@ -53,6 +55,8 @@ internal static partial class L
         public static readonly LocString CharacterChanged = new("issue.characterChanged", "Character or world changed");
         public static readonly LocString NotMarketable = new("issue.notMarketable", "Not sold on the market board");
         public static readonly LocString CrystalLimit = new("issue.crystalLimit", "More than the crystal pouch holds");
+        public static readonly LocString VendorUnreachable = new("issue.vendorUnreachable", "NPC vendor not reached");
+        public static readonly LocString VendorRefused = new("issue.vendorRefused", "The NPC vendor refused a purchase");
         public static readonly LocString OnWorld = new("issue.onWorld", "on {0}");
         public static readonly LocPlural Missing = new("issue.missing", "{0} unit missing", "{0} units missing");
     }

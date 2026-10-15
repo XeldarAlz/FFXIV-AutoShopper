@@ -36,6 +36,8 @@ internal static partial class L
         public static readonly LocString StopsFormat = new("shopping.stopsFormat", "%d");
         public static readonly LocString StaleAfter = new("shopping.staleAfter", "Prices count as old after");
         public static readonly LocString StaleAfterHelp = new("shopping.staleAfterHelp", "Prices uploaded longer ago than this are flagged as old on the Plan page. Get prices again before you trust them.");
+        public static readonly LocString Vendors = new("shopping.vendors", "Buy from NPC vendors");
+        public static readonly LocString VendorsHelp = new("shopping.vendorsHelp", "Items an NPC sells for no more than the market board asks are bought from that NPC first, on the world you are on. Housing merchants are reached through Lifestream, which takes the character into ward 1 of a residential district.");
         public static readonly LocString HoursFormat = new("shopping.hoursFormat", "%d h");
 
         public static readonly LocString Scope = new("shopping.scope", "Worlds to shop on");

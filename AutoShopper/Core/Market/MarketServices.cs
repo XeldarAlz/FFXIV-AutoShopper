@@ -1,3 +1,5 @@
+using AutoShopper.Core.Vendors;
+
 namespace AutoShopper.Core.Market;
 
 // Owns the market engine for the plugin's lifetime. The hooks stay enabled the whole session: a search or purchase
@@ -24,6 +26,10 @@ internal sealed class MarketServices : IDisposable
     public PurchaseSender Sender { get; }
 
     public PurchaseResultWatcher Watcher { get; }
+
+    public VendorPurchaseWatcher VendorWatcher { get; } = new();
+
+    public IPurchaseWatcher WatcherFor(PurchaseChannel channel) => channel == PurchaseChannel.Vendor ? VendorWatcher : Watcher;
 
     public void Dispose()
     {

@@ -92,6 +92,9 @@ internal sealed record IntentRecorded : AttemptEvent
 
     public int OwnedBefore { get; init; } = -1;
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public uint VendorShopId { get; init; }
+
     [JsonIgnore]
     public DemandKey Demand => new(ItemId, Quality);
 

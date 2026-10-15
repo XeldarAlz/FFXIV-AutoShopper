@@ -22,6 +22,8 @@ internal enum RunIssueReason : byte
     CharacterChanged = 15,
     NotMarketable = 16,
     CrystalLimit = 17,
+    VendorUnreachable = 18,
+    VendorRefused = 19,
 }
 
 // One thing that kept part of the run from going as planned. ItemId and WorldId are zero when the issue is not about

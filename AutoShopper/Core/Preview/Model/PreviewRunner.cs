@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using System.Threading;
 using AutoShopper.Core.Planning;
+using AutoShopper.Core.Vendors.Model;
 
 namespace AutoShopper.Core.Preview.Model;
 
@@ -17,6 +18,7 @@ internal static class PreviewRunner
     {
         var planner = new Planner(timeProvider);
         var offers = input.Prices?.Offers ?? ImmutableArray<PlanOffer>.Empty;
+        var split = input.Prices is null ? VendorSplitResult.MarketOnly(input.Demands.Demands) : VendorSplit.Split(input.Demands.Demands, offers, input.Vendors);
         var plans = new PurchasePlan[Modes.Length];
         for (var index = 0; index < Modes.Length; index++)
         {
@@ -24,7 +26,7 @@ internal static class PreviewRunner
             var mode = Modes[index];
             var request = new PlanRequest
             {
-                Demands = input.Demands.Demands,
+                Demands = split.Market,
                 Offers = offers,
                 Worlds = input.Worlds,
                 Settings = input.Settings with { Mode = mode },
@@ -38,6 +40,8 @@ internal static class PreviewRunner
             Input = input,
             Plans = ImmutableCollectionsMarshal.AsImmutableArray(plans),
             PlannedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
+            VendorLines = split.Vendor,
+            VendorTotal = split.VendorTotal,
         };
     }
 }

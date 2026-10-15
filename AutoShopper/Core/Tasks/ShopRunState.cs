@@ -12,7 +12,7 @@ using ECommons.DalamudServices;
 
 namespace AutoShopper.Core.Tasks;
 
-internal readonly record struct InFlightPurchase(PurchaseAttempt Attempt, DemandKey Demand, string ListingKey, int Quantity, long Payable);
+internal readonly record struct InFlightPurchase(PurchaseAttempt Attempt, DemandKey Demand, string ListingKey, int Quantity, long Payable, PurchaseChannel Channel = PurchaseChannel.Market);
 
 internal enum SettledKind : byte
 {
@@ -34,6 +34,7 @@ internal sealed class ShopRunState : IDisposable
     private readonly HashSet<string> excluded = new(StringComparer.Ordinal);
     private readonly List<uint> completedWorlds = [];
     private readonly List<RunIssue> issues = [];
+    private readonly Dictionary<DemandKey, RunIssueReason> vendorFailures = [];
     private readonly IFramework.OnUpdateDelegate settleTick;
     private ImmutableArray<string> excludedSnapshot = ImmutableArray<string>.Empty;
     private bool settleHooked;
@@ -413,6 +414,17 @@ internal sealed class ShopRunState : IDisposable
     }
 
     // The same reason for the same item on the same world is one issue, carrying the newest count.
+    public bool VendorFailed(DemandKey demand) => vendorFailures.ContainsKey(demand);
+
+    public void NoteVendorFailure(DemandKey demand, RunIssueReason reason)
+    {
+        vendorFailures[demand] = reason;
+        RunLog.Info($"Run: NPC vendors are left out for item {demand.ItemId} from here on ({reason}); the market board covers it.");
+        Changed();
+    }
+
+    public RunIssueReason MissingReason(DemandKey demand) => vendorFailures.TryGetValue(demand, out var reason) ? reason : RunIssueReason.NoStock;
+
     public void AddIssue(RunIssueReason reason, uint itemId, uint worldId, int quantity)
     {
         var issue = new RunIssue(reason, itemId, worldId, Math.Max(0, quantity), DateTime.UtcNow);
@@ -513,7 +525,7 @@ internal sealed class ShopRunState : IDisposable
         Unhook();
         if (InFlight is { } purchase)
         {
-            market.Watcher.Abandon(purchase.Attempt.AttemptId);
+            market.WatcherFor(purchase.Channel).Abandon(purchase.Attempt.AttemptId);
         }
     }
 
@@ -525,7 +537,8 @@ internal sealed class ShopRunState : IDisposable
             return;
         }
 
-        var outcome = market.Watcher.Poll();
+        var watcher = market.WatcherFor(purchase.Channel);
+        var outcome = watcher.Poll();
         if (outcome.Kind is PurchaseOutcomeKind.Pending)
         {
             return;
@@ -544,7 +557,7 @@ internal sealed class ShopRunState : IDisposable
             PurchaseOutcomeKind.Rejected => SettleRejected(purchase, outcome),
             _ => SettleUnknown(purchase, outcome),
         };
-        market.Watcher.Acknowledge(attemptId);
+        watcher.Acknowledge(attemptId);
         NoteGil(outcome.GilAfter);
         var settled = kind switch
         {

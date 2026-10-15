@@ -7,6 +7,8 @@ using AutoShopper.Core.Pricing;
 using AutoShopper.Core.Pricing.Model;
 using AutoShopper.Core.Shopping;
 using AutoShopper.Core.Shopping.Model;
+using AutoShopper.Core.Vendors;
+using AutoShopper.Core.Vendors.Model;
 using Dalamud.Plugin.Services;
 using ECommons.DalamudServices;
 
@@ -24,6 +26,7 @@ internal sealed class PlanPreview : IDisposable
     private readonly ShoppingListStore lists;
     private readonly InventoryReader inventory;
     private readonly PriceService prices;
+    private readonly VendorCatalog vendors;
     private readonly PreviewHandoff handoff = new();
 
     private ScopeKey scopeKey;
@@ -34,6 +37,9 @@ internal sealed class PlanPreview : IDisposable
     private int demandInventoryRevision = -1;
     private bool demandHasTargets;
     private PlanningKey planningKey;
+    private VendorPriceTable? reachableVendors;
+    private VendorPriceTable? reachableVendorsSource;
+    private uint reachableVendorsTerritory;
     private long seenPriceGeneration;
     private long changedAtMs;
     private long inputGeneration;
@@ -42,12 +48,13 @@ internal sealed class PlanPreview : IDisposable
     private volatile bool planningRunning;
     private bool pricesRequested;
 
-    public PlanPreview(Configuration configuration, ShoppingListStore lists, InventoryReader inventory, PriceService prices)
+    public PlanPreview(Configuration configuration, ShoppingListStore lists, InventoryReader inventory, PriceService prices, VendorCatalog vendors)
     {
         this.configuration = configuration;
         this.lists = lists;
         this.inventory = inventory;
         this.prices = prices;
+        this.vendors = vendors;
         Svc.Framework.Update += OnUpdate;
     }
 
@@ -215,7 +222,8 @@ internal sealed class PlanPreview : IDisposable
             configuration.StopPenaltyGil,
             configuration.CrossDataCenterPenaltyGil,
             configuration.FewestStopsPremiumPercent,
-            configuration.ReturnHomeAfterRun);
+            configuration.ReturnHomeAfterRun,
+            VendorPrices());
         if (key == planningKey)
         {
             return;
@@ -227,11 +235,44 @@ internal sealed class PlanPreview : IDisposable
         if (onlyMode && changedAtMs == 0 && !planningRunning && current is not null && current.Generation == Volatile.Read(ref inputGeneration))
         {
             var input = current.Input with { Settings = current.Input.Settings with { Mode = ToPlanMode(key.Mode) } };
-            Volatile.Write(ref latest, new PreviewResult { Input = input, Plans = current.Plans, PlannedAtUtc = current.PlannedAtUtc });
+            Volatile.Write(ref latest, new PreviewResult
+            {
+                Input = input,
+                Plans = current.Plans,
+                PlannedAtUtc = current.PlannedAtUtc,
+                VendorLines = current.VendorLines,
+                VendorTotal = current.VendorTotal,
+            });
             return;
         }
 
         MarkChanged();
+    }
+
+    private VendorPriceTable VendorPrices()
+    {
+        if (!configuration.BuyFromVendors)
+        {
+            return VendorPriceTable.Empty;
+        }
+
+        vendors.EnsureLoading();
+        var source = vendors.Prices;
+        var territory = Svc.ClientState.TerritoryType;
+        if (reachableVendors is not null && ReferenceEquals(source, reachableVendorsSource) && territory == reachableVendorsTerritory)
+        {
+            return reachableVendors;
+        }
+
+        var next = vendors.IsReady ? vendors.ReachablePrices(VendorReachability.CanReach) : VendorPriceTable.Empty;
+        reachableVendorsSource = source;
+        reachableVendorsTerritory = territory;
+        if (reachableVendors is null || !reachableVendors.SamePrices(next))
+        {
+            reachableVendors = next;
+        }
+
+        return reachableVendors;
     }
 
     private void RefreshPrices()
@@ -279,6 +320,7 @@ internal sealed class PlanPreview : IDisposable
             Prices = prices.Latest,
             Worlds = scope.PlanWorlds,
             Settings = SettingsFor(configuration, scope),
+            Vendors = planningKey.Vendors ?? VendorPriceTable.Empty,
         };
         CancelPlanning();
         planning = new CancellationTokenSource();
@@ -339,5 +381,5 @@ internal sealed class PlanPreview : IDisposable
 
     private readonly record struct ScopeKey(ScopePreset Preset, uint CurrentWorldId, uint HomeWorldId, int Revision);
 
-    private readonly record struct PlanningKey(PlanningMode Mode, int MaxStops, long StopPenalty, long CrossDataCenterPenalty, int PremiumPercent, bool ReturnHome);
+    private readonly record struct PlanningKey(PlanningMode Mode, int MaxStops, long StopPenalty, long CrossDataCenterPenalty, int PremiumPercent, bool ReturnHome, VendorPriceTable Vendors);
 }

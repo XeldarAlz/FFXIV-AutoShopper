@@ -14,6 +14,7 @@ using AutoShopper.Core.Shopping;
 using AutoShopper.Core.Stats;
 using AutoShopper.Core.Tasks;
 using AutoShopper.Core.Travel;
+using AutoShopper.Core.Vendors;
 using AutoShopper.Windows;
 using AutoShopper.Windows.Shell;
 using clib;
@@ -34,6 +35,7 @@ public sealed class Plugin : IDalamudPlugin
 {
     private const string GotoSubcommand = "goto";
     private const string BoardSubcommand = "board";
+    private const string VendorSubcommand = "vendor";
     private const string AddSubcommand = "add";
     private const string StartSubcommand = "start";
     private const string StopSubcommand = "stop";
@@ -55,6 +57,7 @@ public sealed class Plugin : IDalamudPlugin
     internal AutoShopController Controller { get; }
     internal ItemCatalog Items { get; }
     internal DyeChart Dyes { get; }
+    internal VendorCatalog Vendors { get; }
     internal RecipeExpander Recipes { get; }
     internal InventoryReader Inventory { get; }
     internal ShoppingListStore Lists { get; }
@@ -99,13 +102,14 @@ public sealed class Plugin : IDalamudPlugin
             Controller = new AutoShopController();
             Items = new ItemCatalog();
             Dyes = new DyeChart(Items);
+            Vendors = new VendorCatalog();
             Recipes = new RecipeExpander();
             Inventory = new InventoryReader();
             completed.Push(Inventory.Dispose);
             Lists = new ShoppingListStore(Configuration, Items, Inventory);
             Prices = new PriceService(typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "0");
             completed.Push(Prices.Dispose);
-            Preview = new PlanPreview(Configuration, Lists, Inventory, Prices);
+            Preview = new PlanPreview(Configuration, Lists, Inventory, Prices, Vendors);
             completed.Push(Preview.Dispose);
             Market = new MarketServices(Configuration);
             completed.Push(Market.Dispose);
@@ -268,6 +272,10 @@ public sealed class Plugin : IDalamudPlugin
         else if (HasSubcommand(trimmed, BoardSubcommand))
         {
             AutoBoard.HandleCommand(trimmed[BoardSubcommand.Length..].Trim(), Controller.Running);
+        }
+        else if (HasSubcommand(trimmed, VendorSubcommand))
+        {
+            AutoVendor.HandleCommand(trimmed[VendorSubcommand.Length..].Trim(), Controller.Running, Items, Vendors);
         }
         else if (HasSubcommand(trimmed, AddSubcommand))
         {

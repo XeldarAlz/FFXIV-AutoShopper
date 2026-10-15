@@ -21,6 +21,8 @@ public sealed partial class Configuration
 
     public int StaleAfterHours { get; set; } = 3;
 
+    public bool BuyFromVendors { get; set; } = true;
+
     // A hand-edited file can carry nulls or values out of range; they are put back in range once on load.
     private bool RepairShoppingSettings()
     {

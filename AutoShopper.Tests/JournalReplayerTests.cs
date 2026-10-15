@@ -30,6 +30,39 @@ public sealed class JournalReplayerTests
     }
 
     [Fact]
+    public void EveryVendorPurchaseCountsOnReplay()
+    {
+        const uint shopId = 262_654;
+        var journal = new JournalBuilder().Authorize();
+        journal.Intent(FirstAttempt, listingId: 0, vendorShopId: shopId).Submitted(FirstAttempt).Confirmed(FirstAttempt, 5, 5_050);
+        journal.Intent(SecondAttempt, listingId: 0, vendorShopId: shopId).Submitted(SecondAttempt).Confirmed(SecondAttempt, 5, 5_050);
+
+        var progress = JournalReplayer.Replay(journal.Entries);
+        var purchases = progress.ConfirmedPurchases();
+        var tally = RunTally.Restore([OreDemand], purchases);
+
+        Assert.Equal(2, purchases.Length);
+        Assert.NotEqual(purchases[0].ListingKey, purchases[1].ListingKey);
+        Assert.Equal(ListingKeys.ForVendorPurchase(FirstAttempt), purchases[0].ListingKey);
+        Assert.Equal(10, OreProgress(progress).ConfirmedQuantity);
+        Assert.Equal(10, tally.Acquired(OreDemand.Key));
+    }
+
+    [Fact]
+    public void AMarketIntentLeavesTheVendorShopOutOfTheFile()
+    {
+        var journal = new JournalBuilder().Authorize();
+        journal.Intent(FirstAttempt).Intent(SecondAttempt, listingId: 0, vendorShopId: 262_654);
+
+        var market = JsonSerializer.Serialize<JournalEvent>(journal.Entries[1]!);
+        var vendor = JsonSerializer.Serialize<JournalEvent>(journal.Entries[2]!);
+
+        Assert.DoesNotContain(nameof(IntentRecorded.VendorShopId), market);
+        Assert.Contains(nameof(IntentRecorded.VendorShopId), vendor);
+        Assert.Equal(262_654u, Assert.IsType<IntentRecorded>(JsonSerializer.Deserialize<JournalEvent>(vendor)).VendorShopId);
+    }
+
+    [Fact]
     public void AnUncertainAttemptIsBookedAtWhatThePurseLostWhenThatIsMore()
     {
         var journal = new JournalBuilder().Authorize();
@@ -509,7 +542,7 @@ public sealed class JournalReplayerTests
             return this;
         }
 
-        public JournalBuilder Intent(Guid attemptId, ulong listingId = 77, DemandKey? demand = null, Guid? runId = null)
+        public JournalBuilder Intent(Guid attemptId, ulong listingId = 77, DemandKey? demand = null, Guid? runId = null, uint vendorShopId = 0)
         {
             var key = demand ?? OreDemand.Key;
             entries.Add(new IntentRecorded
@@ -530,6 +563,7 @@ public sealed class JournalReplayerTests
                 Payable = 5_050,
                 SearchGeneration = SearchGeneration,
                 PlanVersion = 1,
+                VendorShopId = vendorShopId,
             });
             return this;
         }

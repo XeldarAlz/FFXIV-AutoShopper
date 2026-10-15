@@ -29,6 +29,8 @@ internal static partial class L
         public static readonly LocString PhaseSettling = new("route.phase.settling", "Arriving on {0}");
         public static readonly LocString PhaseBoard = new("route.phase.board", "Going to the market board on {0}");
         public static readonly LocString PhaseRetry = new("route.phase.retry", "Trying the trip to {0} again shortly");
+        public static readonly LocString PhaseVendor = new("route.phase.vendor", "Going to {0}");
+        public static readonly LocString VendorTarget = new("route.vendorTarget", "{0} in {1}");
         public static readonly LocString PhaseHome = new("route.phase.home", "Travelling home to {0}");
         public static readonly LocString PhaseElapsed = new("route.phase.elapsed", "{0}  ·  {1}");
 

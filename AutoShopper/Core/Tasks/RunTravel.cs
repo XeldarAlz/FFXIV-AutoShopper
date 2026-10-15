@@ -10,6 +10,7 @@ internal enum TravelPhase : byte
     GoingToBoard = 4,
     WaitingToRetry = 5,
     ReturningHome = 6,
+    GoingToVendor = 7,
 }
 
 // The pending journey as it stood at the logout of a planned transfer. It is taken then because the journey clears

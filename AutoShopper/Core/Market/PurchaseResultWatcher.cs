@@ -31,7 +31,7 @@ internal readonly record struct PurchaseOutcome(
 // purchase events second, the chat log lines third. An answer counts only once the purse and the bags agree with it.
 // Every raw value goes to the log at Info, attributed or not, so the first supervised purchases can pin what the codes
 // mean. Framework thread only.
-internal sealed unsafe class PurchaseResultWatcher : IDisposable
+internal sealed unsafe class PurchaseResultWatcher : IDisposable, IPurchaseWatcher
 {
     private const int LoggedParameters = 3;
 

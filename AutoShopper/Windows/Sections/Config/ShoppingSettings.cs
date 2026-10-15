@@ -135,6 +135,12 @@ internal static partial class ShoppingSettings
             SmallStepperWidth,
             () => DrawStepper("##ashop_plan_stale", configuration, configuration.StaleAfterHours, Configuration.MinimumStaleHours, Configuration.MaximumStaleHours,
                 Loc.T(L.Shopping.HoursFormat), static (settings, value) => settings.StaleAfterHours = value));
+
+        SettingsRow.Draw(Loc.T(L.Shopping.Vendors),
+            Loc.T(L.Shopping.VendorsHelp),
+            SettingsControls.ToggleWidth,
+            () => SettingsControls.DrawToggle(configuration, () => configuration.BuyFromVendors, value => configuration.BuyFromVendors = value, "##ashop_plan_vendors"),
+            SettingsRow.ToggleHeight);
     }
 
     private static void DrawStepper(string id, Configuration configuration, int current, int minimum, int maximum, string format, Action<Configuration, int> assign)

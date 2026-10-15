@@ -1,5 +1,6 @@
 using Dalamud.Plugin.Ipc;
 using ECommons.DalamudServices;
+using HousingAddress = (string Name, int World, int City, int Ward, int PropertyType, int Plot, int Apartment, bool ApartmentSubdivision, bool AliasEnabled, string Alias);
 
 namespace AutoShopper.Core.Ipc;
 
@@ -22,6 +23,8 @@ internal sealed class LifestreamIPC
     private const string RealTerritoryTypeFailed = AshopConstants.LogPrefix + " Lifestream GetRealTerritoryType failed";
     private const string AethernetTeleportByIdFailed = AshopConstants.LogPrefix + " Lifestream AethernetTeleportById failed";
     private const string ActiveAetheryteFailed = AshopConstants.LogPrefix + " Lifestream GetActiveAetheryte failed";
+    private const string BuildAddressFailed = AshopConstants.LogPrefix + " Lifestream BuildAddressBookEntry failed";
+    private const string GoToHousingAddressFailed = AshopConstants.LogPrefix + " Lifestream GoToHousingAddress failed";
 
     private static LifestreamIPC? instance;
 
@@ -39,6 +42,8 @@ internal sealed class LifestreamIPC
     private readonly ICallGateSubscriber<uint> realTerritoryType;
     private readonly ICallGateSubscriber<uint, bool> aethernetTeleportById;
     private readonly ICallGateSubscriber<uint> activeAetheryte;
+    private readonly ICallGateSubscriber<string, string, string, string, bool, bool, HousingAddress> buildAddress;
+    private readonly ICallGateSubscriber<HousingAddress, object> goToHousingAddress;
 
     // Cached once so the polling loops of a journey do not allocate a delegate on every call.
     private readonly Func<bool> isBusyCall;
@@ -66,6 +71,8 @@ internal sealed class LifestreamIPC
         realTerritoryType = pluginInterface.GetIpcSubscriber<uint>(GatePrefix + "GetRealTerritoryType");
         aethernetTeleportById = pluginInterface.GetIpcSubscriber<uint, bool>(GatePrefix + "AethernetTeleportById");
         activeAetheryte = pluginInterface.GetIpcSubscriber<uint>(GatePrefix + "GetActiveAetheryte");
+        buildAddress = pluginInterface.GetIpcSubscriber<string, string, string, string, bool, bool, HousingAddress>(GatePrefix + "BuildAddressBookEntry");
+        goToHousingAddress = pluginInterface.GetIpcSubscriber<HousingAddress, object>(GatePrefix + "GoToHousingAddress");
 
         isBusyCall = isBusy.InvokeFunc;
         canChangeInstanceCall = canChangeInstance.InvokeFunc;
@@ -131,4 +138,25 @@ internal sealed class LifestreamIPC
     // The aetheryte or shard Lifestream sees the character standing at, 0 when none.
     public uint ActiveAetheryte()
         => IpcGate.Invoke(activeAetheryte.HasFunction, activeAetheryteCall, 0u, ActiveAetheryteFailed);
+
+    public bool GoToWard(string world, string district, int ward, int plot)
+    {
+        var address = IpcGate.Invoke(
+            buildAddress.HasFunction,
+            () => buildAddress.InvokeFunc(world, district, ward.ToString(System.Globalization.CultureInfo.InvariantCulture), plot.ToString(System.Globalization.CultureInfo.InvariantCulture), false, false),
+            default,
+            BuildAddressFailed);
+        if (address.World == 0 || address.Ward != ward)
+        {
+            return false;
+        }
+
+        if (!goToHousingAddress.HasAction)
+        {
+            return false;
+        }
+
+        IpcGate.Run(true, () => goToHousingAddress.InvokeAction(address), GoToHousingAddressFailed);
+        return true;
+    }
 }

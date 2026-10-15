@@ -83,6 +83,7 @@ internal sealed partial class PlanPage
         DrawTotals(current);
         DrawBudget(plugin, current);
         DrawComparison(plugin, current);
+        DrawVendors(current);
         DrawRoute(current);
         DrawMissing(current);
         DrawFreshness(current);
@@ -103,7 +104,7 @@ internal sealed partial class PlanPage
             return view;
         }
 
-        view = BuildView(plugin.Items, scope, result, staleHours, bucket);
+        view = BuildView(plugin.Items, plugin.Vendors, scope, result, staleHours, bucket);
         return view;
     }
 
