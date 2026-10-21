@@ -1,3 +1,4 @@
+using AutoShopper.Core.Execution.Model;
 using AutoShopper.Core.Game.Ops;
 using Dalamud.Game.ClientState.Conditions;
 using ECommons.Automation;
@@ -7,18 +8,22 @@ using System.Threading.Tasks;
 namespace AutoShopper.Core.Tasks;
 
 // The action belongs to the run's character; another one logged in by then, after a transfer for one, is left alone.
-public sealed class AutoAfterRun(AfterRunAction action, ulong characterContentId) : AutoCommon
+// The player's chat commands go out first, so the action cannot cut them off.
+public sealed class AutoAfterRun(AfterRunAction action, ulong characterContentId, string commandBlock) : AutoCommon
 {
     private const int ReadyWaitMs = 20_000;
     private const int ConfirmationWaitMs = 6_000;
     // The game drops a chat command issued in the middle of a transition.
     private const int PreCommandSettleMs = 800;
+    // Some plugin commands misbehave when several arrive in the same frame, so the player's commands are spaced out.
+    private const int ChatCommandSpacingMs = 500;
     // The second try covers a command eaten by lag or a window in the way.
     private const int LogoutAttempts = 2;
     private const string LogoutCommand = "/logout";
     private const string CloseGameCommand = "/xlkill";
 
     private readonly AfterRunAction action = action;
+    private readonly string commandBlock = commandBlock;
 
     // A mob still on the character keeps it in combat, where neither the logout nor a clean exit goes through, so the
     // action waits for a safe moment.
@@ -39,6 +44,12 @@ public sealed class AutoAfterRun(AfterRunAction action, ulong characterContentId
             return;
         }
 
+        await SendChatCommands();
+        if (CancelToken.IsCancellationRequested)
+        {
+            return;
+        }
+
         switch (action)
         {
             case AfterRunAction.Logout:
@@ -47,6 +58,42 @@ public sealed class AutoAfterRun(AfterRunAction action, ulong characterContentId
             case AfterRunAction.CloseGame:
                 await CloseGame();
                 break;
+        }
+    }
+
+    private async Task SendChatCommands()
+    {
+        var lines = ChatCommandBlock.Lines(commandBlock);
+        for (var lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+        {
+            if (CancelToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            var line = lines[lineIndex];
+            if (!ChatCommandBlock.IsCommand(line))
+            {
+                Warn($"After-run line skipped, commands must start with '/': {line}");
+                continue;
+            }
+
+            Status = "Running your chat commands";
+            SendChatCommand(line);
+            await DelayMs(ChatCommandSpacingMs);
+        }
+    }
+
+    private void SendChatCommand(string command)
+    {
+        try
+        {
+            Diag($"After-run command: {command}");
+            Chat.ExecuteCommand(command);
+        }
+        catch (Exception exception)
+        {
+            RunLog.Error(exception, $"After-run command '{command}' failed");
         }
     }
 

@@ -55,12 +55,13 @@ internal sealed partial class AutoShopController
         }
 
         progress.SetPhase(RunPhase.Finishing);
-        RunChain(choice.WayHome, choice.Action);
+        RunChain(choice.WayHome, choice.Action, choice.ChatCommands);
     }
 
-    // One ordered chain once a run ends on its own: the way home, then the after-run action. A Stop or a fault runs
-    // neither. The finished run stays on screen while the chain runs, and is cleared once it ends. The way home's
-    // result goes to the run's panel and history row, apart from how the shopping ended.
+    // One ordered chain once a run ends on its own: the way home, then the after-run step, the player's chat commands
+    // ahead of the after-run action. A Stop or a fault runs none of it. The finished run stays on screen while the chain
+    // runs, and is cleared once it ends. The way home's result goes to the run's panel and history row, apart from how
+    // the shopping ended.
     private AfterRunChoice ChooseAfterRun(ShopSession ending)
     {
         if (ending.AfterActionDispatched)
@@ -71,7 +72,8 @@ internal sealed partial class AutoShopController
         ending.AfterActionDispatched = true;
         var configuration = Plugin.Instance.Configuration;
         var returnHome = shopRun?.ReturnsHome(configuration) ?? configuration.ReturnHomeAfterRun;
-        var afterRun = shopRun is { FromApi: true } ? AfterRunAction.StayLoggedIn : configuration.AfterRun;
+        var fromApi = shopRun is { FromApi: true };
+        var afterRun = fromApi ? AfterRunAction.StayLoggedIn : configuration.AfterRun;
         var homeKnown = Worlds.TryHome(out var home);
         var currentKnown = Worlds.TryCurrent(out var current);
         var away = homeKnown && currentKnown && home.Id != current.Id;
@@ -88,8 +90,9 @@ internal sealed partial class AutoShopController
             AwayFromHome = away,
             WayHomeAllowed = wayHomeAllowed,
             Action = afterRun,
+            HasChatCommands = !fromApi && !string.IsNullOrWhiteSpace(configuration.PostRunCommands),
         });
-        Diag($"After the run: way home {choice.WayHome}, after-run action {(choice.Action?.ToString() ?? "none")}; stop condition {ending.CompletedByStopCondition}, fault {ending.EndedWithFault}, away from home {away}.");
+        Diag($"After the run: way home {choice.WayHome}, after-run action {(choice.Action?.ToString() ?? "none")}, chat commands {choice.ChatCommands}; stop condition {ending.CompletedByStopCondition}, fault {ending.EndedWithFault}, away from home {away}.");
         if (!ending.CompletedByStopCondition || ending.EndedWithFault)
         {
             return choice;
@@ -154,8 +157,8 @@ internal sealed partial class AutoShopController
     }
 
     // A way home that did not run to its own end, a fault for one, says nothing of where the character stands, so the
-    // after-run action is not taken after it.
-    private void RunChain(bool wayHome, AfterRunAction? action)
+    // after-run step is not taken after it.
+    private void RunChain(bool wayHome, AfterRunAction? action, bool chatCommands)
     {
         if (wayHome)
         {
@@ -172,7 +175,7 @@ internal sealed partial class AutoShopController
                     SetReturnHome(ending, result);
                 }
 
-                RunChain(wayHome: false, ended ? action : null);
+                RunChain(wayHome: false, ended ? action : null, ended && chatCommands);
             });
             if (!started)
             {
@@ -189,7 +192,7 @@ internal sealed partial class AutoShopController
 
         if (action is { } next)
         {
-            RunAfterAction(next);
+            RunAfterAction(next, chatCommands);
             return;
         }
 
@@ -197,7 +200,7 @@ internal sealed partial class AutoShopController
     }
 
     // The action is the run's character's alone: after a transfer home another character may stand in its place.
-    private void RunAfterAction(AfterRunAction action)
+    private void RunAfterAction(AfterRunAction action, bool chatCommands)
     {
         var contentId = shopRun?.Authorization?.CharacterContentId ?? 0;
         if (contentId == 0 || contentId != ECommons.DalamudServices.Svc.PlayerState.ContentId)
@@ -207,8 +210,22 @@ internal sealed partial class AutoShopController
             return;
         }
 
-        Diag($"Starting after-run action {action}.");
-        var started = RunTask(() => AfterRunTask(action, contentId), () =>
+        var commandBlock = chatCommands ? Plugin.Instance.Configuration.PostRunCommands : string.Empty;
+        // The inn trip is a task of its own, so the chat commands go out in a step just before it.
+        if (chatCommands && action == AfterRunAction.ReturnToInn)
+        {
+            Diag("Sending the after-run chat commands, then returning to the inn.");
+            var sent = RunTask(() => new AutoAfterRun(AfterRunAction.StayLoggedIn, contentId, commandBlock), () => RunAfterAction(action, chatCommands: false));
+            if (!sent)
+            {
+                ClearRun();
+            }
+
+            return;
+        }
+
+        Diag(chatCommands ? $"Starting after-run action {action}, chat commands first." : $"Starting after-run action {action}.");
+        var started = RunTask(() => AfterRunTask(action, contentId, commandBlock), () =>
         {
             Diag($"After-run action {action} finished.");
             ClearRun();
@@ -219,8 +236,8 @@ internal sealed partial class AutoShopController
         }
     }
 
-    private static AutoCommon AfterRunTask(AfterRunAction action, ulong contentId)
-        => action == AfterRunAction.ReturnToInn ? new AutoReturnToInn() : new AutoAfterRun(action, contentId);
+    private static AutoCommon AfterRunTask(AfterRunAction action, ulong contentId, string commandBlock)
+        => action == AfterRunAction.ReturnToInn ? new AutoReturnToInn() : new AutoAfterRun(action, contentId, commandBlock);
 
     // Idempotent through Recorded, so an explicit Stop and a finished task can both call it.
     private void FinalizeRun(ShopSession? ending)

@@ -27,6 +27,9 @@ public sealed partial class Configuration : IPluginConfiguration
     // Never fires on a manual Stop or a fault.
     public AfterRunAction AfterRun { get; set; } = AfterRunAction.StayLoggedIn;
 
+    // One chat command per line, sent ahead of the after-run action on the same runs, even when that action is to stay.
+    public string PostRunCommands { get; set; } = string.Empty;
+
     public bool AutoPauseInContent { get; set; } = true;
 
     public string LastSeenChangelogVersion { get; set; } = string.Empty;

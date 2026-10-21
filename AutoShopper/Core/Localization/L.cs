@@ -416,6 +416,11 @@ internal static partial class L
         public static readonly LocString AutoPauseHelp = new("settings.general.autoPauseHelp", "Pause the run while you are inside a duty, trial, raid, or any other instanced content, then resume it once you are back outside. Your run and session stats are kept.");
         public static readonly LocString PauseTyping = new("settings.general.pauseTyping", "Hold while typing");
         public static readonly LocString PauseTypingHelp = new("settings.general.pauseTypingHelp", "While a text box of the game has focus, like the chat line, a run starts no new move until you close it. A move already under way carries on.");
+
+        public static readonly LocString PostRunGroup = new("settings.postRun.group", "Chat commands");
+        public static readonly LocString PostRunLabel = new("settings.postRun.label", "Run when the run finishes");
+        public static readonly LocString PostRunHelp = new("settings.postRun.help", "One command per line, each starting with a slash. They run when a run ends on its own, before the after-run action, and never after Stop or a failure.");
+        public static readonly LocString PostRunCaption = new("settings.postRun.caption", "Lines that do not start with a slash are skipped, so nothing is ever said in chat. Try /li home to head home or /ays m to hand off to AutoRetainer.");
     }
 
     internal static class Plugin
