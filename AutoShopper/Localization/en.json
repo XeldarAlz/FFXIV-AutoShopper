@@ -180,6 +180,7 @@
   "changelog.r1300.2": "Buys from NPC vendors when they cost no more than the market board, housing merchants in the residential districts included, before any market stop",
   "changelog.r1300.3": "The Shop page has a How to buy section: buy from everything, the market board only or NPC vendors only, and pick the route mode with buttons",
   "changelog.r1300.4": "List lines stay readable in a narrow window: the item name moves above the controls instead of being cut off",
+  "changelog.r1310.1": "Fixed long sessions ending in a crash or a Start button that stops working; moving around no longer sets up new game hooks each time",
   "changelog.r1001.1": "Fixed the aethernet ride to a market board giving up at the shard while the zone was still loading",
   "changelog.r1001.2": "Fixed the walk to a market board ending a few metres out of reach, as at Ul'dah's Sapphire Avenue Exchange",
   "changelog.r1000.1": "Shopping lists: Any, HQ or NQ, buy an amount or top up to a target, with a max price per unit including the 5% fee",

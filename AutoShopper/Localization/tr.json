@@ -180,6 +180,7 @@
   "changelog.r1300.2": "Pazar panosundan pahalı olmadıklarında NPC satıcılardan, konut bölgelerindeki satıcılar dahil, herhangi bir pano durağından önce satın alır",
   "changelog.r1300.3": "Alışveriş sayfasında Nasıl alınacak bölümü var: hepsi, yalnızca pazar panosu veya yalnızca NPC satıcılar; rota modu da düğmelerle seçilir",
   "changelog.r1300.4": "Dar bir pencerede liste satırları okunur kalır: eşya adı kesilmek yerine kontrollerin üstüne geçer",
+  "changelog.r1310.1": "Düzeltildi: uzun oturumlar bir çökmeyle ya da çalışmayı bırakan bir Başlat düğmesiyle bitiyordu; hareket artık her seferinde oyuna yeni kancalar kurmuyor",
   "changelog.r1001.1": "Düzeltildi: pazar panosuna aethernet yolculuğu, bölge daha yüklenirken varış noktasında vazgeçiyordu",
   "changelog.r1001.2": "Düzeltildi: pazar panosuna yürüyüş, Ul'dah'ta olduğu gibi birkaç metre erişim dışında bitiyordu",
   "changelog.r1000.1": "Alışveriş listeleri: Herhangi, HQ ya da NQ, bir miktar alın ya da bir hedefe tamamlayın, %5 ücret dahil birim fiyat üst sınırıyla",

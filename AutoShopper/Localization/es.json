@@ -180,6 +180,7 @@
   "changelog.r1300.2": "Compra a vendedores NPC cuando no cuestan más que el tablón del mercado, mercaderes de vivienda de las zonas residenciales incluidos, antes de cualquier parada en el tablón",
   "changelog.r1300.3": "La página Compras tiene una sección Cómo comprar: todo, solo el tablón del mercado o solo vendedores NPC, y el modo de ruta con botones",
   "changelog.r1300.4": "Las líneas de la lista siguen legibles en una ventana estrecha: el nombre del objeto pasa encima de los controles en lugar de cortarse",
+  "changelog.r1310.1": "Corregido: las sesiones largas terminaban en un cierre inesperado o con el botón Iniciar sin responder; moverse ya no instala nuevos ganchos en el juego cada vez",
   "changelog.r1001.1": "Corregido: el viaje por aethernet hasta el tablón del mercado se cancelaba al llegar, mientras la zona seguía cargando",
   "changelog.r1001.2": "Corregido: la caminata hasta el tablón del mercado terminaba a unos metros fuera del alcance, como en Ul'dah",
   "changelog.r1000.1": "Listas de compra: Cualquiera, HQ o NQ, comprar una cantidad o completar hasta un objetivo, con un máximo por unidad que incluye la tasa del 5 %",
