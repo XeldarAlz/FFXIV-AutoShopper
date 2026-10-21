@@ -3,8 +3,8 @@ using ECommons.DalamudServices;
 
 namespace AutoShopper.Core.Tasks;
 
-// Starts a task of its own, outside a run. Building a task hooks game functions and throws when one is missing; that
-// must not reach a command handler or a window's draw, so it ends in the log and the chat instead.
+// Starts a task of its own, outside a run. Building or starting a task can throw; that must not reach a command handler
+// or a window's draw, so it ends in the log and the chat instead.
 internal static class TaskStarter
 {
     public static bool TryStart(Func<AutoCommon> build)

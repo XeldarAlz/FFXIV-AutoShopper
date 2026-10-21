@@ -444,8 +444,8 @@ internal sealed partial class AutoShopController
 
     // The movement library fires OnCompleted off the game thread: its await of the task does not return to the framework
     // scheduler, and the runtime moves the continuation to the thread pool. Recording a run reads the object table, which
-    // Dalamud allows only on the game thread, so the hand-off is moved back there. Building a task hooks game functions
-    // and throws when one is missing; false then, once the log and the chat say so, and the caller undoes its setup.
+    // Dalamud allows only on the game thread, so the hand-off is moved back there. Building or starting a task can throw;
+    // false then, once the log and the chat say so, and the caller undoes its setup.
     private bool RunTask(Func<AutoCommon> build, Action onCompleted)
     {
         try
