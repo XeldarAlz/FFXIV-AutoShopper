@@ -118,7 +118,7 @@ internal static partial class L
         public static readonly LocString WhenDone = new("travel.whenDone", "When the run ends");
         public static readonly LocString WhenDoneHelp = new("travel.whenDoneHelp", "What to do once a run ends on its own. A manual Stop or a fault never triggers it.");
         public static readonly LocString ReturnHome = new("travel.returnHome", "Return home after the run");
-        public static readonly LocString ReturnHomeHelp = new("travel.returnHomeHelp", "Travel back to your home world once a run ends, crossing data centers when the run ended on another one. Off leaves you where the run ended.");
+        public static readonly LocString ReturnHomeHelp = new("travel.returnHomeHelp", "Travel back to your home world once a run ends, crossing data centers when the run ended on another one. A world change from Limsa Lominsa, Gridania or Ul'dah happens right there, so you stay in that city. Off leaves you where the run ended.");
         public static readonly LocString AfterStayName = new("travel.after.stay.name", "Stay where you are");
         public static readonly LocString AfterStayDetail = new("travel.after.stay.detail", "Just stop. You're left standing wherever the run ended.");
         public static readonly LocString AfterInnName = new("travel.after.inn.name", "Return to the inn");

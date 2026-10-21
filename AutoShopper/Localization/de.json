@@ -57,7 +57,7 @@
   "travel.whenDone": "Wenn der Lauf endet",
   "travel.whenDoneHelp": "Was passiert, wenn ein Lauf von selbst endet. Ein manueller Stopp oder ein Fehler löst es nie aus.",
   "travel.returnHome": "Nach dem Lauf heimkehren",
-  "travel.returnHomeHelp": "Reist nach dem Ende eines Laufs zurück in deine Heimatwelt, auch über Datenzentren hinweg, wenn der Lauf auf einem anderen endete. Aus lässt dich dort, wo der Lauf endete.",
+  "travel.returnHomeHelp": "Reist nach dem Ende eines Laufs zurück in deine Heimatwelt, auch über Datenzentren hinweg, wenn der Lauf auf einem anderen endete. Ein Weltwechsel aus Limsa Lominsa, Gridania oder Ul'dah findet direkt dort statt, sodass du in dieser Stadt bleibst. Aus lässt dich dort, wo der Lauf endete.",
   "travel.after.stay.name": "Stehen bleiben",
   "travel.after.stay.detail": "Einfach aufhören. Du bleibst dort stehen, wo der Lauf endete.",
   "travel.after.inn.name": "Ins Gasthaus zurückkehren",

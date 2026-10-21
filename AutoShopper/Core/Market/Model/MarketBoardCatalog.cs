@@ -74,6 +74,22 @@ internal static class MarketBoardCatalog
         return false;
     }
 
+    // Also matches the territory of a city's aetheryte hub, whose aethernet reaches the board without a teleport.
+    public static bool TryFindCityOrHub(uint territoryId, out MarketBoardCity city)
+    {
+        for (var index = 0; index < Cities.Length; index++)
+        {
+            if (Cities[index].TerritoryId == territoryId || Cities[index].TeleportTerritoryId == territoryId)
+            {
+                city = Cities[index];
+                return true;
+            }
+        }
+
+        city = default;
+        return false;
+    }
+
     public static Vector3 NearestBoard(in MarketBoardCity city, Vector3 from)
     {
         var positions = city.BoardPositions;

@@ -136,7 +136,7 @@ internal sealed class AutoGoto(uint territoryId, Vector3 destination) : AutoComm
         }
 
         Svc.Chat.Print($"{AshopConstants.LogPrefix} Goto: heading home to {home.Name} ({home.DataCenterName}).");
-        AutoJourney.Start(JourneyPlan.Home(home.Name));
+        AutoJourney.Start(HomePlan(home.Name));
     }
 
     // The first word is the world, a trailing i<n> is the instance, and whatever sits between is the aetheryte's name.

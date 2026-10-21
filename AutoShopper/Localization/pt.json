@@ -57,7 +57,7 @@
   "travel.whenDone": "Quando a rodada terminar",
   "travel.whenDoneHelp": "O que fazer quando uma rodada termina sozinha. Uma parada manual ou uma falha nunca o acionam.",
   "travel.returnHome": "Voltar para casa após a rodada",
-  "travel.returnHomeHelp": "Volta ao seu mundo de origem quando uma rodada termina, trocando de data center se a rodada terminou em outro. Desligado, você fica onde a rodada terminou.",
+  "travel.returnHomeHelp": "Volta ao seu mundo de origem quando uma rodada termina, trocando de data center se a rodada terminou em outro. Uma troca de mundo a partir de Limsa Lominsa, Gridania ou Ul'dah acontece ali mesmo, então você fica nessa cidade. Desligado, você fica onde a rodada terminou.",
   "travel.after.stay.name": "Ficar onde está",
   "travel.after.stay.detail": "Apenas parar. Você fica onde a rodada terminou.",
   "travel.after.inn.name": "Voltar para a estalagem",

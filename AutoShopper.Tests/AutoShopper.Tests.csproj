@@ -23,6 +23,7 @@
     <Compile Include="..\AutoShopper\Core\Market\Model\**\*.cs" Link="Market\Model\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\AutoShopper\Core\Vendors\Model\**\*.cs" Link="Vendors\Model\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\AutoShopper\Core\Travel\StandSpot.cs" Link="Travel\StandSpot.cs" />
+    <Compile Include="..\AutoShopper\Core\Travel\JourneyPlan.cs" Link="Travel\JourneyPlan.cs" />
     <Compile Include="..\AutoShopper\ConfigEnums.cs" Link="ConfigEnums.cs" />
     <Compile Include="..\AutoShopper\Core\Exports\**\*.cs" Link="Exports\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\AutoShopper\Core\Recipes\**\*.cs" Exclude="..\AutoShopper\Core\Recipes\RecipeExpander.cs" Link="Recipes\%(RecursiveDir)%(Filename)%(Extension)" />

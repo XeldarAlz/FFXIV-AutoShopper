@@ -57,7 +57,7 @@
   "travel.whenDone": "运行结束后",
   "travel.whenDoneHelp": "运行自行结束后的动作。手动停止或出错时不会触发。",
   "travel.returnHome": "运行结束后返回主世界",
-  "travel.returnHomeHelp": "运行结束后返回你的主世界，如果运行在其他数据中心结束则跨数据中心返回。关闭后你会留在运行结束的地方。",
+  "travel.returnHomeHelp": "运行结束后返回你的主世界，如果运行在其他数据中心结束则跨数据中心返回。从利姆萨·罗敏萨、格里达尼亚或乌尔达哈换服时会在原地进行，因此你会留在那座城市。关闭后你会留在运行结束的地方。",
   "travel.after.stay.name": "留在原地",
   "travel.after.stay.detail": "直接停止。你会停留在运行结束的地方。",
   "travel.after.inn.name": "返回旅馆",

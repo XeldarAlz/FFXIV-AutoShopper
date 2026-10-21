@@ -9,16 +9,13 @@ internal static class MarketCityChoice
     // when its aetheryte is attuned, because the game refuses a teleport to one that is not.
     public static bool TryChoose(uint currentTerritoryId, MarketCity preferred, Func<uint, bool> isAttuned, out MarketCity city)
     {
-        var cities = MarketBoardCatalog.Cities;
-        for (var index = 0; index < cities.Length; index++)
+        if (MarketBoardCatalog.TryFindCityOrHub(currentTerritoryId, out var here))
         {
-            if (cities[index].TerritoryId == currentTerritoryId || cities[index].TeleportTerritoryId == currentTerritoryId)
-            {
-                city = cities[index].City;
-                return true;
-            }
+            city = here.City;
+            return true;
         }
 
+        var cities = MarketBoardCatalog.Cities;
         var wanted = MarketBoardCatalog.Contains(preferred) ? preferred : DefaultPreferred;
         if (isAttuned(MarketBoardCatalog.Of(wanted).TeleportAetheryteId))
         {

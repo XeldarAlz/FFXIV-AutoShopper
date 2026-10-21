@@ -12,8 +12,8 @@ public readonly record struct JourneyPlan(string World, uint AetheryteId, uint T
     public static JourneyPlan ToWorldThrough(string world, int gateway)
         => new(world, 0, 0, 0, ReturnTrip: false, DateTime.UtcNow, gateway);
 
-    public static JourneyPlan Home(string world)
-        => new(world, 0, 0, 0, ReturnTrip: true, DateTime.UtcNow);
+    public static JourneyPlan Home(string world, int gateway)
+        => new(world, 0, 0, 0, ReturnTrip: true, DateTime.UtcNow, gateway);
 }
 
 public enum JourneyOutcome : byte

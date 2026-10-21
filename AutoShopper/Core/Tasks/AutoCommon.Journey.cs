@@ -1,6 +1,7 @@
 using AutoShopper.Core.Execution.Model;
 using AutoShopper.Core.Game.Ops;
 using AutoShopper.Core.Ipc;
+using AutoShopper.Core.Market.Model;
 using AutoShopper.Core.Travel;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
@@ -53,11 +54,14 @@ public abstract partial class AutoCommon
     {
         if (Worlds.TryHome(out var home))
         {
-            return TravelToWorld(JourneyPlan.Home(home.Name));
+            return TravelToWorld(HomePlan(home.Name));
         }
 
         return Task.FromResult(Refuse(ReturnLabel, "the home world could not be read from the character"));
     }
+
+    private protected static JourneyPlan HomePlan(string homeWorld)
+        => JourneyPlan.Home(homeWorld, MarketGateway.ForWayHome(Svc.ClientState.TerritoryType, Plugin.Instance.Configuration.PreferredMarketCity, ZoneAetherytes.IsAttuned));
 
     // Everything needed to stand at a named aetheryte on a named world and instance, from anywhere in the region. The
     // plan stays in the configuration until the journey ends, so a login can pick it up when the task does not live

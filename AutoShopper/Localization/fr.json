@@ -57,7 +57,7 @@
   "travel.whenDone": "À la fin de la tournée",
   "travel.whenDoneHelp": "Que faire quand une tournée se termine d'elle-même. Un arrêt manuel ou une erreur ne le déclenche jamais.",
   "travel.returnHome": "Rentrer après la tournée",
-  "travel.returnHomeHelp": "Retourne sur votre monde d'origine une fois la tournée terminée, en changeant de centre de données si elle s'est terminée sur un autre. Désactivé, vous restez là où la tournée s'est terminée.",
+  "travel.returnHomeHelp": "Retourne sur votre monde d'origine une fois la tournée terminée, en changeant de centre de données si elle s'est terminée sur un autre. Un changement de monde depuis Limsa Lominsa, Gridania ou Ul'dah se fait sur place, vous restez donc dans cette cité. Désactivé, vous restez là où la tournée s'est terminée.",
   "travel.after.stay.name": "Rester sur place",
   "travel.after.stay.detail": "Simplement s'arrêter. Vous restez là où la tournée s'est terminée.",
   "travel.after.inn.name": "Rentrer à l'auberge",

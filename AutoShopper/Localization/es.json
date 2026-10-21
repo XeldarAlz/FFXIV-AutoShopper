@@ -57,7 +57,7 @@
   "travel.whenDone": "Cuando termine la ronda",
   "travel.whenDoneHelp": "Qué hacer cuando una ronda termina por sí sola. Una parada manual o un fallo nunca lo activan.",
   "travel.returnHome": "Volver a casa tras la ronda",
-  "travel.returnHomeHelp": "Regresa a tu mundo de origen cuando termina una ronda, cambiando de centro de datos si la ronda terminó en otro. Desactivado, te quedas donde terminó la ronda.",
+  "travel.returnHomeHelp": "Regresa a tu mundo de origen cuando termina una ronda, cambiando de centro de datos si la ronda terminó en otro. Un cambio de mundo desde Limsa Lominsa, Gridania o Ul'dah se hace allí mismo, así que te quedas en esa ciudad. Desactivado, te quedas donde terminó la ronda.",
   "travel.after.stay.name": "Quedarte donde estés",
   "travel.after.stay.detail": "Solo parar. Te quedas donde terminó la ronda.",
   "travel.after.inn.name": "Volver a la posada",

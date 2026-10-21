@@ -57,7 +57,7 @@
   "travel.whenDone": "Tur bittiğinde",
   "travel.whenDoneHelp": "Bir tur kendiliğinden bittiğinde ne yapılacağı. Elle durdurma ya da bir hata bunu asla tetiklemez.",
   "travel.returnHome": "Turdan sonra eve dön",
-  "travel.returnHomeHelp": "Bir tur bitince ana dünyanıza geri döner; tur başka bir veri merkezinde bittiyse veri merkezleri arasında da geçer. Kapalıyken turun bittiği yerde kalırsınız.",
+  "travel.returnHomeHelp": "Bir tur bitince ana dünyanıza geri döner; tur başka bir veri merkezinde bittiyse veri merkezleri arasında da geçer. Limsa Lominsa, Gridania veya Ul'dah'tan dünya değişimi orada yapılır, böylece o şehirde kalırsınız. Kapalıyken turun bittiği yerde kalırsınız.",
   "travel.after.stay.name": "Olduğun yerde kal",
   "travel.after.stay.detail": "Sadece dur. Turun bittiği yerde kalırsınız.",
   "travel.after.inn.name": "Hana dön",

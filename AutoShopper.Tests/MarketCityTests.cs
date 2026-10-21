@@ -5,10 +5,14 @@ namespace AutoShopper.Tests;
 
 public sealed class MarketCityTests
 {
+    private const uint LimsaLowerDecks = 129;
     private const uint StepsOfNald = 130;
+    private const uint StepsOfThal = 131;
     private const uint NewGridania = 132;
+    private const uint OldGridania = 133;
     private const uint KuganeTerritory = 628;
     private const uint CoerthasCentralHighlands = 155;
+    private const uint LimsaAetheryte = 8;
     private const uint UldahAetheryte = 9;
     private const uint CrystariumAetheryte = 133;
 
@@ -127,6 +131,53 @@ public sealed class MarketCityTests
     public void OnlyTheThreeStartingCitiesAreWorldChangeGateways(MarketCity city, int gateway)
     {
         Assert.Equal(gateway, MarketGateway.For(city));
+    }
+
+    [Fact]
+    public void CatalogFindsACityByItsBoardOrItsHub()
+    {
+        Assert.True(MarketBoardCatalog.TryFindCityOrHub(LimsaLowerDecks, out var city));
+        Assert.Equal(MarketCity.LimsaLominsa, city.City);
+        Assert.True(MarketBoardCatalog.TryFindCityOrHub(StepsOfNald, out city));
+        Assert.Equal(MarketCity.Uldah, city.City);
+        Assert.True(MarketBoardCatalog.TryFindCityOrHub(OldGridania, out city));
+        Assert.Equal(MarketCity.Gridania, city.City);
+        Assert.False(MarketBoardCatalog.TryFindCityOrHub(CoerthasCentralHighlands, out _));
+    }
+
+    [Fact]
+    public void AGatewayNeedsItsAetheryteAttuned()
+    {
+        Assert.Equal(LimsaAetheryte, (uint)MarketGateway.Through(MarketCity.LimsaLominsa, EverythingAttuned));
+        Assert.Equal(MarketGateway.None, MarketGateway.Through(MarketCity.LimsaLominsa, NothingAttuned));
+        Assert.Equal(MarketGateway.None, MarketGateway.Through(MarketCity.Kugane, EverythingAttuned));
+        Assert.Equal(MarketGateway.None, MarketGateway.Through((MarketCity)99, EverythingAttuned));
+    }
+
+    [Theory]
+    [InlineData(LimsaLowerDecks, 8)]
+    [InlineData(StepsOfThal, 9)]
+    [InlineData(StepsOfNald, 9)]
+    [InlineData(OldGridania, 2)]
+    [InlineData(NewGridania, 2)]
+    public void TheWayHomeChangesWorldsInTheGatewayCityTheRunEndedIn(uint territoryId, int gateway)
+    {
+        Assert.Equal(gateway, MarketGateway.ForWayHome(territoryId, MarketCity.Kugane, EverythingAttuned));
+    }
+
+    [Fact]
+    public void TheWayHomeFromElsewhereGoesThroughThePreferredCity()
+    {
+        Assert.Equal(LimsaAetheryte, (uint)MarketGateway.ForWayHome(KuganeTerritory, MarketCity.LimsaLominsa, EverythingAttuned));
+        Assert.Equal(UldahAetheryte, (uint)MarketGateway.ForWayHome(CoerthasCentralHighlands, MarketCity.Uldah, EverythingAttuned));
+        Assert.Equal(MarketGateway.None, MarketGateway.ForWayHome(CoerthasCentralHighlands, MarketCity.Kugane, EverythingAttuned));
+    }
+
+    [Fact]
+    public void TheWayHomeSkipsAGatewayWhoseAetheryteIsNotAttuned()
+    {
+        Assert.Equal(UldahAetheryte, (uint)MarketGateway.ForWayHome(LimsaLowerDecks, MarketCity.Uldah, aetheryteId => aetheryteId != LimsaAetheryte));
+        Assert.Equal(MarketGateway.None, MarketGateway.ForWayHome(LimsaLowerDecks, MarketCity.Uldah, NothingAttuned));
     }
 
     private static bool EverythingAttuned(uint aetheryteId) => true;

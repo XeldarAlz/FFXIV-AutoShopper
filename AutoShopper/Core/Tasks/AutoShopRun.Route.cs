@@ -451,13 +451,7 @@ internal sealed partial class AutoShopRun
         return scopeWorlds.ToImmutable();
     }
 
-    // The preferred city's own aetheryte when Lifestream changes worlds at it and the character has it attuned.
-    private static int GatewayFor()
-    {
-        var city = Owner.Configuration.PreferredMarketCity;
-        var gateway = MarketGateway.For(city);
-        return gateway != MarketGateway.None && ZoneAetherytes.IsAttuned(MarketBoardCatalog.Of(city).TeleportAetheryteId) ? gateway : MarketGateway.None;
-    }
+    private static int GatewayFor() => MarketGateway.Through(Owner.Configuration.PreferredMarketCity, ZoneAetherytes.IsAttuned);
 
     private static TravelFailure FailureOf(JourneyOutcome outcome, bool crossDataCenter) => outcome switch
     {
